@@ -58,8 +58,16 @@ C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel
 ```
 
 You can change this by:
-1. Using the `custom_path` parameter in `setup_local_imports()`
-2. Modifying the `DEFAULT_LOCAL_LIBRARY_PATH` in `thalos_prime/config.py`
+1. Setting the `THALOS_LIBRARY_PATH` environment variable:
+   ```bash
+   # Windows
+   set THALOS_LIBRARY_PATH=C:\Your\Custom\Path\ThalosPrimeLibraryOfBabel
+   
+   # Linux/Mac
+   export THALOS_LIBRARY_PATH=/your/custom/path/ThalosPrimeLibraryOfBabel
+   ```
+2. Using the `custom_path` parameter in `setup_local_imports()`
+3. Modifying the default value in `thalos_prime/__init__.py` or `thalos_prime/config.py`
 
 ## Example
 

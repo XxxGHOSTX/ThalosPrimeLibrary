@@ -5,14 +5,22 @@ Manages paths and import configurations
 
 import os
 import sys
+import logging
+import warnings
 from pathlib import Path
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 
 class LibraryConfig:
     """Configuration class for managing library paths and imports"""
     
-    # Default local library path (Windows)
-    DEFAULT_LOCAL_LIBRARY_PATH = r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
+    # Default local library path (Windows) - can be overridden via THALOS_LIBRARY_PATH env var
+    DEFAULT_LOCAL_LIBRARY_PATH = os.getenv(
+        'THALOS_LIBRARY_PATH',
+        r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
+    )
     
     def __init__(self, local_library_path=None):
         """
@@ -40,8 +48,14 @@ class LibraryConfig:
         
         # Check if path exists
         if not lib_path.exists():
-            print(f"Warning: Local library path does not exist: {lib_path}")
-            print("You may need to adjust the path in thalos_prime.config.LibraryConfig")
+            warnings.warn(
+                f"Local library path does not exist: {lib_path}\n"
+                f"You can set the THALOS_LIBRARY_PATH environment variable or "
+                f"call setup_local_imports() with a custom path.",
+                UserWarning,
+                stacklevel=2
+            )
+            logger.warning("Local library path does not exist: %s", lib_path)
             return False
         
         # Add to sys.path if not already present
@@ -49,7 +63,7 @@ class LibraryConfig:
         if lib_path_str not in sys.path:
             sys.path.insert(0, lib_path_str)
             self._added_to_path = True
-            print(f"Added to Python path: {lib_path_str}")
+            logger.info("Added to Python path: %s", lib_path_str)
             return True
         
         self._added_to_path = True
