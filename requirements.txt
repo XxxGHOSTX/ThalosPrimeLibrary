@@ -1,0 +1,6 @@
+# ThalosPrime Library - No external dependencies required for basic usage
+# Install in development mode: pip install -e .
+
+# Optional development dependencies
+# pytest>=7.0
+# pytest-cov>=4.0
