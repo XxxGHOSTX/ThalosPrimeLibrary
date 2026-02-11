@@ -3,16 +3,39 @@ Tests for the configuration module
 """
 
 import sys
+import os
 import pytest
 from pathlib import Path
 from thalos_prime.config import LibraryConfig, get_config, setup_local_imports
 
 
-def test_library_config_default_path():
+def test_library_config_default_path(monkeypatch):
     """Test that LibraryConfig has the correct default path"""
-    config = LibraryConfig()
+    # Clear the environment variable to test the actual default
+    monkeypatch.delenv('THALOS_LIBRARY_PATH', raising=False)
+    
+    # Import fresh to get the default without env var
+    from importlib import reload
+    import thalos_prime.config as config_module
+    reload(config_module)
+    
+    config = config_module.LibraryConfig()
     expected_path = r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
     assert config.get_local_library_path() == expected_path
+
+
+def test_library_config_with_env_var(monkeypatch):
+    """Test that LibraryConfig respects the environment variable"""
+    custom_path = "/custom/env/path"
+    monkeypatch.setenv('THALOS_LIBRARY_PATH', custom_path)
+    
+    # Import fresh to get the value from env var
+    from importlib import reload
+    import thalos_prime.config as config_module
+    reload(config_module)
+    
+    config = config_module.LibraryConfig()
+    assert config.get_local_library_path() == custom_path
 
 
 def test_library_config_custom_path():
