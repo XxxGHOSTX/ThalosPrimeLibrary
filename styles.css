@@ -189,7 +189,8 @@ body {
     border-top: 1px solid var(--border);
 }
 
-.input-row input {
+.input-row input,
+.input-row textarea {
     flex: 1;
     padding: 12px 14px;
     border-radius: 10px;
@@ -198,9 +199,12 @@ body {
     color: var(--text);
     font-size: 1rem;
     box-shadow: var(--glow) inset;
+    resize: vertical;
+    min-height: 56px;
 }
 
-.input-row input:focus {
+.input-row input:focus,
+.input-row textarea:focus {
     outline: 1px solid var(--accent);
     box-shadow: 0 0 8px rgba(0, 255, 140, 0.4);
 }

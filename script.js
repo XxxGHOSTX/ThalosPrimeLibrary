@@ -5,6 +5,8 @@
   const sessionEl = document.getElementById("session-id");
   const clockEl = document.getElementById("clock");
 
+  const nodeLabel = document.getElementById("node-label");
+
   const sessionId =
     (crypto && crypto.randomUUID && crypto.randomUUID()) ||
     `sid-${Math.random().toString(16).slice(2, 10)}`;
@@ -56,17 +58,38 @@
     messagesEl.parentElement.scrollTop = messagesEl.parentElement.scrollHeight;
   };
 
+  const detectNode = (text) => {
+    const lower = text.toLowerCase();
+    if (/[atcg]{10,}/i.test(text) || lower.includes("peptide") || lower.includes("genome")) {
+      return "Genomic";
+    }
+    if (/[0-9+\-*\/=^]/.test(text) || lower.includes("matrix") || lower.includes("logic")) {
+      return "Logical";
+    }
+    if (lower.includes("story") || lower.includes("narrative") || lower.includes("dialog")) {
+      return "Narrative";
+    }
+    return "Universal";
+  };
+
   const buildResponse = (query) => {
     const pick = samples[Math.floor(Math.random() * samples.length)];
-    return [
-      "BABEL_RESPONSE:",
-      `QUERY: ${query}`,
-      `- ${pick.url} SCORE=${pick.score}`,
-      `  ${pick.snippetA}`,
-      `- ${pick.alt} SCORE=${pick.altScore}`,
-      `  ${pick.snippetB}`,
-      "COHERENCE: stable | CACHE: warm | MODE: local preview",
-    ].join("\n");
+    const sections = [
+      ["PHYSICAL/CHEMICAL", `${pick.url} SCORE=${pick.score}`, pick.snippetA],
+      ["LOGICAL/MATHEMATICAL", `${pick.alt} SCORE=${pick.altScore}`, pick.snippetB],
+      [
+        "LINGUISTIC/NARRATIVE",
+        `${pick.url} SCORE=${pick.score - 3}`,
+        "…Narrative coherence stabilized. Context aligned…",
+      ],
+    ];
+    const body = sections
+      .map(
+        ([title, link, line]) =>
+          `${title}:\n- ${link}\n  ${line}\n  SYNTHESIS: relevant | scope: unrestricted`
+      )
+      .join("\n");
+    return `BABEL_NEXUS_RESPONSE:\nQUERY: ${query}\n${body}\nCOHERENCE: structured | ENGINE: LLM-stub | MODE: local preview`;
   };
 
   const tickClock = () => {
@@ -101,9 +124,16 @@
     evt.preventDefault();
     const value = inputEl.value.trim();
     if (!value) return;
+    const node = detectNode(value);
+    nodeLabel.textContent = node;
+    addMessage("system", "Semantic Deconstruction → Coordinate Mapping → Nexus Assembly");
     addMessage("user", value);
     inputEl.value = "";
     addMessage("bot", await sendViaApi(value));
+  });
+
+  inputEl.addEventListener("input", (evt) => {
+    nodeLabel.textContent = detectNode(evt.target.value);
   });
 
   addMessage(

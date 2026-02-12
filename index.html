@@ -27,6 +27,7 @@
     <div class="status-item">Session <span id="session-id" class="mono"></span></div>
     <div class="status-item">Mode <span class="mono">Local Preview</span></div>
     <div class="status-item">Latency <span class="mono">&lt;1 ms</span></div>
+    <div class="status-item">Node <span id="node-label" class="mono">Universal</span></div>
   </section>
 
   <main id="console" class="console">
@@ -34,13 +35,13 @@
   </main>
 
   <form id="input-form" class="input-row" autocomplete="off">
-    <input
+    <textarea
       id="message-input"
-      type="text"
       name="message"
-      placeholder='Type a query, e.g., "Thalos Prime created by Tony Ray Macier III"'
-    >
-    <button type="submit">Send</button>
+      rows="3"
+      placeholder='Type a query, e.g., "Synthesize anti-microbial peptide length=10"'
+    ></textarea>
+    <button type="submit">Synthesize</button>
   </form>
 </div>
 </body>

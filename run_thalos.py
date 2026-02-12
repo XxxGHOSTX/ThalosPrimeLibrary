@@ -90,14 +90,23 @@ def synthesize_hits(query: str, max_results: int, domain: Optional[str], constra
 
 
 def build_reply(query: str, hits: List[SearchHit], domain: Optional[str], constraints: Optional[List[str]]) -> str:
-    lines = ["BABEL_RESPONSE:", f"QUERY: {query}"]
+    lines = ["BABEL_NEXUS_RESPONSE:", f"QUERY: {query}"]
     if domain:
         lines.append(f"DOMAIN: {domain}")
     if constraints:
         lines.append(f"CONSTRAINTS: {', '.join(constraints)}")
-    for hit in hits:
+
+    sections = [
+        "PHYSICAL/CHEMICAL",
+        "LOGICAL/MATHEMATICAL",
+        "LINGUISTIC/NARRATIVE",
+    ]
+    for idx, section in enumerate(sections):
+        hit = hits[idx % len(hits)]
+        lines.append(f"{section}:")
         lines.append(f"- {hit.url} SCORE={hit.score}")
         lines.append(f"  {hit.snippet}")
+        lines.append("  SYNTHESIS: relevant | scope=unrestricted | coherence=deterministic")
     lines.append("COHERENCE: structured | ENGINE: LLM-stub | MODE: local")
     return "\n".join(lines)
 
