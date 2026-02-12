@@ -77,13 +77,28 @@
   tickClock();
   setInterval(tickClock, 1000);
 
-  formEl.addEventListener("submit", (evt) => {
+  const sendViaApi = async (text) => {
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, session_id: sessionId }),
+      });
+      if (!res.ok) throw new Error("bad status");
+      const data = await res.json();
+      return data.reply || buildResponse(text);
+    } catch (err) {
+      return buildResponse(text);
+    }
+  };
+
+  formEl.addEventListener("submit", async (evt) => {
     evt.preventDefault();
     const value = inputEl.value.trim();
     if (!value) return;
     addMessage("user", value);
     inputEl.value = "";
-    setTimeout(() => addMessage("bot", buildResponse(value)), 320);
+    addMessage("bot", await sendViaApi(value));
   });
 
   addMessage(
