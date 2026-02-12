@@ -82,7 +82,12 @@
       const res = await fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, session_id: sessionId }),
+        body: JSON.stringify({
+          message: text,
+          session_id: sessionId,
+          domain: "universal",
+          constraints: [],
+        }),
       });
       if (!res.ok) throw new Error("bad status");
       const data = await res.json();

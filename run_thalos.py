@@ -55,6 +55,8 @@ class SearchHit(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    domain: Optional[str] = None
+    constraints: Optional[List[str]] = None
     session_id: Optional[str] = None
     max_results: int = 2
 
@@ -65,8 +67,10 @@ class ChatResponse(BaseModel):
     hits: List[SearchHit]
 
 
-def synthesize_hits(query: str, max_results: int) -> List[SearchHit]:
-    seed = int(hashlib.sha1(query.encode("utf-8")).hexdigest(), 16)
+def synthesize_hits(query: str, max_results: int, domain: Optional[str], constraints: Optional[List[str]]) -> List[SearchHit]:
+    salt = "|".join(constraints) if constraints else ""
+    basis = f"{domain or 'universal'}::{query}::{salt}"
+    seed = int(hashlib.sha1(basis.encode("utf-8")).hexdigest(), 16)
     rng = random.Random(seed)
     hits: List[SearchHit] = []
     for _ in range(max(1, max_results)):
@@ -79,14 +83,18 @@ def synthesize_hits(query: str, max_results: int) -> List[SearchHit]:
             SearchHit(
                 url=f"{LIBRARY_BASE}{hex_id}",
                 score=score,
-                snippet=f"{snippet} | coherence={score}/100 | variant=structured-mod",
+                snippet=f"{snippet} | domain={domain or 'universal'} | constraints={constraints or []} | coherence={score}/100 | variant=structured-mod",
             )
         )
     return hits
 
 
-def build_reply(query: str, hits: List[SearchHit]) -> str:
+def build_reply(query: str, hits: List[SearchHit], domain: Optional[str], constraints: Optional[List[str]]) -> str:
     lines = ["BABEL_RESPONSE:", f"QUERY: {query}"]
+    if domain:
+        lines.append(f"DOMAIN: {domain}")
+    if constraints:
+        lines.append(f"CONSTRAINTS: {', '.join(constraints)}")
     for hit in hits:
         lines.append(f"- {hit.url} SCORE={hit.score}")
         lines.append(f"  {hit.snippet}")
@@ -109,17 +117,17 @@ def health():
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest):
-    hits = synthesize_hits(payload.message, payload.max_results)
+    hits = synthesize_hits(payload.message, payload.max_results, payload.domain, payload.constraints)
     session_id = payload.session_id or hashlib.sha1(
         f"{payload.message}{time.time()}".encode("utf-8")
     ).hexdigest()[:16]
-    reply = build_reply(payload.message, hits)
+    reply = build_reply(payload.message, hits, payload.domain, payload.constraints)
     return ChatResponse(reply=reply, session_id=session_id, hits=hits)
 
 
 @app.get("/api/search")
 def search(query: str, max_results: int = 3):
-    hits = synthesize_hits(query, max_results)
+    hits = synthesize_hits(query, max_results, domain=None, constraints=None)
     return JSONResponse({"query": query, "hits": [h.dict() for h in hits]})
 
 
