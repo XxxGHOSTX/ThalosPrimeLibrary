@@ -52,7 +52,7 @@ def test_deep_synthesis_structure():
     assert "nexus_result" in result
     assert any("Genomic" in m for m in result["semantic_decomposition"]["modalities"])
     views = {block["view"] for block in result["nexus_result"]}
-    assert {"Physical/Chemical", "Logical/Mathematical", "Linguistic/Narrative"} <= views
+    assert views == {"Physical/Chemical", "Logical/Mathematical", "Linguistic/Narrative"}
     coordinates = result["nexus_result"][0]["coordinates_hint"]
     assert coordinates["search_api"] == "https://libraryofbabel.info/search.cgi"
 

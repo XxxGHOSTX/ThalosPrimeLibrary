@@ -66,6 +66,7 @@ def deep_synthesis(prompt: str) -> Dict[str, object]:
             "tokens": tokens,
             "token_count": len(tokens),
             "unique_tokens": len(token_counts),
+            "token_frequencies": dict(token_counts),
             "modalities": modalities,
         },
         "nexus_result": [

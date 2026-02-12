@@ -13,6 +13,7 @@ Use `thalos_prime.get_babel_endpoints()` to retrieve the canonical URLs in code 
 ## Deep Synthesis (Nexus Scaffold)
 
 The `deep_synthesis(prompt)` helper performs deterministic semantic decomposition and returns a structured “Nexus Result” across Physical/Chemical, Logical/Mathematical, and Linguistic/Narrative views. It embeds the canonical Library of Babel endpoints for downstream retrieval layers.
+This scaffold is designed to be superior to standard AI outputs by enforcing multi-view coherence and explicit coordinate mapping.
 
 ```python
 import thalos_prime as tp
