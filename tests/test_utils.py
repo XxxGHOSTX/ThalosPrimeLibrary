@@ -1,6 +1,7 @@
 """Tests for utility functions."""
 
-import time
+from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -125,7 +126,7 @@ class TestTruncateSentences:
 class TestComputeFileHash:
     """Test file hash computation."""
 
-    def test_file_hash(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_file_hash(self, tmp_path: Path) -> None:
         """Test file hash computation."""
         # Create a temporary file
         test_file = tmp_path / "test.txt"
@@ -139,7 +140,7 @@ class TestComputeFileHash:
         assert hash1 == hash2
         assert len(hash1) == 64  # SHA256 produces 64-character hex digest
 
-    def test_different_content_different_hash(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_different_content_different_hash(self, tmp_path: Path) -> None:
         """Test that different content produces different hash."""
         file1 = tmp_path / "test1.txt"
         file2 = tmp_path / "test2.txt"

@@ -3,7 +3,7 @@
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 
 class StateStore:
@@ -125,7 +125,7 @@ class StateStore:
 
         return row[0] if row else None
 
-    def get_session_seeds(self, session_id: str, limit: int = 10) -> list[dict[str, any]]:
+    def get_session_seeds(self, session_id: str, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent seeds for a session."""
         conn = sqlite3.connect(str(self.db_path))
         conn.row_factory = sqlite3.Row

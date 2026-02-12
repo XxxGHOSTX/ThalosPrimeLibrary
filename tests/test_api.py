@@ -1,5 +1,7 @@
 """Tests for API endpoints."""
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
@@ -9,7 +11,7 @@ from src.api import app
 
 
 @pytest.fixture
-def test_settings(tmp_path: pytest.TempPathFactory) -> Settings:
+def test_settings(tmp_path: Path) -> Settings:
     """Create test settings."""
     return Settings(
         corpus_dir=str(tmp_path / "corpus"),

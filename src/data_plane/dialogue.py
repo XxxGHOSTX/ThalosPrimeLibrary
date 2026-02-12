@@ -1,6 +1,6 @@
 """Dialogue manager for handling conversations."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.data_plane import DeterministicGenerator, TFIDFRetriever
 from src.observability import EventLog, get_logger
@@ -42,7 +42,7 @@ class DialogueManager:
         self,
         session_id: str,
         user_input: str,
-        timestamp: float | None = None,
+        timestamp: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Process a user message and generate a response.

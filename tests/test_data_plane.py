@@ -3,6 +3,7 @@
 import json
 import pickle
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -12,7 +13,7 @@ from src.data_plane import DeterministicGenerator, TFIDFRetriever
 
 
 @pytest.fixture
-def test_corpus(tmp_path: pytest.TempPathFactory) -> tuple[Path, Path]:
+def test_corpus(tmp_path: Path) -> tuple[Path, Path]:
     """Create test corpus and index."""
     # Create corpus
     corpus_dir = tmp_path / "corpus"

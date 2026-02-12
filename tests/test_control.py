@@ -1,5 +1,7 @@
 """Tests for control plane lifecycle."""
 
+from pathlib import Path
+
 import pytest
 
 from configs.config import Settings
@@ -7,7 +9,7 @@ from src.control import ControlPlane, LifecycleState
 
 
 @pytest.fixture
-def test_settings(tmp_path: pytest.TempPathFactory) -> Settings:
+def test_settings(tmp_path: Path) -> Settings:
     """Create test settings with temporary paths."""
     return Settings(
         corpus_dir=str(tmp_path / "corpus"),
