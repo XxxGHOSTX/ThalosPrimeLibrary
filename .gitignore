@@ -50,3 +50,15 @@ Thumbs.db
 *.tmp
 *.log
 /tmp/
+
+# Project specific - Data directory
+data/
+*.db
+*.jsonl
+*.pkl
+
+# Mypy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/

@@ -3,7 +3,11 @@
 
 import json
 import pickle
+import sys
 from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 

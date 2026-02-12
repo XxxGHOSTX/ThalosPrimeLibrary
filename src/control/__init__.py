@@ -1,7 +1,7 @@
 """Control plane for lifecycle management."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -190,7 +190,7 @@ class ControlPlane:
             logger.info("Creating checkpoint")
 
             # Create checkpoint data
-            timestamp = datetime.utcnow().isoformat().replace(":", "-")
+            timestamp = datetime.now(UTC).isoformat().replace(":", "-")
             checkpoint_file = self.settings.get_checkpoint_dir() / f"checkpoint_{timestamp}.json"
 
             checkpoint_data = {

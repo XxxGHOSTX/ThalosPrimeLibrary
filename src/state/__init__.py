@@ -1,7 +1,7 @@
 """State store for persisting session and seed data."""
 
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Optional
 
@@ -55,7 +55,7 @@ class StateStore:
         conn = sqlite3.connect(str(self.db_path))
         cursor = conn.cursor()
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         cursor.execute(
             """
@@ -73,7 +73,7 @@ class StateStore:
         conn = sqlite3.connect(str(self.db_path))
         cursor = conn.cursor()
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         cursor.execute(
             """
@@ -92,7 +92,7 @@ class StateStore:
         conn = sqlite3.connect(str(self.db_path))
         cursor = conn.cursor()
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         cursor.execute(
             """

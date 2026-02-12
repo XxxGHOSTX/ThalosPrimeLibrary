@@ -1,8 +1,9 @@
 """FastAPI application for Thalos Prime."""
 
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,46 +22,14 @@ settings = get_settings()
 # Initialize logger
 logger = get_logger(__name__)
 
-# Create FastAPI app
-app = FastAPI(
-    title="Thalos Prime Library of Babel",
-    description="Deterministic conversational system with TF-IDF retrieval",
-    version="0.2.0",
-)
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# API key authentication (optional)
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-
-async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> None:
-    """Verify API key if authentication is enabled."""
-    if not settings.enable_api_key_auth:
-        return
-
-    if not settings.api_key:
-        raise HTTPException(status_code=500, detail="API key not configured")
-
-    if api_key != settings.api_key:
-        raise HTTPException(status_code=403, detail="Invalid API key")
-
-
 # Global control plane and dialogue manager
 control_plane: Optional[ControlPlane] = None
 dialogue_manager: Optional[DialogueManager] = None
 
 
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Initialize system on startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Manage application lifespan."""
     global control_plane, dialogue_manager
 
     logger.info("Starting Thalos Prime")
@@ -98,18 +67,47 @@ async def startup_event() -> None:
         logger.error(f"Startup failed: {e}")
         raise
 
+    yield
 
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """Cleanup on shutdown."""
-    global control_plane
-
+    # Shutdown
     logger.info("Shutting down Thalos Prime")
 
     if control_plane:
         control_plane.terminate()
 
     logger.info("Thalos Prime shut down")
+
+
+# Create FastAPI app with lifespan
+app = FastAPI(
+    title="Thalos Prime Library of Babel",
+    description="Deterministic conversational system with TF-IDF retrieval",
+    version="0.2.0",
+    lifespan=lifespan,
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# API key authentication (optional)
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> None:
+    """Verify API key if authentication is enabled."""
+    if not settings.enable_api_key_auth:
+        return
+
+    if not settings.api_key:
+        raise HTTPException(status_code=500, detail="API key not configured")
+
+    if api_key != settings.api_key:
+        raise HTTPException(status_code=403, detail="Invalid API key")
 
 
 class ChatRequest(BaseModel):
