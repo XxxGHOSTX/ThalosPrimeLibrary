@@ -1,4 +1,4 @@
-from lob_shard_manager.shard_manager import ShardManager
+from src.lob_shard_manager.shard_manager import ShardManager
 
 
 
@@ -29,7 +29,6 @@ print("missing:", manager.get_entry("missing"))
 print("\nShards:", manager.list_shards())
 
 print("Stats:", manager.shard_stats())
-
 
 
 

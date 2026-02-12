@@ -10,9 +10,9 @@ class TestMainModule(unittest.TestCase):
 
         """Thalos Prime system is operational."""
 
-        # Main execution handled by run_thalos.py
+        from src.api import app
 
-        self.assertTrue(True)
+        self.assertEqual(app.title, "Thalos Prime API")
 
 
 
@@ -21,7 +21,6 @@ class TestMainModule(unittest.TestCase):
 if __name__ == "__main__":
 
     unittest.main()
-
 
 
 
