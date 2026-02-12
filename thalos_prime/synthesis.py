@@ -45,7 +45,7 @@ def deep_synthesis(prompt: str) -> Dict[str, object]:
     Library of Babel endpoints for downstream retrieval.
     """
     tokens = prompt.split()
-    token_counts = Counter(tokens)
+    token_frequencies = Counter(tokens)
     modalities = _detect_modalities(prompt)
 
     def _block(view: str) -> Dict[str, object]:
@@ -65,8 +65,8 @@ def deep_synthesis(prompt: str) -> Dict[str, object]:
         "semantic_decomposition": {
             "tokens": tokens,
             "token_count": len(tokens),
-            "unique_tokens": len(token_counts),
-            "token_frequencies": dict(token_counts),
+            "unique_tokens": len(token_frequencies),
+            "token_frequencies": dict(token_frequencies),
             "modalities": modalities,
         },
         "nexus_result": [
