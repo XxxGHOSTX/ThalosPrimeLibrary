@@ -577,6 +577,7 @@ from src.babel_search_expansion import babel_search_expansion
 from src.core.execution_graph import execute_graph
 from src.constraint_navigator import translate_constraints
 from src.peptide_space import search_peptide_constraints
+from src.semantic_parser import semantic_deconstruct
 
 
 
@@ -598,6 +599,9 @@ def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
 
 
 
+    # Semantic decomposition for Nexus output
+    semantic = semantic_deconstruct(text)
+
     # Domain-specific fast path (peptide permutation prototype)
     translated = translate_constraints(text)
     if translated and translated.get("domain") == "peptide":
@@ -611,6 +615,7 @@ def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
         ]
         for p in peptides:
             lines.append(f"- {p['sequence']}  ({p['address']})  SCORE={p['score']}")
+        lines.append(_render_nexus_block(semantic))
         return "\n".join(lines)
 
     # Prefer execution graph (combinatorial pipeline) for provenance + fallback
@@ -635,7 +640,7 @@ def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
 
         body = top.text
 
-        return "\n".join(header) + "\n" + body
+        return "\n".join(header) + "\n" + body + "\n" + _render_nexus_block(semantic)
 
     except Exception:
 
@@ -643,11 +648,26 @@ def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
 
             reply = babel_search_expansion(text)
 
-            return reply
+            return reply + "\n" + _render_nexus_block(semantic)
 
         except Exception as e:
 
             return f"BABEL_CORE: Pipeline error: {str(e)}\nFallback: {text}"
+
+
+def _render_nexus_block(semantic: dict) -> str:
+    dims = semantic.get("dimensions", {})
+    node = semantic.get("node", "unknown")
+    fragments = semantic.get("fragments", [])
+    lines = [
+        "NEXUS_RESULT:",
+        f"ACTIVE_NODE: {node}",
+        f"FRAGMENTS: {' | '.join(fragments[:16])}",
+        f"PHYSICAL: {dims.get('physical', '')}",
+        f"LOGICAL: {dims.get('logical', '')}",
+        f"NARRATIVE: {dims.get('narrative', '')}",
+    ]
+    return "\n".join(lines)
 
 
 
@@ -742,5 +762,3 @@ async def chat(request: Request):
 async def status():
 
     return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}
-
-
