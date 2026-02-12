@@ -3,6 +3,7 @@ The brain
 
 ## Overview
 ThalosPrime Library provides a Python package structure that allows importing from your local ThalosPrimeLibraryOfBabel directory.
+It is aligned with the canonical Library of Babel domain at https://libraryofbabel.info (not thelibraryofbabel.com).
 
 ## Installation
 

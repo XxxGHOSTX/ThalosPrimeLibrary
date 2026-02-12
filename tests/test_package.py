@@ -19,6 +19,12 @@ def test_package_author():
     assert thalos_prime.__author__ == "ThalosPrime"
 
 
+def test_library_of_babel_base_url():
+    """Ensure the canonical Library of Babel domain is correct"""
+    assert hasattr(thalos_prime, 'LIBRARY_OF_BABEL_BASE_URL')
+    assert thalos_prime.LIBRARY_OF_BABEL_BASE_URL == "https://libraryofbabel.info"
+
+
 def test_package_local_library_path(monkeypatch):
     """Test that the package defines LOCAL_LIBRARY_PATH"""
     # Clear any environment variable to test the default
