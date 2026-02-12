@@ -31,6 +31,20 @@ def test_library_of_babel_search_url():
     assert thalos_prime.LIBRARY_OF_BABEL_SEARCH_URL == "https://libraryofbabel.info/search.html"
 
 
+def test_library_of_babel_search_api():
+    """Ensure the programmatic search endpoint is exposed"""
+    assert hasattr(thalos_prime, 'LIBRARY_OF_BABEL_SEARCH_API')
+    assert thalos_prime.LIBRARY_OF_BABEL_SEARCH_API == "https://libraryofbabel.info/search.cgi"
+
+
+def test_get_babel_endpoints():
+    """Ensure endpoint helper returns all canonical URLs"""
+    endpoints = thalos_prime.get_babel_endpoints()
+    assert endpoints["base"] == "https://libraryofbabel.info"
+    assert endpoints["search_html"] == "https://libraryofbabel.info/search.html"
+    assert endpoints["search_api"] == "https://libraryofbabel.info/search.cgi"
+
+
 def test_package_local_library_path(monkeypatch):
     """Test that the package defines LOCAL_LIBRARY_PATH"""
     # Clear any environment variable to test the default

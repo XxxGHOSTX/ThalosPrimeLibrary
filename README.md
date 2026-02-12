@@ -4,7 +4,11 @@ The brain
 ## Overview
 ThalosPrime Library provides a Python package structure that allows importing from your local ThalosPrimeLibraryOfBabel directory.
 It is aligned with the canonical Library of Babel domain at https://libraryofbabel.info (not thelibraryofbabel.com).
-The structured search endpoint used by ThalosPrime is https://libraryofbabel.info/search.html.
+The structured search endpoints used by ThalosPrime are:
+- Human-readable search UI: https://libraryofbabel.info/search.html
+- Programmatic search API: https://libraryofbabel.info/search.cgi
+
+Use `thalos_prime.get_babel_endpoints()` to retrieve the canonical URLs in code when wiring the “Permutation Search Engine” or any downstream navigator.
 
 ## Installation
 
