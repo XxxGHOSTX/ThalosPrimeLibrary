@@ -45,6 +45,18 @@ def test_get_babel_endpoints():
     assert endpoints["search_api"] == "https://libraryofbabel.info/search.cgi"
 
 
+def test_deep_synthesis_structure():
+    """Deep synthesis returns semantic decomposition and nexus views"""
+    result = thalos_prime.deep_synthesis("Find antimicrobial peptide in genomic space")
+    assert "semantic_decomposition" in result
+    assert "nexus_result" in result
+    assert any("Genomic" in m for m in result["semantic_decomposition"]["modalities"])
+    views = {block["view"] for block in result["nexus_result"]}
+    assert {"Physical/Chemical", "Logical/Mathematical", "Linguistic/Narrative"} <= views
+    coordinates = result["nexus_result"][0]["coordinates_hint"]
+    assert coordinates["search_api"] == "https://libraryofbabel.info/search.cgi"
+
+
 def test_package_local_library_path(monkeypatch):
     """Test that the package defines LOCAL_LIBRARY_PATH"""
     # Clear any environment variable to test the default

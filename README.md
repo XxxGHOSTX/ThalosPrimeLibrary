@@ -10,6 +10,19 @@ The structured search endpoints used by ThalosPrime are:
 
 Use `thalos_prime.get_babel_endpoints()` to retrieve the canonical URLs in code when wiring the “Permutation Search Engine” or any downstream navigator.
 
+## Deep Synthesis (Nexus Scaffold)
+
+The `deep_synthesis(prompt)` helper performs deterministic semantic decomposition and returns a structured “Nexus Result” across Physical/Chemical, Logical/Mathematical, and Linguistic/Narrative views. It embeds the canonical Library of Babel endpoints for downstream retrieval layers.
+
+```python
+import thalos_prime as tp
+
+result = tp.deep_synthesis("Find antimicrobial peptide in genomic space")
+print(result["semantic_decomposition"]["modalities"])  # e.g., ["Genomic", "Chemical"]
+print(result["nexus_result"][0]["coordinates_hint"]["search_api"])
+# https://libraryofbabel.info/search.cgi
+```
+
 ## Installation
 
 ### For Development

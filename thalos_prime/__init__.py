@@ -31,3 +31,6 @@ def get_babel_endpoints():
         "search_html": LIBRARY_OF_BABEL_SEARCH_URL,
         "search_api": LIBRARY_OF_BABEL_SEARCH_API,
     }
+
+# Re-export synthesis helpers
+from .synthesis import deep_synthesis  # noqa: E402,F401
