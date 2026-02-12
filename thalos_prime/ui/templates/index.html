@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Thalos Prime - Symbiotic Intelligence Framework for extracting coherent information from the Library of Babel">
+    <title>Thalos Prime - Matrix Console</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/matrix.css">
+    <link rel="stylesheet" href="/static/css/console.css">
+    <link rel="stylesheet" href="/static/css/animations.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+</head>
+<body>
+    <!-- Matrix Background Canvas -->
+    <canvas id="matrix-canvas"></canvas>
+    
+    <!-- Main Container -->
+    <div id="app-container">
+        <!-- Header -->
+        <header id="main-header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1 class="glitch" data-text="THALOS PRIME">THALOS PRIME</h1>
+                    <p class="subtitle">Symbiotic Intelligence Framework</p>
+                </div>
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="label">Status:</span>
+                        <span class="value status-online" id="connection-status">ONLINE</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Mode:</span>
+                        <select id="search-mode" class="mode-selector">
+                            <option value="hybrid">HYBRID</option>
+                            <option value="local">LOCAL</option>
+                            <option value="remote">REMOTE</option>
+                        </select>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Time:</span>
+                        <span class="value" id="utc-clock">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Sidebar -->
+            <aside id="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-btn active" data-view="console">
+                        <span class="icon">▶</span> Console
+                    </button>
+                    <button class="nav-btn" data-view="search">
+                        <span class="icon">🔍</span> Search
+                    </button>
+                    <button class="nav-btn" data-view="generate">
+                        <span class="icon">⚡</span> Generate
+                    </button>
+                    <button class="nav-btn" data-view="enumerate">
+                        <span class="icon">📊</span> Enumerate
+                    </button>
+                    <button class="nav-btn" data-view="decode">
+                        <span class="icon">🧬</span> Decode
+                    </button>
+                    <button class="nav-btn" data-view="history">
+                        <span class="icon">📜</span> History
+                    </button>
+                    <button class="nav-btn" data-view="settings">
+                        <span class="icon">⚙</span> Settings
+                    </button>
+                    <button class="nav-btn" data-view="docs">
+                        <span class="icon">📚</span> Docs
+                    </button>
+                </nav>
+                
+                <div class="sidebar-footer">
+                    <div class="version-info">
+                        <p>Version: <span id="api-version">1.0.0</span></p>
+                        <p>Session: <span id="session-id">--</span></p>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Content Views -->
+            <div id="content-area">
+                <!-- Console View -->
+                <div id="console-view" class="view active">
+                    <div class="console-container">
+                        <div id="console-output" class="console-output"></div>
+                        <div class="console-input-container">
+                            <span class="prompt">></span>
+                            <input type="text" id="console-input" class="console-input" 
+                                   placeholder="Enter your query..." autocomplete="off">
+                            <button id="send-btn" class="send-btn">SEND</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search View -->
+                <div id="search-view" class="view">
+                    <div class="search-container">
+                        <h2>Advanced Search</h2>
+                        <form id="search-form" class="search-form">
+                            <div class="form-group">
+                                <label for="search-query">Query:</label>
+                                <input type="text" id="search-query" name="query" 
+                                       placeholder="Enter search query" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="max-results">Max Results:</label>
+                                    <input type="number" id="max-results" name="maxResults" 
+                                           value="10" min="1" max="50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="min-score">Min Score:</label>
+                                    <input type="number" id="min-score" name="minScore" 
+                                           value="0" min="0" max="100" step="0.1">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+                        <div id="search-results" class="results-container"></div>
+                    </div>
+                </div>
+                
+                <!-- Generate View -->
+                <div id="generate-view" class="view">
+                    <div class="generate-container">
+                        <h2>Page Generation</h2>
+                        <form id="generate-form" class="generate-form">
+                            <div class="form-group">
+                                <label for="gen-address">Hex Address:</label>
+                                <input type="text" id="gen-address" name="address" 
+                                       placeholder="Enter hex address or leave empty for random">
+                            </div>
+                            <div class="form-group">
+                                <label for="gen-query">Or Query:</label>
+                                <input type="text" id="gen-query" name="query" 
+                                       placeholder="Enter query to convert to address">
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="gen-validate" name="validate" checked>
+                                    Validate generated page
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate</button>
+                        </form>
+                        <div id="generate-results" class="results-container"></div>
+                    </div>
+                </div>
+                
+                <!-- Enumerate View -->
+                <div id="enumerate-view" class="view">
+                    <div class="enumerate-container">
+                        <h2>Address Enumeration</h2>
+                        <form id="enumerate-form" class="enumerate-form">
+                            <div class="form-group">
+                                <label for="enum-query">Query:</label>
+                                <input type="text" id="enum-query" name="query" 
+                                       placeholder="Enter query to enumerate" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="enum-max-results">Max Results:</label>
+                                    <input type="number" id="enum-max-results" name="maxResults" 
+                                           value="10" min="1" max="100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="enum-depth">Depth:</label>
+                                    <input type="number" id="enum-depth" name="depth" 
+                                           value="2" min="1" max="10">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enumerate</button>
+                        </form>
+                        <div id="enumerate-results" class="results-container"></div>
+                    </div>
+                </div>
+                
+                <!-- Decode View -->
+                <div id="decode-view" class="view">
+                    <div class="decode-container">
+                        <h2>Page Decoding & Coherence Analysis</h2>
+                        <form id="decode-form" class="decode-form">
+                            <div class="form-group">
+                                <label for="decode-address">Address:</label>
+                                <input type="text" id="decode-address" name="address" 
+                                       placeholder="Enter page address" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="decode-text">Page Text:</label>
+                                <textarea id="decode-text" name="text" rows="10" 
+                                          placeholder="Paste page text here..." required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="decode-query">Query (optional):</label>
+                                <input type="text" id="decode-query" name="query" 
+                                       placeholder="Enter query for relevance scoring">
+                            </div>
+                            <div class="form-group">
+                                <label for="decode-normalization">Normalization:</label>
+                                <select id="decode-normalization" name="normalization">
+                                    <option value="none">None</option>
+                                    <option value="heuristic" selected>Heuristic</option>
+                                    <option value="llm">LLM (if enabled)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Decode</button>
+                        </form>
+                        <div id="decode-results" class="results-container"></div>
+                    </div>
+                </div>
+                
+                <!-- History View -->
+                <div id="history-view" class="view">
+                    <div class="history-container">
+                        <h2>Query History</h2>
+                        <div id="history-list" class="history-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Settings View -->
+                <div id="settings-view" class="view">
+                    <div class="settings-container">
+                        <h2>Settings</h2>
+                        <form id="settings-form" class="settings-form">
+                            <h3>Display</h3>
+                            <div class="form-group">
+                                <label for="theme-select">Theme:</label>
+                                <select id="theme-select" name="theme">
+                                    <option value="matrix" selected>Matrix Green</option>
+                                    <option value="amber">Amber Terminal</option>
+                                    <option value="blue">Blue Cyber</option>
+                                    <option value="dark">Dark Mode</option>
+                                    <option value="light">Light Mode</option>
+                                </select>
+                            </div>
+                            
+                            <h3>Search Preferences</h3>
+                            <div class="form-group">
+                                <label for="default-max-results">Default Max Results:</label>
+                                <input type="number" id="default-max-results" name="defaultMaxResults" 
+                                       value="10" min="1" max="50">
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="auto-cache" name="autoCache" checked>
+                                    Enable automatic caching
+                                </label>
+                            </div>
+                            
+                            <h3>Advanced</h3>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="show-debug" name="showDebug">
+                                    Show debug information
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="enable-sounds" name="enableSounds">
+                                    Enable sound effects
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                            <button type="button" class="btn btn-secondary" id="reset-settings">Reset to Default</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Docs View -->
+                <div id="docs-view" class="view">
+                    <div class="docs-container">
+                        <h2>Documentation</h2>
+                        <div class="docs-content">
+                            <section>
+                                <h3>Getting Started</h3>
+                                <p>Thalos Prime is a symbiotic intelligence framework that extracts coherent information from high-entropy data spaces.</p>
+                            </section>
+                            <section>
+                                <h3>Features</h3>
+                                <ul>
+                                    <li><strong>Console:</strong> Interactive chat interface for queries</li>
+                                    <li><strong>Search:</strong> Advanced search with filtering and scoring</li>
+                                    <li><strong>Generate:</strong> Deterministic page generation from addresses</li>
+                                    <li><strong>Enumerate:</strong> Query-to-address mapping</li>
+                                    <li><strong>Decode:</strong> Coherence analysis and scoring</li>
+                                </ul>
+                            </section>
+                            <section>
+                                <h3>API Documentation</h3>
+                                <p>For detailed API documentation, visit <a href="/docs" target="_blank">/docs</a></p>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer id="main-footer">
+            <div class="footer-content">
+                <p>&copy; 2026 Thalos Prime. All rights reserved.</p>
+                <p>Powered by the Library of Babel</p>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p class="loading-text">Processing...</p>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- Scripts -->
+    <script src="/static/js/matrix-background.js"></script>
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/ui-manager.js"></script>
+    <script src="/static/js/console-handler.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
