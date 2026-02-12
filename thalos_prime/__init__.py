@@ -5,6 +5,7 @@ ThalosPrime Library - Main Package
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
+LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
 
 # This allows importing from the local ThalosPrimeLibraryOfBabel
 import sys
