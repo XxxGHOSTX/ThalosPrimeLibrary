@@ -575,6 +575,8 @@ DEFAULT_MODE = "local"
 from src.babel_search_expansion import babel_search_expansion
 
 from src.core.execution_graph import execute_graph
+from src.constraint_navigator import translate_constraints
+from src.peptide_space import search_peptide_constraints
 
 
 
@@ -595,6 +597,21 @@ def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
         return "BABEL_CORE: Search mode disabled."
 
 
+
+    # Domain-specific fast path (peptide permutation prototype)
+    translated = translate_constraints(text)
+    if translated and translated.get("domain") == "peptide":
+        length = translated.get("length", 10)
+        peptides = search_peptide_constraints(text, length=length, max_results=3)
+        lines = [
+            "BABEL_PEPTIDE_RESPONSE:",
+            f"QUERY: {text}",
+            f"LENGTH: {length}",
+            "CANDIDATES:",
+        ]
+        for p in peptides:
+            lines.append(f"- {p['sequence']}  ({p['address']})  SCORE={p['score']}")
+        return "\n".join(lines)
 
     # Prefer execution graph (combinatorial pipeline) for provenance + fallback
 
@@ -725,6 +742,5 @@ async def chat(request: Request):
 async def status():
 
     return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}
-
 
 
