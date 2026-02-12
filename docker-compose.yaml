@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  thalos-prime:
+    build: .
+    container_name: thalos-prime
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./corpus:/app/corpus
+    environment:
+      - SEED_SALT=thalos_prime_docker_salt
+      - TIME_BUCKET_SECONDS=3600
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/status')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  data:

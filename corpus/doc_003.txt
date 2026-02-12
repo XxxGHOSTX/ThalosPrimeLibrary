@@ -1,0 +1,1 @@
+Information retrieval is the science of searching for information in documents. Modern retrieval systems use techniques like TF-IDF (Term Frequency-Inverse Document Frequency) to rank documents by relevance. These systems help users find the most pertinent information from large collections of text.

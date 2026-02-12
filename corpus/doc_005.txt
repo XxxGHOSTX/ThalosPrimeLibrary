@@ -1,0 +1,1 @@
+The concept of entropy measures disorder or randomness in a system. In information theory, entropy quantifies the uncertainty in a random variable. High entropy means high unpredictability, while low entropy indicates more structure and predictability. Entropy is fundamental to understanding both physical and information systems.

@@ -1,0 +1,1 @@
+Deterministic systems are predictable by definition. When given the same input and initial conditions, a deterministic system will always produce the same output. This property is essential for reproducibility in scientific computing and for building reliable software systems. Random number generators can be made deterministic by using seeds.
