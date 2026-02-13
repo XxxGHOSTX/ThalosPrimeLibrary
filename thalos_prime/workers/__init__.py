@@ -1,0 +1,1 @@
+"""Worker subsystem for Thalos Prime."""
