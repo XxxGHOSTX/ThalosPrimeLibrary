@@ -10,6 +10,9 @@ This package provides:
 
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
+LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
+LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
+LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
 
 # Library of Babel endpoints
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
@@ -40,6 +43,17 @@ LOCAL_LIBRARY_PATH = os.getenv(
 if os.path.exists(LOCAL_LIBRARY_PATH) and LOCAL_LIBRARY_PATH not in sys.path:
     sys.path.insert(0, LOCAL_LIBRARY_PATH)
 
+
+def get_babel_endpoints():
+    """Return the canonical Library of Babel endpoints used by Thalos Prime."""
+    return {
+        "base": LIBRARY_OF_BABEL_BASE_URL,
+        "search_html": LIBRARY_OF_BABEL_SEARCH_URL,
+        "search_api": LIBRARY_OF_BABEL_SEARCH_API,
+    }
+
+# Re-export synthesis helpers
+from .synthesis import deep_synthesis  # noqa: E402,F401
 # Export main components for easy access
 from thalos_prime.lob_babel_generator import (
     BabelGenerator,

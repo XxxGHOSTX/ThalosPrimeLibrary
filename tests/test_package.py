@@ -19,6 +19,44 @@ def test_package_author():
     assert thalos_prime.__author__ == "ThalosPrime"
 
 
+def test_library_of_babel_base_url():
+    """Ensure the canonical Library of Babel domain is correct"""
+    assert hasattr(thalos_prime, 'LIBRARY_OF_BABEL_BASE_URL')
+    assert thalos_prime.LIBRARY_OF_BABEL_BASE_URL == "https://libraryofbabel.info"
+
+
+def test_library_of_babel_search_url():
+    """Ensure the structured search endpoint is exposed"""
+    assert hasattr(thalos_prime, 'LIBRARY_OF_BABEL_SEARCH_URL')
+    assert thalos_prime.LIBRARY_OF_BABEL_SEARCH_URL == "https://libraryofbabel.info/search.html"
+
+
+def test_library_of_babel_search_api():
+    """Ensure the programmatic search endpoint is exposed"""
+    assert hasattr(thalos_prime, 'LIBRARY_OF_BABEL_SEARCH_API')
+    assert thalos_prime.LIBRARY_OF_BABEL_SEARCH_API == "https://libraryofbabel.info/search.cgi"
+
+
+def test_get_babel_endpoints():
+    """Ensure endpoint helper returns all canonical URLs"""
+    endpoints = thalos_prime.get_babel_endpoints()
+    assert endpoints["base"] == "https://libraryofbabel.info"
+    assert endpoints["search_html"] == "https://libraryofbabel.info/search.html"
+    assert endpoints["search_api"] == "https://libraryofbabel.info/search.cgi"
+
+
+def test_deep_synthesis_structure():
+    """Deep synthesis returns semantic decomposition and nexus views"""
+    result = thalos_prime.deep_synthesis("Find antimicrobial peptide in genomic space")
+    assert "semantic_decomposition" in result
+    assert "nexus_result" in result
+    assert any("Genomic" in m for m in result["semantic_decomposition"]["modalities"])
+    views = {block["view"] for block in result["nexus_result"]}
+    assert views == {"Physical/Chemical", "Logical/Mathematical", "Linguistic/Narrative"}
+    coordinates = result["nexus_result"][0]["coordinates_hint"]
+    assert coordinates["search_api"] == "https://libraryofbabel.info/search.cgi"
+
+
 def test_package_local_library_path(monkeypatch):
     """Test that the package defines LOCAL_LIBRARY_PATH"""
     # Clear any environment variable to test the default
