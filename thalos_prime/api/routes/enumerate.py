@@ -5,6 +5,7 @@ Provides query-to-address mapping functionality.
 """
 
 from fastapi import APIRouter, HTTPException
+from typing import Any
 import time
 
 from thalos_prime.models.api_models import (
@@ -18,7 +19,7 @@ enumerator = BabelEnumerator()
 
 
 @router.post("/", response_model=EnumerateResponse)
-async def enumerate(request: EnumerateRequest):
+async def enumerate(request: EnumerateRequest) -> EnumerateResponse:
     """
     Enumerate addresses for a query.
     
@@ -60,7 +61,7 @@ async def enumerate(request: EnumerateRequest):
 
 
 @router.get("/addresses")
-async def get_addresses_only(query: str, count: int = 10):
+async def get_addresses_only(query: str, count: int = 10) -> dict[str, Any]:
     """
     Get just the addresses without metadata.
     
@@ -84,7 +85,7 @@ async def get_addresses_only(query: str, count: int = 10):
 
 
 @router.post("/ngrams")
-async def extract_ngrams(text: str, min_size: int = 2, max_size: int = 5):
+async def extract_ngrams(text: str, min_size: int = 2, max_size: int = 5) -> dict[str, Any]:
     """
     Extract n-grams from text.
     
@@ -117,7 +118,7 @@ async def extract_ngrams(text: str, min_size: int = 2, max_size: int = 5):
 
 
 @router.post("/common")
-async def find_common_addresses(query1: str, query2: str, max_results: int = 10):
+async def find_common_addresses(query1: str, query2: str, max_results: int = 10) -> dict[str, Any]:
     """
     Find addresses that might contain both queries.
     
@@ -143,7 +144,7 @@ async def find_common_addresses(query1: str, query2: str, max_results: int = 10)
 
 
 @router.post("/substrings")
-async def enumerate_substrings(text: str, substring_length: int = 10):
+async def enumerate_substrings(text: str, substring_length: int = 10) -> dict[str, Any]:
     """
     Enumerate all substrings of a given length.
     

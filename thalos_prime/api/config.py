@@ -5,7 +5,7 @@ Configuration settings for the Thalos Prime API.
 """
 
 import os
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -71,7 +71,7 @@ class APIConfig(BaseModel):
     log_file: Optional[str] = Field(default=None, description="Log file path")
     
     # CORS
-    cors_origins: list = Field(
+    cors_origins: List[str] = Field(
         default_factory=lambda: ["*"],
         description="Allowed CORS origins"
     )

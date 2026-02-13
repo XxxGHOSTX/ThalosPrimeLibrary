@@ -5,6 +5,7 @@ These models define the database schema for persistent storage.
 
 from datetime import datetime
 import uuid
+from typing import Any
 
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, DateTime, Text, JSON,
@@ -16,7 +17,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.engine import Engine
 
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 def generate_uuid() -> str:
     """Generate a new UUID string."""

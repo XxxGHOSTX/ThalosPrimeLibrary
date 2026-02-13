@@ -357,7 +357,7 @@ class BabelDecoder:
             **kwargs: Provider-specific configuration
         """
         self.llm_enabled = True
-        self.llm_provider: Optional[str] = provider
+        self.llm_provider = provider
         # Store additional config as needed
 
 

@@ -5,7 +5,7 @@ Provides administrative and monitoring functionality.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Header
-from typing import Optional
+from typing import Any, Optional
 import time
 import sys
 import psutil
@@ -19,7 +19,7 @@ router = APIRouter()
 ADMIN_API_KEY = os.getenv("THALOS_ADMIN_API_KEY", "admin-key-change-in-production")
 
 
-def verify_admin_key(x_api_key: str = Header(None)):
+def verify_admin_key(x_api_key: Optional[str] = Header(None)) -> bool:
     """Verify admin API key"""
     if x_api_key != ADMIN_API_KEY:
         raise HTTPException(status_code=403, detail="Invalid admin API key")
@@ -27,7 +27,7 @@ def verify_admin_key(x_api_key: str = Header(None)):
 
 
 @router.get("/status", dependencies=[Depends(verify_admin_key)])
-async def get_system_status():
+async def get_system_status() -> dict[str, Any]:
     """
     Get comprehensive system status.
     
@@ -73,7 +73,7 @@ async def get_system_status():
 
 
 @router.get("/metrics", dependencies=[Depends(verify_admin_key)])
-async def get_metrics():
+async def get_metrics() -> dict[str, Any]:
     """
     Get application metrics.
     
@@ -100,7 +100,7 @@ async def get_metrics():
 
 
 @router.post("/cache/clear", dependencies=[Depends(verify_admin_key)])
-async def clear_all_caches():
+async def clear_all_caches() -> dict[str, Any]:
     """
     Clear all application caches.
     
@@ -121,7 +121,7 @@ async def clear_all_caches():
 
 
 @router.post("/sessions/cleanup", dependencies=[Depends(verify_admin_key)])
-async def cleanup_sessions(max_age_hours: int = 24):
+async def cleanup_sessions(max_age_hours: int = 24) -> dict[str, Any]:
     """
     Clean up old sessions.
     
@@ -155,7 +155,7 @@ async def cleanup_sessions(max_age_hours: int = 24):
 
 
 @router.get("/config", dependencies=[Depends(verify_admin_key)])
-async def get_configuration():
+async def get_configuration() -> dict[str, Any]:
     """
     Get current configuration (non-sensitive).
     
@@ -181,7 +181,7 @@ async def get_configuration():
 
 
 @router.get("/health/detailed", dependencies=[Depends(verify_admin_key)])
-async def detailed_health_check():
+async def detailed_health_check() -> dict[str, Any]:
     """
     Detailed health check of all components.
     
@@ -190,7 +190,7 @@ async def detailed_health_check():
     Returns:
         Detailed health status
     """
-    health = {
+    health: dict[str, Any] = {
         'overall': 'healthy',
         'components': {}
     }
@@ -244,7 +244,7 @@ async def detailed_health_check():
 
 
 @router.post("/shutdown", dependencies=[Depends(verify_admin_key)])
-async def shutdown_server():
+async def shutdown_server() -> dict[str, str]:
     """
     Initiate graceful server shutdown.
     

@@ -5,6 +5,7 @@ Provides coherence analysis and text normalization functionality.
 """
 
 from fastapi import APIRouter, HTTPException
+from typing import Any, Optional
 import time
 
 from thalos_prime.models.api_models import (
@@ -13,7 +14,8 @@ from thalos_prime.models.api_models import (
     AddressInfo,
     CoherenceInfo,
     ProvenanceInfo,
-    NormalizationMode
+    NormalizationMode,
+    ConfidenceLevel
 )
 from thalos_prime.lob_decoder import decode_page, score_coherence, BabelDecoder
 
@@ -22,7 +24,7 @@ decoder = BabelDecoder()
 
 
 @router.post("/", response_model=DecodeResponse)
-async def decode(request: DecodeRequest):
+async def decode(request: DecodeRequest) -> DecodeResponse:
     """
     Decode and score a page.
     
@@ -57,7 +59,14 @@ async def decode(request: DecodeRequest):
             normalized_text = decoded.raw_text.strip()
         
         return DecodeResponse(
-            address=AddressInfo(hex_address=request.address),
+            address=AddressInfo(
+                hex_address=request.address,
+                wall=None,
+                shelf=None,
+                volume=None,
+                page=None,
+                url=None
+            ),
             raw_text=decoded.raw_text,
             normalized_text=normalized_text,
             coherence=CoherenceInfo(
@@ -66,7 +75,7 @@ async def decode(request: DecodeRequest):
                 structure_score=decoded.coherence.structure_score,
                 ngram_score=decoded.coherence.ngram_score,
                 exact_match_score=decoded.coherence.exact_match_score,
-                confidence_level=decoded.coherence.confidence_level,
+                confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
                 metrics=decoded.coherence.metrics
             ),
             provenance=ProvenanceInfo(
@@ -84,7 +93,7 @@ async def decode(request: DecodeRequest):
 
 
 @router.post("/score")
-async def score_text(text: str, query: str = None):
+async def score_text(text: str, query: Optional[str] = None) -> dict[str, Any]:
     """
     Score text coherence without full decoding.
     
@@ -112,7 +121,7 @@ async def score_text(text: str, query: str = None):
 
 
 @router.post("/batch")
-async def decode_batch(items: list[dict]):
+async def decode_batch(items: list[dict[str, Any]]) -> dict[str, Any]:
     """
     Decode multiple pages in batch.
     
@@ -167,7 +176,7 @@ async def update_decoder_weights(
     structure: float = 0.20,
     ngram: float = 0.20,
     exact_match: float = 0.30
-):
+) -> dict[str, Any]:
     """
     Update decoder scoring weights.
     
@@ -203,7 +212,7 @@ async def update_decoder_weights(
 
 
 @router.get("/metrics")
-async def get_decoder_metrics():
+async def get_decoder_metrics() -> dict[str, Any]:
     """
     Get decoder configuration and metrics.
     
