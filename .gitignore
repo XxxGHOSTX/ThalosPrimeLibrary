@@ -41,6 +41,17 @@ env/
 .coverage
 htmlcov/
 .tox/
+coverage.xml
+.coverage.*
+
+# Type checking
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.pyright/
+
+# Pre-commit
+.pre-commit-cache/
 
 # OS
 .DS_Store
