@@ -1,0 +1,67 @@
+# Git and version control
+.git
+.gitignore
+.github
+
+# Python cache and compiled files
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+*.egg
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Virtual environments
+venv
+env
+ENV
+.venv
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation and reports
+*.md
+!README.md
+docs
+htmlcov
+.coverage
+coverage.xml
+*.log
+
+# Test files
+tests
+test_output.txt
+
+# Large files and dumps
+*.txt
+tree_output.txt
+FULL_SOURCE_DUMP.txt
+PROJECT_FILES.txt
+test_output.txt
+
+# Temporary and backup files
+*.bak
+*.tmp
+tmp
+.tmp
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Docker files (not needed in image)
+docker-compose.yml
+Dockerfile
+.dockerignore

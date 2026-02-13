@@ -41,6 +41,17 @@ env/
 .coverage
 htmlcov/
 .tox/
+coverage.xml
+.coverage.*
+
+# Type checking
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.pyright/
+
+# Pre-commit
+.pre-commit-cache/
 
 # OS
 .DS_Store
@@ -50,3 +61,10 @@ Thumbs.db
 *.tmp
 *.log
 /tmp/
+
+# Local data directory (but keep README)
+data/*
+!data/README.md
+
+# Lock files
+.thalos_prime.lock

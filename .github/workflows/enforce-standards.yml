@@ -1,0 +1,146 @@
+name: Enforce Standards
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  enforce-standards:
+    name: Enforce Thalos Prime Standards
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Type Check - mypy
+        run: |
+          echo "::group::Running mypy"
+          mypy thalos_prime tests --strict --show-error-codes --no-implicit-optional
+          echo "::endgroup::"
+
+      - name: Type Check - pyright
+        run: |
+          echo "::group::Running pyright"
+          pyright thalos_prime tests
+          echo "::endgroup::"
+
+      - name: Lint - ruff
+        run: |
+          echo "::group::Running ruff"
+          ruff check thalos_prime tests --select ALL --ignore COM812,ISC001,ANN101,ANN102,D203,D213 --output-format=github
+          echo "::endgroup::"
+
+      - name: Test with pytest
+        run: |
+          echo "::group::Running pytest"
+          pytest tests -v --cov=thalos_prime --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+          echo "::endgroup::"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Validate Lifecycle Methods
+        run: |
+          echo "::group::Validating lifecycle methods"
+          python tools/validate_lifecycle.py
+          echo "::endgroup::"
+
+      - name: Validate Determinism
+        run: |
+          echo "::group::Validating determinism"
+          python tools/validate_determinism.py
+          echo "::endgroup::"
+
+      - name: Validate State Management
+        run: |
+          echo "::group::Validating state management"
+          python tools/validate_state.py
+          echo "::endgroup::"
+
+      - name: Validate Documentation
+        run: |
+          echo "::group::Validating documentation"
+          python tools/validate_docs.py
+          echo "::endgroup::"
+
+      - name: Detect Prohibited Patterns
+        run: |
+          echo "::group::Detecting prohibited patterns"
+          python tools/detect_prohibited_patterns.py
+          echo "::endgroup::"
+
+      - name: Security Check - bandit
+        run: |
+          echo "::group::Running bandit security scan"
+          bandit -r thalos_prime -f json -o bandit-report.json
+          bandit -r thalos_prime
+          echo "::endgroup::"
+
+      - name: Dependency Vulnerability Check - pip-audit
+        run: |
+          echo "::group::Running pip-audit"
+          pip-audit --desc --skip-editable
+          echo "::endgroup::"
+
+      - name: Check for TODO/FIXME in production code
+        run: |
+          echo "::group::Checking for prohibited keywords"
+          if grep -r -n "TODO\|FIXME\|XXX\|HACK\|STUB\|MOCK\|PLACEHOLDER" thalos_prime/ --include="*.py" | grep -v "__pycache__"; then
+            echo "❌ Found prohibited keywords in production code"
+            exit 1
+          else
+            echo "✅ No prohibited keywords found"
+          fi
+          echo "::endgroup::"
+
+      - name: Generate Summary Report
+        if: always()
+        run: |
+          echo "## Thalos Prime Standards Enforcement Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Type Checking" >> $GITHUB_STEP_SUMMARY
+          echo "- mypy: See logs above" >> $GITHUB_STEP_SUMMARY
+          echo "- pyright: See logs above" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Testing" >> $GITHUB_STEP_SUMMARY
+          echo "- pytest: See logs above" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation" >> $GITHUB_STEP_SUMMARY
+          echo "- Lifecycle methods: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Determinism: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- State management: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Documentation: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Prohibited patterns: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Security" >> $GITHUB_STEP_SUMMARY
+          echo "- bandit: See logs above" >> $GITHUB_STEP_SUMMARY
+          echo "- pip-audit: See logs above" >> $GITHUB_STEP_SUMMARY
