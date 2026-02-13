@@ -39,7 +39,7 @@ class TestApiChat(unittest.TestCase):
     @unittest.skipIf(api.FASTAPI_AVAILABLE, "FastAPI is installed; placeholder path not active")
     def test_status_endpoint_requires_fastapi(self):
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(RuntimeError, "FastAPI dependency not installed"):
 
             asyncio.run(api.status())
 

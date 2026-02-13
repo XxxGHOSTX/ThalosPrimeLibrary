@@ -1,4 +1,5 @@
 from typing import Any
+from functools import wraps
 
 API_TITLE = "Thalos Prime API"
 
@@ -28,6 +29,7 @@ except ModuleNotFoundError:
 
         def _decorate(self, func):
 
+            @wraps(func)
             async def wrapper(*args: Any, **kwargs: Any) -> Any:
 
                 raise RuntimeError("FastAPI dependency not installed; API endpoints are unavailable.")
