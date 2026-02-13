@@ -229,9 +229,22 @@ async def status() -> Dict[str, Any]:
     if not control_plane:
         return {"status": "not_initialized"}
 
+    control_plane_state = control_plane.get_state()
+
+    operating = False
+    if isinstance(control_plane_state, dict):
+        operating = bool(control_plane_state.get("operating"))
+
+    if operating:
+        status_value = "operational"
+    elif isinstance(control_plane_state, dict) and "status" in control_plane_state:
+        status_value = str(control_plane_state["status"])
+    else:
+        status_value = "not_operational"
+
     return {
-        "status": "operational",
-        "control_plane": control_plane.get_state(),
+        "status": status_value,
+        "control_plane": control_plane_state,
         "dialogue_manager": dialogue_manager is not None,
     }
 
