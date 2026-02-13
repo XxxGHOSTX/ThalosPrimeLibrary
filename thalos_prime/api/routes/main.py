@@ -6,13 +6,14 @@ Provides the main landing page and UI serving.
 
 from fastapi import APIRouter, Response
 from fastapi.responses import HTMLResponse, FileResponse
+from typing import Any
 import os
 
 router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
-async def root():
+async def root() -> HTMLResponse:
     """
     Serve the main UI page.
     
@@ -56,7 +57,7 @@ async def root():
 
 
 @router.get("/api/v1/status")
-async def api_status():
+async def api_status() -> dict[str, Any]:
     """
     Get API status.
     

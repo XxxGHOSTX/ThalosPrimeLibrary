@@ -8,25 +8,15 @@ This package provides:
 - Configuration and import management (config)
 """
 
+from typing import Dict
+
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
-LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
-LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
-LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
 
 # Library of Babel endpoints
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
 LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
 LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
-
-# Helper to retrieve endpoints
-def get_babel_endpoints():
-    """Return Library of Babel endpoint URLs."""
-    return {
-        "base": LIBRARY_OF_BABEL_BASE_URL,
-        "search_html": LIBRARY_OF_BABEL_SEARCH_URL,
-        "search_api": LIBRARY_OF_BABEL_SEARCH_API,
-    }
 
 # This allows importing from the local ThalosPrimeLibraryOfBabel
 import sys
@@ -44,7 +34,7 @@ if os.path.exists(LOCAL_LIBRARY_PATH) and LOCAL_LIBRARY_PATH not in sys.path:
     sys.path.insert(0, LOCAL_LIBRARY_PATH)
 
 
-def get_babel_endpoints():
+def get_babel_endpoints() -> Dict[str, str]:
     """Return the canonical Library of Babel endpoints used by Thalos Prime."""
     return {
         "base": LIBRARY_OF_BABEL_BASE_URL,
@@ -82,6 +72,12 @@ __all__ = [
     '__author__',
     'LOCAL_LIBRARY_PATH',
     
+    # Library of Babel endpoints
+    'LIBRARY_OF_BABEL_BASE_URL',
+    'LIBRARY_OF_BABEL_SEARCH_URL',
+    'LIBRARY_OF_BABEL_SEARCH_API',
+    'get_babel_endpoints',
+    
     # Generator
     'BabelGenerator',
     'address_to_page',
@@ -99,4 +95,7 @@ __all__ = [
     'DecodedPage',
     'score_coherence',
     'decode_page',
+    
+    # Synthesis
+    'deep_synthesis',
 ]

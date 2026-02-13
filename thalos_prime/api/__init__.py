@@ -11,6 +11,7 @@ from thalos_prime.api.routes import (
     chat_router,
     search_router,
     generate_router,
+    enumerate_router,
     decode_router,
     admin_router
 )
@@ -22,6 +23,7 @@ __all__ = [
     'chat_router',
     'search_router',
     'generate_router',
+    'enumerate_router',
     'decode_router',
     'admin_router',
 ]

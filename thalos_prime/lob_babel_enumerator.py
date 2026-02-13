@@ -7,7 +7,7 @@ to generate deterministic candidate addresses where matching text might be found
 """
 
 import hashlib
-from typing import List, Dict, Set, Tuple
+from typing import Any, List, Dict, Set, Tuple
 
 
 class BabelEnumerator:
@@ -34,7 +34,7 @@ class BabelEnumerator:
         query: str,
         max_results: int = 20,
         depth: int = 1
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, Any]]:
         """
         Generate candidate addresses for a query.
         
@@ -78,7 +78,7 @@ class BabelEnumerator:
                     })
         
         # Sort by score (highest first) and limit results
-        candidates.sort(key=lambda x: x['score'], reverse=True)
+        candidates.sort(key=lambda x: float(x['score']), reverse=True)  # type: ignore[arg-type]
         return candidates[:max_results]
     
     def _extract_ngrams(self, text: str) -> List[str]:
@@ -218,7 +218,7 @@ class BabelEnumerator:
 _enumerator = BabelEnumerator()
 
 
-def enumerate_addresses(query: str, max_results: int = 20, depth: int = 1) -> List[Dict[str, any]]:
+def enumerate_addresses(query: str, max_results: int = 20, depth: int = 1) -> List[Dict[str, Any]]:
     """
     Convenience function to enumerate addresses for a query.
     

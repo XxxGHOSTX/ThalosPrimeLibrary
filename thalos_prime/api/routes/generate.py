@@ -5,6 +5,7 @@ Provides deterministic page generation from addresses or queries.
 """
 
 from fastapi import APIRouter, HTTPException
+from typing import Any, Optional
 import time
 
 from thalos_prime.models.api_models import (
@@ -19,7 +20,7 @@ generator = BabelGenerator()
 
 
 @router.post("/", response_model=GenerateResponse)
-async def generate_page(request: GenerateRequest):
+async def generate_page(request: GenerateRequest) -> GenerateResponse:
     """
     Generate a Library of Babel page.
     
@@ -47,7 +48,7 @@ async def generate_page(request: GenerateRequest):
         
         # Validate if requested
         valid = True
-        if request.validate:
+        if request.validate_page:
             is_valid, error = generator.validate_page(page_text)
             valid = is_valid
         
@@ -55,7 +56,14 @@ async def generate_page(request: GenerateRequest):
         generation_time_ms = (time.time() - start_time) * 1000
         
         return GenerateResponse(
-            address=AddressInfo(hex_address=address),
+            address=AddressInfo(
+                hex_address=address,
+                wall=None,
+                shelf=None,
+                volume=None,
+                page=None,
+                url=None
+            ),
             text=page_text,
             valid=valid,
             generation_time_ms=generation_time_ms
@@ -66,7 +74,7 @@ async def generate_page(request: GenerateRequest):
 
 
 @router.post("/batch")
-async def generate_batch(addresses: list[str], validate: bool = True):
+async def generate_batch(addresses: list[str], validate: bool = True) -> dict[str, Any]:
     """
     Generate multiple pages in batch.
     
@@ -113,7 +121,7 @@ async def generate_batch(addresses: list[str], validate: bool = True):
 
 
 @router.get("/random")
-async def generate_random_page(seed: str = None):
+async def generate_random_page(seed: Optional[str] = None) -> dict[str, Any]:
     """
     Generate a random page with optional seed.
     
@@ -141,7 +149,7 @@ async def generate_random_page(seed: str = None):
 
 
 @router.post("/validate")
-async def validate_page(address: str, text: str):
+async def validate_page(address: str, text: str) -> dict[str, Any]:
     """
     Validate a page against Library of Babel spec.
     

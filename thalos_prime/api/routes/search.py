@@ -5,7 +5,7 @@ Provides search functionality with detailed results and filtering.
 """
 
 from fastapi import APIRouter, HTTPException, Query as QueryParam
-from typing import List, Optional
+from typing import Any, List, Optional
 import time
 
 from thalos_prime.models.api_models import (
@@ -15,7 +15,8 @@ from thalos_prime.models.api_models import (
     AddressInfo,
     CoherenceInfo,
     ProvenanceInfo,
-    SearchMode
+    SearchMode,
+    ConfidenceLevel
 )
 from thalos_prime.lob_babel_generator import address_to_page
 from thalos_prime.lob_babel_enumerator import enumerate_addresses
@@ -24,11 +25,11 @@ from thalos_prime.lob_decoder import decode_page, score_coherence
 router = APIRouter()
 
 # Simple in-memory cache (replace with Redis in production)
-SEARCH_CACHE = {}
+SEARCH_CACHE: dict[str, tuple[dict[str, Any], float]] = {}
 CACHE_TTL = 3600  # 1 hour
 
 
-def get_cached_search(cache_key: str) -> Optional[dict]:
+def get_cached_search(cache_key: str) -> Optional[dict[str, Any]]:
     """Get cached search results if available and not expired"""
     if cache_key in SEARCH_CACHE:
         cached_data, timestamp = SEARCH_CACHE[cache_key]
@@ -40,13 +41,13 @@ def get_cached_search(cache_key: str) -> Optional[dict]:
     return None
 
 
-def cache_search(cache_key: str, data: dict):
+def cache_search(cache_key: str, data: dict[str, Any]) -> None:
     """Cache search results"""
     SEARCH_CACHE[cache_key] = (data, time.time())
 
 
 @router.post("/", response_model=SearchResponse)
-async def search(request: SearchRequest):
+async def search(request: SearchRequest) -> SearchResponse:
     """
     Search for pages matching the query.
     
@@ -105,16 +106,24 @@ async def search(request: SearchRequest):
                 # Filter by minimum score
                 if decoded.coherence.overall_score >= request.min_score:
                     page_result = PageResult(
-                        address=AddressInfo(hex_address=address),
+                        address=AddressInfo(
+                            hex_address=address,
+                            wall=None,
+                            shelf=None,
+                            volume=None,
+                            page=None,
+                            url=None
+                        ),
                         text=decoded.raw_text,
                         snippet=decoded.raw_text[:200] + "...",
+                        normalized_text=None,
                         coherence=CoherenceInfo(
                             overall_score=decoded.coherence.overall_score,
                             language_score=decoded.coherence.language_score,
                             structure_score=decoded.coherence.structure_score,
                             ngram_score=decoded.coherence.ngram_score,
                             exact_match_score=decoded.coherence.exact_match_score,
-                            confidence_level=decoded.coherence.confidence_level,
+                            confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
                             metrics=decoded.coherence.metrics
                         ),
                         provenance=ProvenanceInfo(
@@ -122,7 +131,8 @@ async def search(request: SearchRequest):
                             source=decoded.source,
                             query=request.query,
                             timestamp=decoded.timestamp,
-                            normalized=False
+                            normalized=False,
+                            llm_provider=None
                         )
                     )
                     results.append(page_result)
@@ -161,7 +171,7 @@ async def search(request: SearchRequest):
 
 
 @router.get("/suggestions")
-async def get_search_suggestions(q: str = QueryParam(..., min_length=1)):
+async def get_search_suggestions(q: str = QueryParam(..., min_length=1)) -> dict[str, Any]:
     """
     Get search query suggestions.
     
@@ -188,7 +198,7 @@ async def get_search_suggestions(q: str = QueryParam(..., min_length=1)):
 
 
 @router.delete("/cache")
-async def clear_search_cache():
+async def clear_search_cache() -> dict[str, Any]:
     """
     Clear the search cache.
     
@@ -205,7 +215,7 @@ async def clear_search_cache():
 
 
 @router.get("/cache/stats")
-async def get_cache_stats():
+async def get_cache_stats() -> dict[str, Any]:
     """
     Get search cache statistics.
     

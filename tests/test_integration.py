@@ -23,7 +23,7 @@ from thalos_prime import (
 )
 
 
-def test_full_pipeline():
+def test_full_pipeline() -> None:
     """Test complete pipeline: query → addresses → pages → scoring"""
     query = "test query"
     
@@ -54,7 +54,7 @@ def test_full_pipeline():
     assert len(decoded_pages) == len(pages)
 
 
-def test_generator_enumerator_integration():
+def test_generator_enumerator_integration() -> None:
     """Test that generator can create pages for enumerated addresses"""
     enum = BabelEnumerator()
     gen = BabelGenerator()
@@ -74,7 +74,7 @@ def test_generator_enumerator_integration():
         assert is_valid, f"Invalid page: {error}"
 
 
-def test_enumerator_decoder_integration():
+def test_enumerator_decoder_integration() -> None:
     """Test that decoder can score pages from enumerated addresses"""
     enum = BabelEnumerator()
     gen = BabelGenerator()
@@ -94,7 +94,7 @@ def test_enumerator_decoder_integration():
         assert coherence.confidence_level in ['high', 'medium', 'sparse', 'minimal']
 
 
-def test_determinism_across_modules():
+def test_determinism_across_modules() -> None:
     """Test that operations are deterministic across all modules"""
     query = "test"
     address = "abc123"
@@ -118,7 +118,7 @@ def test_determinism_across_modules():
     assert score1.overall_score == score2.overall_score
 
 
-def test_package_imports():
+def test_package_imports() -> None:
     """Test that all main components are importable from package"""
     import thalos_prime
     
@@ -132,7 +132,7 @@ def test_package_imports():
     assert hasattr(thalos_prime, 'decode_page')
 
 
-def test_query_to_pages_workflow():
+def test_query_to_pages_workflow() -> None:
     """Test a realistic query-to-pages workflow"""
     # User query
     query = "meaning of life"
@@ -160,7 +160,7 @@ def test_query_to_pages_workflow():
         assert 0 <= score <= 100
 
 
-def test_provenance_tracking():
+def test_provenance_tracking() -> None:
     """Test that provenance is correctly tracked through pipeline"""
     query = "test"
     address = "prov123"
@@ -177,7 +177,7 @@ def test_provenance_tracking():
     assert isinstance(decoded.provenance['timestamp'], float)
 
 
-def test_confidence_levels_correlation():
+def test_confidence_levels_correlation() -> None:
     """Test that confidence levels correlate with score ranges"""
     decoder = BabelDecoder()
     
@@ -199,7 +199,7 @@ def test_confidence_levels_correlation():
         assert low_score.confidence_level in ['minimal', 'sparse']
 
 
-def test_performance_reasonable():
+def test_performance_reasonable() -> None:
     """Test that operations complete in reasonable time"""
     import time
     

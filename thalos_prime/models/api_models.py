@@ -134,7 +134,7 @@ class ChatRequest(BaseModel):
     mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode")
     
     @validator('message')
-    def message_not_empty(cls, v):
+    def message_not_empty(cls, v: str) -> str:
         if not v.strip():
             raise ValueError('Message cannot be empty or whitespace only')
         return v.strip()
@@ -177,7 +177,7 @@ class SearchRequest(BaseModel):
     min_score: float = Field(default=0.0, ge=0, le=100, description="Minimum coherence score")
     
     @validator('query')
-    def query_not_empty(cls, v):
+    def query_not_empty(cls, v: str) -> str:
         if not v.strip():
             raise ValueError('Query cannot be empty or whitespace only')
         return v.strip()
@@ -220,10 +220,10 @@ class GenerateRequest(BaseModel):
     """Request model for generate endpoint"""
     address: Optional[str] = Field(None, description="Hex address to generate from")
     query: Optional[str] = Field(None, description="Query to convert to address")
-    validate: bool = Field(default=True, description="Whether to validate generated page")
+    validate_page: bool = Field(default=True, description="Whether to validate generated page", alias="validate")
     
     @validator('address', 'query')
-    def at_least_one_field(cls, v, values):
+    def at_least_one_field(cls, v: Optional[str], values: Dict[str, Any]) -> Optional[str]:
         if not v and not values.get('address') and not values.get('query'):
             raise ValueError('Either address or query must be provided')
         return v
@@ -263,7 +263,7 @@ class EnumerateRequest(BaseModel):
     depth: int = Field(default=1, ge=1, le=10, description="Enumeration depth")
     
     @validator('query')
-    def query_not_empty(cls, v):
+    def query_not_empty(cls, v: str) -> str:
         if not v.strip():
             raise ValueError('Query cannot be empty or whitespace only')
         return v.strip()

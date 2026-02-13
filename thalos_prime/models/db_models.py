@@ -5,6 +5,7 @@ These models define the database schema for persistent storage.
 
 from datetime import datetime
 import uuid
+from typing import Any
 
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, DateTime, Text, JSON,
@@ -16,14 +17,14 @@ from sqlalchemy.sql import func
 from sqlalchemy.engine import Engine
 
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 def generate_uuid() -> str:
     """Generate a new UUID string."""
     return str(uuid.uuid4())
 
 
-class User(Base):
+class User(Base):  # type: ignore[misc]
     """User model for authentication."""
 
     __tablename__ = "users"
@@ -57,7 +58,7 @@ class User(Base):
         return f"<User(username=\"{self.username}\", email=\"{self.email}\")>"
 
 
-class Session(Base):
+class Session(Base):  # type: ignore[misc]
     """Session model for tracking user sessions."""
 
     __tablename__ = "sessions"
@@ -97,7 +98,7 @@ class Session(Base):
         )
 
 
-class Query(Base):
+class Query(Base):  # type: ignore[misc]
     """Query model for tracking search queries."""
 
     __tablename__ = "queries"
@@ -145,7 +146,7 @@ class Query(Base):
         )
 
 
-class CachedResult(Base):
+class CachedResult(Base):  # type: ignore[misc]
     """Cached search result model."""
 
     __tablename__ = "cached_results"
@@ -184,7 +185,7 @@ class CachedResult(Base):
         )
 
 
-class GeneratedPage(Base):
+class GeneratedPage(Base):  # type: ignore[misc]
     """Generated page model for storing locally generated pages."""
 
     __tablename__ = "generated_pages"
@@ -216,7 +217,7 @@ class GeneratedPage(Base):
         )
 
 
-class APILog(Base):
+class APILog(Base):  # type: ignore[misc]
     """API request log model."""
 
     __tablename__ = "api_logs"

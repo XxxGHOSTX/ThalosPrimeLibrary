@@ -71,7 +71,7 @@ class APIConfig(BaseModel):
     log_file: Optional[str] = Field(default=None, description="Log file path")
     
     # CORS
-    cors_origins: list = Field(
+    cors_origins: list[str] = Field(
         default_factory=lambda: ["*"],
         description="Allowed CORS origins"
     )

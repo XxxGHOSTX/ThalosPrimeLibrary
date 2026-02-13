@@ -8,6 +8,7 @@ import sys
 import logging
 import warnings
 from pathlib import Path
+from typing import Optional
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class LibraryConfig:
         r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
     )
     
-    def __init__(self, local_library_path=None):
+    def __init__(self, local_library_path: Optional[str] = None) -> None:
         """
         Initialize the library configuration
         
@@ -30,10 +31,10 @@ class LibraryConfig:
             local_library_path: Optional custom path to the local library.
                                If not provided, uses the default path.
         """
-        self.local_library_path = local_library_path or self.DEFAULT_LOCAL_LIBRARY_PATH
-        self._added_to_path = False
+        self.local_library_path: str = local_library_path or self.DEFAULT_LOCAL_LIBRARY_PATH
+        self._added_to_path: bool = False
     
-    def setup_imports(self):
+    def setup_imports(self) -> bool:
         """
         Set up the import paths to include the local library
         
@@ -69,11 +70,11 @@ class LibraryConfig:
         self._added_to_path = True
         return True
     
-    def get_local_library_path(self):
+    def get_local_library_path(self) -> str:
         """Get the configured local library path"""
         return self.local_library_path
     
-    def set_local_library_path(self, path):
+    def set_local_library_path(self, path: str) -> None:
         """
         Set a new local library path
         
@@ -88,12 +89,12 @@ class LibraryConfig:
 _config = LibraryConfig()
 
 
-def get_config():
+def get_config() -> LibraryConfig:
     """Get the global configuration instance"""
     return _config
 
 
-def setup_local_imports(custom_path=None):
+def setup_local_imports(custom_path: Optional[str] = None) -> bool:
     """
     Convenience function to set up local library imports
     
