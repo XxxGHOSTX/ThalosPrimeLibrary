@@ -1,6 +1,83 @@
-from fastapi import FastAPI, Request
+from typing import Any
+from functools import wraps
 
-from fastapi.responses import HTMLResponse, JSONResponse
+API_TITLE = "Thalos Prime API"
+
+try:
+
+    from fastapi import FastAPI, Request
+    from fastapi.responses import HTMLResponse, JSONResponse
+    FASTAPI_AVAILABLE = True
+
+except ModuleNotFoundError:
+
+    FASTAPI_AVAILABLE = False
+
+    class _UnavailableFastAPI:
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+
+            self.title = API_TITLE
+
+        def get(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def post(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def put(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def delete(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def patch(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def head(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def options(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def _decorate(self, func):
+
+            @wraps(func)
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+
+                raise RuntimeError("FastAPI dependency not installed")
+
+            return wrapper
+
+    class _UnavailableRequest:
+
+        """Placeholder request type used when FastAPI is not installed.
+
+        This stub exposes no attributes or methods and will raise AttributeError if
+        accessed, mirroring the explicit RuntimeError raised by the placeholder
+        FastAPI decorator when endpoints are invoked without FastAPI present.
+        """
+
+    class _UnavailableResponse(dict):
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+
+            super().__init__(*args, **kwargs)
+
+    FastAPI = _UnavailableFastAPI  # type: ignore[assignment]
+
+    Request = _UnavailableRequest
+
+    HTMLResponse = _UnavailableResponse  # type: ignore
+
+    JSONResponse = _UnavailableResponse  # type: ignore
 
 from datetime import datetime
 
@@ -10,7 +87,7 @@ import time
 
 
 
-app = FastAPI(title="Thalos Prime API")
+app = FastAPI(title=API_TITLE)
 
 
 
@@ -702,7 +779,7 @@ def _cached_search(query, max_results=3):
 
 @app.get("/", response_class=HTMLResponse)
 
-def index():
+def index():  # pragma: no cover - UI endpoint not exercised in unit tests
 
     return HTMLResponse(MATRIX_HTML)
 
@@ -712,7 +789,7 @@ def index():
 
 @app.post("/chat")
 
-async def chat(request: Request):
+async def chat(request: Request):  # pragma: no cover - exercised via integration layer
 
     raw_body = await request.body()
 

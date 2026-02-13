@@ -28,7 +28,7 @@ lint:
 
 test:
 	@echo "Running pytest with coverage..."
-	pytest tests -v --cov=thalos_prime --cov-report=term-missing --cov-fail-under=80
+	pytest tests -v --cov=src --cov-report=term-missing --cov-fail-under=80
 
 validate:
 	@echo "Running lifecycle validator..."
