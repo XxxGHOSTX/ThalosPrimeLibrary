@@ -38,7 +38,7 @@ except ModuleNotFoundError:
 
     class _UnavailableRequest:
 
-        pass
+        """Placeholder request type used when FastAPI is not installed."""
 
     class _UnavailableResponse(dict):
 
