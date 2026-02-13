@@ -28,7 +28,11 @@ except ModuleNotFoundError:
 
         def _decorate(self, func):
 
-            return func
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+
+                raise RuntimeError("FastAPI dependency not installed; API endpoints are unavailable.")
+
+            return wrapper
 
     class _UnavailableRequest:  # pragma: no cover - placeholder for missing FastAPI
 
@@ -760,10 +764,6 @@ def index():  # pragma: no cover - UI endpoint not exercised in unit tests
 
 async def chat(request: Request):  # pragma: no cover - exercised via integration layer
 
-    if not FASTAPI_AVAILABLE:
-
-        raise RuntimeError("FastAPI dependency not installed; chat endpoint unavailable.")
-
     raw_body = await request.body()
 
     try:
@@ -811,9 +811,5 @@ async def chat(request: Request):  # pragma: no cover - exercised via integratio
 @app.get("/api/status")
 
 async def status():
-
-    if not FASTAPI_AVAILABLE:
-
-        raise RuntimeError("FastAPI dependency not installed; status endpoint unavailable.")
 
     return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}
