@@ -1,6 +1,55 @@
-from fastapi import FastAPI, Request
+from typing import Any
 
-from fastapi.responses import HTMLResponse, JSONResponse
+try:
+
+    from fastapi import FastAPI, Request
+    from fastapi.responses import HTMLResponse, JSONResponse
+    FASTAPI_AVAILABLE = True
+
+except ModuleNotFoundError:
+
+    FASTAPI_AVAILABLE = False
+
+    class _UnavailableFastAPI:
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+
+            self._error = RuntimeError("FastAPI dependency not installed; API endpoints are unavailable.")
+            self.title = "Thalos Prime API"
+
+        def get(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def post(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def _decorate(self, func):
+
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+
+                raise self._error
+
+            return wrapper
+
+    class _UnavailableRequest:  # pragma: no cover - placeholder for missing FastAPI
+
+        pass
+
+    class _UnavailableResponse(dict):  # pragma: no cover - placeholder for missing FastAPI
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+
+            raise RuntimeError("FastAPI dependency not installed; response generation unavailable.")
+
+    FastAPI = _UnavailableFastAPI  # type: ignore[assignment]
+
+    Request = _UnavailableRequest
+
+    HTMLResponse = _UnavailableResponse  # type: ignore
+
+    JSONResponse = _UnavailableResponse  # type: ignore
 
 from datetime import datetime
 
@@ -714,6 +763,10 @@ def index():
 
 async def chat(request: Request):
 
+    if not FASTAPI_AVAILABLE:
+
+        raise RuntimeError("FastAPI dependency not installed; chat endpoint unavailable.")
+
     raw_body = await request.body()
 
     try:
@@ -761,5 +814,9 @@ async def chat(request: Request):
 @app.get("/api/status")
 
 async def status():
+
+    if not FASTAPI_AVAILABLE:
+
+        return {"status": "unavailable", "reason": "fastapi dependency missing"}
 
     return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}

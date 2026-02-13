@@ -1,0 +1,17 @@
+[run]
+omit =
+    src/api/*
+    src/babel_search_expansion.py
+    src/lob_babel_search.py
+    src/lob_shard_manager/examples/*
+    src/main.py
+    src/thalosprime/cli.py
+
+[report]
+omit =
+    src/api/*
+    src/babel_search_expansion.py
+    src/lob_babel_search.py
+    src/lob_shard_manager/examples/*
+    src/main.py
+    src/thalosprime/cli.py
