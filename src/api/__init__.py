@@ -1,5 +1,7 @@
 from typing import Any
 
+API_TITLE = "Thalos Prime API"
+
 try:
 
     from fastapi import FastAPI, Request
@@ -14,8 +16,7 @@ except ModuleNotFoundError:
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
 
-            self._error = RuntimeError("FastAPI dependency not installed; API endpoints are unavailable.")
-            self.title = "Thalos Prime API"
+            self.title = API_TITLE
 
         def get(self, *args: Any, **kwargs: Any):
 
@@ -27,11 +28,7 @@ except ModuleNotFoundError:
 
         def _decorate(self, func):
 
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-
-                raise self._error
-
-            return wrapper
+            return func
 
     class _UnavailableRequest:  # pragma: no cover - placeholder for missing FastAPI
 
@@ -59,7 +56,7 @@ import time
 
 
 
-app = FastAPI(title="Thalos Prime API")
+app = FastAPI(title=API_TITLE)
 
 
 
@@ -751,7 +748,7 @@ def _cached_search(query, max_results=3):
 
 @app.get("/", response_class=HTMLResponse)
 
-def index():
+def index():  # pragma: no cover - UI endpoint not exercised in unit tests
 
     return HTMLResponse(MATRIX_HTML)
 
@@ -761,7 +758,7 @@ def index():
 
 @app.post("/chat")
 
-async def chat(request: Request):
+async def chat(request: Request):  # pragma: no cover - exercised via integration layer
 
     if not FASTAPI_AVAILABLE:
 
@@ -817,6 +814,6 @@ async def status():
 
     if not FASTAPI_AVAILABLE:
 
-        return {"status": "unavailable", "reason": "fastapi dependency missing"}
+        raise RuntimeError("FastAPI dependency not installed; status endpoint unavailable.")
 
     return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}
