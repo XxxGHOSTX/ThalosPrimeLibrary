@@ -19,6 +19,16 @@ def test_package_author() -> None:
     assert thalos_prime.__author__ == "ThalosPrime"
 
 
+def test_library_motto() -> None:
+    """Ensure the philosophical motto is exposed"""
+    assert hasattr(thalos_prime, 'LIBRARY_MOTTO')
+    assert thalos_prime.LIBRARY_MOTTO == (
+        "The library speaks In fragmentation of infinite possibilities, ask. "
+        "And the noice turns resolves into patterns. Meaning is never absent. "
+        "Only waiting to be read."
+    )
+
+
 def test_library_of_babel_base_url() -> None:
     """Ensure the canonical Library of Babel domain is correct"""
     assert hasattr(thalos_prime, 'LIBRARY_OF_BABEL_BASE_URL')

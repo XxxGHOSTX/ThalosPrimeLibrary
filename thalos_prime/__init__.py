@@ -13,6 +13,13 @@ from typing import Dict
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
 
+# Philosophical motto
+LIBRARY_MOTTO = (
+    "The library speaks In fragmentation of infinite possibilities, ask. "
+    "And the noice turns resolves into patterns. Meaning is never absent. "
+    "Only waiting to be read."
+)
+
 # Library of Babel endpoints
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
 LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
@@ -70,6 +77,7 @@ __all__ = [
     # Version info
     '__version__',
     '__author__',
+    'LIBRARY_MOTTO',
     'LOCAL_LIBRARY_PATH',
     
     # Library of Babel endpoints
