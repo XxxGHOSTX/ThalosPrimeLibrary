@@ -10,7 +10,7 @@ The Library of Babel uses a deterministic algorithm where:
 """
 
 import hashlib
-from typing import Tuple
+from typing import Optional, Tuple
 
 
 class BabelGenerator:
@@ -32,7 +32,7 @@ class BabelGenerator:
     # For hexadecimal addresses
     HEX_CHARS = '0123456789abcdef'
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Babel generator"""
         self._charset_map = {char: idx for idx, char in enumerate(self.CHARSET)}
         self._reverse_map = {idx: char for idx, char in enumerate(self.CHARSET)}
@@ -156,7 +156,7 @@ class BabelGenerator:
         
         return True, ""
     
-    def generate_random_address(self, seed: str = None) -> str:
+    def generate_random_address(self, seed: Optional[str] = None) -> str:
         """
         Generate a pseudo-random hex address.
         
