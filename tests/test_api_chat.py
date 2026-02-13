@@ -54,7 +54,9 @@ class TestApiChat(unittest.TestCase):
     @unittest.skipIf(api.FASTAPI_AVAILABLE, "FastAPI is installed; placeholder path not active")
     def test_placeholder_wrapped_endpoint_raises(self):
 
-        @api.app.get("/placeholder-check")
+        placeholder_app = api._UnavailableFastAPI()
+
+        @placeholder_app.get("/placeholder-check")
         async def placeholder_endpoint():
 
             return "ok"
