@@ -58,6 +58,20 @@ warn_no_return = true
 check_untyped_defs = true
 strict_equality = true
 
+# Ignore missing imports for optional dependencies
+[[tool.mypy.overrides]]
+module = [
+    "fastapi",
+    "fastapi.*",
+    "pydantic",
+    "pydantic.*",
+    "sqlalchemy",
+    "sqlalchemy.*",
+    "uvicorn",
+    "uvicorn.*",
+]
+ignore_missing_imports = true
+
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"

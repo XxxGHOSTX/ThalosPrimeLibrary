@@ -84,7 +84,7 @@ class BabelDecoder:
         self.weight_exact_match = weight_exact_match / total
         
         self.llm_enabled = False
-        self.llm_provider = None
+        self.llm_provider: Optional[str] = None
     
     def score_coherence(self, text: str, query: Optional[str] = None) -> CoherenceScore:
         """
@@ -357,7 +357,7 @@ class BabelDecoder:
             **kwargs: Provider-specific configuration
         """
         self.llm_enabled = True
-        self.llm_provider = provider
+        self.llm_provider: Optional[str] = provider
         # Store additional config as needed
 
 
