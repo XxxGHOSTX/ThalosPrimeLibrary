@@ -1,5 +1,6 @@
-import unittest
 import asyncio
+import unittest
+
 import src.api as api
 
 

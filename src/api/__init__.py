@@ -34,11 +34,11 @@ except ModuleNotFoundError:
 
             return wrapper
 
-    class _UnavailableRequest:  # pragma: no cover - placeholder for missing FastAPI
+    class _UnavailableRequest:  # pragma: no cover
 
         pass
 
-    class _UnavailableResponse(dict):  # pragma: no cover - placeholder for missing FastAPI
+    class _UnavailableResponse(dict):  # pragma: no cover
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
 
