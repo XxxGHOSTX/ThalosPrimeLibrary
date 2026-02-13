@@ -32,7 +32,7 @@ except ModuleNotFoundError:
             @wraps(func)
             async def wrapper(*args: Any, **kwargs: Any) -> Any:
 
-                raise RuntimeError("FastAPI dependency not installed; API endpoints are unavailable.")
+                raise RuntimeError("FastAPI dependency not installed")
 
             return wrapper
 

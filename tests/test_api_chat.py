@@ -1,11 +1,8 @@
 import asyncio
 import unittest
 
-import src.api as api
-
-
-
 from src.api import build_reply
+import src.api as api
 
 
 
