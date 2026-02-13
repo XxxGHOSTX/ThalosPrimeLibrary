@@ -24,7 +24,7 @@ def test_library_motto() -> None:
     assert hasattr(thalos_prime, 'LIBRARY_MOTTO')
     expected_motto = (
         "The library speaks in fragmentation of infinite possibilities, ask. "
-        "And the noise resolves into patterns. "
+        "And the noise turns resolves into patterns. "
         "Meaning is never absent. Only waiting to be read."
     )
     assert thalos_prime.LIBRARY_MOTTO == expected_motto
