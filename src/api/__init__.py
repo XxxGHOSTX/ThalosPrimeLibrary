@@ -60,8 +60,9 @@ except ModuleNotFoundError:
 
         """Placeholder request type used when FastAPI is not installed.
 
-        Using this stub in place of the real Request will typically fail at runtime,
-        mirroring the explicit RuntimeError raised by the placeholder FastAPI decorator.
+        This stub exposes no attributes or methods and will raise AttributeError if
+        accessed, mirroring the explicit RuntimeError raised by the placeholder
+        FastAPI decorator when endpoints are invoked without FastAPI present.
         """
 
     class _UnavailableResponse(dict):

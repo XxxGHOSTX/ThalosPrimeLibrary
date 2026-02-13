@@ -59,7 +59,7 @@ class TestApiChat(unittest.TestCase):
         @placeholder_app.get("/placeholder-check")
         async def placeholder_endpoint():
 
-            return "ok"
+            pass
 
         with self.assertRaisesRegex(RuntimeError, "FastAPI dependency not installed"):
 
