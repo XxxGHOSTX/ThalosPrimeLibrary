@@ -10,7 +10,7 @@ from thalos_prime.lob_babel_enumerator import (
 )
 
 
-def test_babel_enumerator_initialization():
+def test_babel_enumerator_initialization() -> None:
     """Test that BabelEnumerator initializes correctly"""
     enum = BabelEnumerator()
     assert enum.max_ngram_size == 5
@@ -22,7 +22,7 @@ def test_babel_enumerator_initialization():
     assert enum2.min_ngram_size == 3
 
 
-def test_enumerate_addresses_simple_query():
+def test_enumerate_addresses_simple_query() -> None:
     """Test enumerating addresses for a simple query"""
     enum = BabelEnumerator()
     
@@ -45,7 +45,7 @@ def test_enumerate_addresses_simple_query():
         assert len(result['address']) > 0
 
 
-def test_enumerate_addresses_deterministic():
+def test_enumerate_addresses_deterministic() -> None:
     """Test that enumeration is deterministic"""
     enum = BabelEnumerator()
     
@@ -63,7 +63,7 @@ def test_enumerate_addresses_deterministic():
         assert r1['score'] == r2['score']
 
 
-def test_enumerate_addresses_empty_query():
+def test_enumerate_addresses_empty_query() -> None:
     """Test that empty query returns empty results"""
     enum = BabelEnumerator()
     
@@ -74,7 +74,7 @@ def test_enumerate_addresses_empty_query():
     assert len(results) == 0
 
 
-def test_enumerate_addresses_respects_max_results():
+def test_enumerate_addresses_respects_max_results() -> None:
     """Test that max_results parameter is respected"""
     enum = BabelEnumerator()
     
@@ -85,7 +85,7 @@ def test_enumerate_addresses_respects_max_results():
         assert len(results) <= max_results
 
 
-def test_enumerate_addresses_with_depth():
+def test_enumerate_addresses_with_depth() -> None:
     """Test that depth parameter generates more variations"""
     enum = BabelEnumerator()
     
@@ -104,7 +104,7 @@ def test_enumerate_addresses_with_depth():
         assert result['depth'] >= 0
 
 
-def test_extract_ngrams():
+def test_extract_ngrams() -> None:
     """Test n-gram extraction"""
     enum = BabelEnumerator()
     
@@ -120,7 +120,7 @@ def test_extract_ngrams():
             assert len(ngrams[i]) >= len(ngrams[i + 1])
 
 
-def test_extract_ngrams_short_text():
+def test_extract_ngrams_short_text() -> None:
     """Test n-gram extraction for short text"""
     enum = BabelEnumerator()
     
@@ -131,7 +131,7 @@ def test_extract_ngrams_short_text():
     assert len(ngrams) >= 0
 
 
-def test_ngram_to_address():
+def test_ngram_to_address() -> None:
     """Test converting n-gram to address"""
     enum = BabelEnumerator()
     
@@ -151,7 +151,7 @@ def test_ngram_to_address():
     assert addr1 != addr3
 
 
-def test_score_address():
+def test_score_address() -> None:
     """Test address scoring"""
     enum = BabelEnumerator()
     
@@ -172,7 +172,7 @@ def test_score_address():
     assert score2 > score3
 
 
-def test_enumerate_substrings():
+def test_enumerate_substrings() -> None:
     """Test substring enumeration"""
     enum = BabelEnumerator()
     
@@ -188,7 +188,7 @@ def test_enumerate_substrings():
         assert len(address) > 0
 
 
-def test_enumerate_substrings_short_text():
+def test_enumerate_substrings_short_text() -> None:
     """Test substring enumeration with text shorter than substring length"""
     enum = BabelEnumerator()
     
@@ -199,7 +199,7 @@ def test_enumerate_substrings_short_text():
     assert len(results) == 0
 
 
-def test_find_common_addresses():
+def test_find_common_addresses() -> None:
     """Test finding common addresses between two queries"""
     enum = BabelEnumerator()
     
@@ -217,7 +217,7 @@ def test_find_common_addresses():
         assert isinstance(address, str)
 
 
-def test_find_common_addresses_identical_queries():
+def test_find_common_addresses_identical_queries() -> None:
     """Test that identical queries have many common addresses"""
     enum = BabelEnumerator()
     
@@ -229,7 +229,7 @@ def test_find_common_addresses_identical_queries():
     assert len(common) > 0
 
 
-def test_convenience_function_enumerate_addresses():
+def test_convenience_function_enumerate_addresses() -> None:
     """Test the module-level enumerate_addresses function"""
     results = enumerate_addresses("hello world", max_results=5)
     
@@ -242,7 +242,7 @@ def test_convenience_function_enumerate_addresses():
         assert 'score' in result
 
 
-def test_convenience_function_query_to_addresses():
+def test_convenience_function_query_to_addresses() -> None:
     """Test the module-level query_to_addresses function"""
     addresses = query_to_addresses("hello", count=5)
     
@@ -255,7 +255,7 @@ def test_convenience_function_query_to_addresses():
         assert len(address) > 0
 
 
-def test_different_queries_different_addresses():
+def test_different_queries_different_addresses() -> None:
     """Test that different queries generate different address sets"""
     enum = BabelEnumerator()
     
@@ -270,7 +270,7 @@ def test_different_queries_different_addresses():
     assert addrs1 != addrs2
 
 
-def test_results_sorted_by_score():
+def test_results_sorted_by_score() -> None:
     """Test that results are sorted by score (highest first)"""
     enum = BabelEnumerator()
     

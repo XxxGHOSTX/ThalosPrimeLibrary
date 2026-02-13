@@ -6,7 +6,7 @@ import unittest
 
 class TestMainModule(unittest.TestCase):
 
-    def test_thalos_prime_is_ready(self):
+    def test_thalos_prime_is_ready(self) -> None:
 
         """Thalos Prime system is operational."""
 

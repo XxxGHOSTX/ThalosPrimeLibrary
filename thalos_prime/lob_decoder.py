@@ -6,7 +6,7 @@ readability of generated pages, with optional LLM-based normalization.
 """
 
 import re
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 import time
 
@@ -20,7 +20,7 @@ class CoherenceScore:
     ngram_score: float  # N-gram coherence
     exact_match_score: float  # Query match score
     confidence_level: str  # 'high', 'medium', 'sparse', 'minimal'
-    metrics: Dict[str, any]  # Detailed metrics
+    metrics: Dict[str, Any]  # Detailed metrics
 
 
 @dataclass
@@ -32,7 +32,7 @@ class DecodedPage:
     coherence: CoherenceScore
     source: str  # 'local' or 'remote'
     timestamp: float
-    provenance: Dict[str, any]
+    provenance: Dict[str, Any]
 
 
 class BabelDecoder:
@@ -66,7 +66,7 @@ class BabelDecoder:
         weight_structure: float = 0.20,
         weight_ngram: float = 0.20,
         weight_exact_match: float = 0.30
-    ):
+    ) -> None:
         """
         Initialize the decoder with configurable weights.
         
@@ -84,9 +84,9 @@ class BabelDecoder:
         self.weight_exact_match = weight_exact_match / total
         
         self.llm_enabled = False
-        self.llm_provider = None
+        self.llm_provider: Optional[str] = None
     
-    def score_coherence(self, text: str, query: str = None) -> CoherenceScore:
+    def score_coherence(self, text: str, query: Optional[str] = None) -> CoherenceScore:
         """
         Score the coherence of a text using multiple heuristics.
         
@@ -289,7 +289,7 @@ class BabelDecoder:
         self,
         address: str,
         text: str,
-        query: str = None,
+        query: Optional[str] = None,
         source: str = 'local',
         normalize: bool = False
     ) -> DecodedPage:
@@ -333,7 +333,7 @@ class BabelDecoder:
             provenance=provenance
         )
     
-    def _normalize_with_llm(self, text: str, query: str = None) -> str:
+    def _normalize_with_llm(self, text: str, query: Optional[str] = None) -> str:
         """
         Normalize text using LLM (placeholder for future implementation).
         
@@ -348,7 +348,7 @@ class BabelDecoder:
         # For now, just return the original text
         return text
     
-    def enable_llm(self, provider: str, **kwargs):
+    def enable_llm(self, provider: str, **kwargs: Any) -> None:
         """
         Enable LLM normalization.
         
@@ -365,7 +365,7 @@ class BabelDecoder:
 _decoder = BabelDecoder()
 
 
-def score_coherence(text: str, query: str = None) -> CoherenceScore:
+def score_coherence(text: str, query: Optional[str] = None) -> CoherenceScore:
     """
     Convenience function to score text coherence.
     
@@ -382,7 +382,7 @@ def score_coherence(text: str, query: str = None) -> CoherenceScore:
 def decode_page(
     address: str,
     text: str,
-    query: str = None,
+    query: Optional[str] = None,
     source: str = 'local'
 ) -> DecodedPage:
     """

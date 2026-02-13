@@ -10,7 +10,7 @@ from src.api import _score_coherence
 
 class TestApiSearch(unittest.TestCase):
 
-    def test_score_coherence_exact_match(self):
+    def test_score_coherence_exact_match(self) -> None:
 
         text = "This is a test phrase in context."
 
@@ -20,7 +20,7 @@ class TestApiSearch(unittest.TestCase):
 
 
 
-    def test_score_coherence_empty(self):
+    def test_score_coherence_empty(self) -> None:
 
         score = _score_coherence("", "test")
 

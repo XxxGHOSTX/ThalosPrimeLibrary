@@ -10,7 +10,7 @@ from src.api import build_reply
 
 class TestApiChat(unittest.TestCase):
 
-    def test_help_reply(self):
+    def test_help_reply(self) -> None:
 
         reply = build_reply("help", [], allow_search=False)
 
@@ -18,7 +18,7 @@ class TestApiChat(unittest.TestCase):
 
 
 
-    def test_time_reply(self):
+    def test_time_reply(self) -> None:
 
         reply = build_reply("time", [], allow_search=False)
 
@@ -26,7 +26,7 @@ class TestApiChat(unittest.TestCase):
 
 
 
-    def test_mode_reply(self):
+    def test_mode_reply(self) -> None:
 
         reply = build_reply("mode: analyst", [], allow_search=False)
 
