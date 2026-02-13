@@ -72,6 +72,12 @@ __all__ = [
     '__author__',
     'LOCAL_LIBRARY_PATH',
     
+    # Library of Babel endpoints
+    'LIBRARY_OF_BABEL_BASE_URL',
+    'LIBRARY_OF_BABEL_SEARCH_URL',
+    'LIBRARY_OF_BABEL_SEARCH_API',
+    'get_babel_endpoints',
+    
     # Generator
     'BabelGenerator',
     'address_to_page',
@@ -89,4 +95,7 @@ __all__ = [
     'DecodedPage',
     'score_coherence',
     'decode_page',
+    
+    # Synthesis
+    'deep_synthesis',
 ]
