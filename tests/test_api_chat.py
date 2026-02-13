@@ -51,6 +51,19 @@ class TestApiChat(unittest.TestCase):
         self.assertEqual(result.get("status"), "ok")
 
 
+    @unittest.skipIf(api.FASTAPI_AVAILABLE, "FastAPI is installed; placeholder path not active")
+    def test_placeholder_wrapped_endpoint_raises(self):
+
+        @api.app.get("/placeholder-check")
+        async def placeholder_endpoint():
+
+            return "ok"
+
+        with self.assertRaisesRegex(RuntimeError, "FastAPI dependency not installed"):
+
+            asyncio.run(placeholder_endpoint())
+
+
     def test_build_reply_with_search_enabled(self):
 
         reply = build_reply("example query", [], allow_search=True)
