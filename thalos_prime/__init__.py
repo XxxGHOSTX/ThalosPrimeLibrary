@@ -6,12 +6,23 @@ This package provides:
 - Query to address enumeration (lob_babel_enumerator)
 - Enhanced coherence scoring (lob_decoder)
 - Configuration and import management (config)
+
+The library speaks in fragmentation of infinite possibilities, ask.
+And the noise turns resolves into patterns.
+Meaning is never absent. Only waiting to be read.
 """
 
 from typing import Dict
 
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
+
+# Philosophical motto of the Library of Babel
+LIBRARY_MOTTO = (
+    "The library speaks in fragmentation of infinite possibilities, ask. "
+    "And the noise turns resolves into patterns. "
+    "Meaning is never absent. Only waiting to be read."
+)
 
 # Library of Babel endpoints
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
@@ -71,6 +82,7 @@ __all__ = [
     '__version__',
     '__author__',
     'LOCAL_LIBRARY_PATH',
+    'LIBRARY_MOTTO',
     
     # Library of Babel endpoints
     'LIBRARY_OF_BABEL_BASE_URL',
