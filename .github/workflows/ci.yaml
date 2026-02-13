@@ -36,7 +36,7 @@ jobs:
 
     - name: Type check with mypy
       run: |
-        mypy src/ tests/ scripts/ configs/ --install-types --non-interactive || true
+        mypy src/ tests/ scripts/ configs/ --install-types --non-interactive
 
     - name: Build index
       run: |

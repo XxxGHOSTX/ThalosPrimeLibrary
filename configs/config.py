@@ -1,6 +1,5 @@
 """Configuration management for Thalos Prime."""
 
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -27,8 +26,14 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, description="Server port")
 
     # Seed Policy
-    seed_salt: str = Field(default="thalos_prime_default_salt", description="Salt for seed generation")
-    time_bucket_seconds: int = Field(default=3600, description="Time bucket for seed generation")
+    seed_salt: str = Field(
+        default="thalos_prime_default_salt",
+        description="Salt for seed generation"
+    )
+    time_bucket_seconds: int = Field(
+        default=3600,
+        description="Time bucket for seed generation"
+    )
 
     # Rate Limiting
     max_requests_per_minute: int = Field(default=60, description="Maximum requests per minute")

@@ -81,54 +81,36 @@ class DialogueManager:
         )
 
         # Retrieve relevant documents
-        try:
-            retrieved_docs = self.retriever.retrieve(user_input, top_k=self.top_k_retrieval)
-            logger.info(
-                "Retrieval complete",
-                session_id=session_id,
-                num_docs=len(retrieved_docs),
-            )
+        retrieved_docs = self.retriever.retrieve(user_input, top_k=self.top_k_retrieval)
+        logger.info(
+            "Retrieval complete",
+            session_id=session_id,
+            num_docs=len(retrieved_docs),
+        )
 
-            # Log retrieval event
-            self.event_log.log_event(
-                "retrieval",
-                {
-                    "query": user_input,
-                    "num_results": len(retrieved_docs),
-                    "doc_ids": [doc.get("doc_id") for doc in retrieved_docs],
-                },
-                session_id=session_id,
-            )
-
-        except Exception as e:
-            logger.error(f"Retrieval failed: {e}", session_id=session_id)
-            return {
-                "response": "I apologize, but I encountered an error retrieving information.",
-                "seed": seed,
-                "error": str(e),
-            }
+        # Log retrieval event
+        self.event_log.log_event(
+            "retrieval",
+            {
+                "query": user_input,
+                "num_results": len(retrieved_docs),
+                "doc_ids": [doc.get("doc_id") for doc in retrieved_docs],
+            },
+            session_id=session_id,
+        )
 
         # Generate response deterministically
-        try:
-            generator = DeterministicGenerator(seed=seed, max_sentences=self.max_sentences)
-            response_text = generator.generate(retrieved_docs)
+        generator = DeterministicGenerator(seed=seed, max_sentences=self.max_sentences)
+        response_text = generator.generate(retrieved_docs)
 
-            logger.info("Response generated", session_id=session_id, seed=seed)
+        logger.info("Response generated", session_id=session_id, seed=seed)
 
-            # Log generation event
-            self.event_log.log_event(
-                "generation",
-                {"seed": seed, "response_length": len(response_text)},
-                session_id=session_id,
-            )
-
-        except Exception as e:
-            logger.error(f"Generation failed: {e}", session_id=session_id)
-            return {
-                "response": "I apologize, but I encountered an error generating a response.",
-                "seed": seed,
-                "error": str(e),
-            }
+        # Log generation event
+        self.event_log.log_event(
+            "generation",
+            {"seed": seed, "response_length": len(response_text)},
+            session_id=session_id,
+        )
 
         # Log chat event
         self.event_log.log_event(

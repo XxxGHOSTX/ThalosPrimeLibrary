@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
 
 from configs.config import Settings
 from src.api import app

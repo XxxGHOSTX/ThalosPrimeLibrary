@@ -43,7 +43,7 @@ class StateStore:
 
         # Create index for faster lookups
         cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_seeds_session 
+            CREATE INDEX IF NOT EXISTS idx_seeds_session
             ON seeds(session_id, timestamp DESC)
         """)
 
@@ -77,7 +77,7 @@ class StateStore:
 
         cursor.execute(
             """
-            UPDATE sessions 
+            UPDATE sessions
             SET last_active = ?
             WHERE session_id = ?
         """,
@@ -165,5 +165,12 @@ class StateStore:
         return [dict(row) for row in rows]
 
     def close(self) -> None:
-        """Close any open connections (for cleanup)."""
+        """Interface hook for cleanup.
+
+        This implementation opens and closes a new SQLite connection for each
+        operation, so there is no persistent connection or other resource to
+        release at shutdown. The method is provided to satisfy the control
+        plane's expected StateStore interface and is intentionally a no-op.
+        """
+        # All database connections are per-operation; nothing to clean up here.
         pass

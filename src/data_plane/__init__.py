@@ -3,9 +3,10 @@
 import json
 import pickle
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
+import scipy.sparse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -23,8 +24,8 @@ class TFIDFRetriever:
         self.index_path = index_path
         self.manifest_path = manifest_path
         self.vectorizer: Optional[TfidfVectorizer] = None
-        self.tfidf_matrix: Optional[np.ndarray] = None
-        self.documents: list[dict[str, str]] = []
+        self.tfidf_matrix: Union[scipy.sparse.spmatrix, np.ndarray, None] = None
+        self.documents: list[dict[str, Any]] = []
         self.loaded = False
 
     def load(self) -> None:
@@ -74,8 +75,9 @@ class TFIDFRetriever:
         # Compute cosine similarity
         similarities = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
 
-        # Get top-k indices (sorted in descending order)
-        top_indices = np.argsort(similarities)[::-1][:top_k]
+        # Get top-k indices with stable sorting for determinism
+        # Use mergesort for stable ordering when scores are tied
+        top_indices = np.argsort(similarities, kind="mergesort")[::-1][:top_k]
 
         # Build results with stable ordering
         results = []

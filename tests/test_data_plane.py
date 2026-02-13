@@ -3,9 +3,7 @@
 import json
 import pickle
 from pathlib import Path
-from typing import Any
 
-import numpy as np
 import pytest
 from sklearn.feature_extraction.text import TfidfVectorizer
 

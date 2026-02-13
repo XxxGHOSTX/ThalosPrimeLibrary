@@ -1,9 +1,6 @@
 """Tests for utility functions."""
 
 from pathlib import Path
-from typing import Any
-
-import pytest
 
 from src.utils import compute_file_hash, generate_deterministic_seed, truncate_to_sentences
 

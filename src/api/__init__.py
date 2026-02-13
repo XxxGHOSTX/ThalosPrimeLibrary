@@ -5,9 +5,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Security
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
@@ -113,9 +113,15 @@ async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> N
 class ChatRequest(BaseModel):
     """Chat request model."""
 
-    session_id: Optional[str] = Field(default=None, description="Session ID (auto-generated if not provided)")
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Session ID (auto-generated if not provided)"
+    )
     message: str = Field(..., description="User message", min_length=1)
-    timestamp: Optional[float] = Field(default=None, description="Optional timestamp for seed generation")
+    timestamp: Optional[float] = Field(
+        default=None,
+        description="Optional timestamp for seed generation"
+    )
 
 
 class ChatResponse(BaseModel):
@@ -185,7 +191,10 @@ async def serve_js() -> FileResponse:
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest, api_key: Optional[str] = Security(api_key_header)) -> ChatResponse:
+async def chat(
+    request: ChatRequest,
+    api_key: Optional[str] = Security(api_key_header)
+) -> ChatResponse:
     """
     Process a chat message and return a deterministic response.
 
@@ -220,7 +229,10 @@ async def chat(request: ChatRequest, api_key: Optional[str] = Security(api_key_h
 
     except Exception as e:
         logger.error(f"Chat processing failed: {e}", session_id=session_id)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error. Please try again later."
+        )
 
 
 @app.get("/api/status")
@@ -262,7 +274,10 @@ async def create_checkpoint(api_key: Optional[str] = Security(api_key_header)) -
         return {"checkpoint_path": str(checkpoint_path)}
     except Exception as e:
         logger.error(f"Checkpoint creation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create checkpoint. Please try again later."
+        )
 
 
 @app.post("/api/reconcile")
@@ -278,4 +293,7 @@ async def reconcile(api_key: Optional[str] = Security(api_key_header)) -> Dict[s
         return {"success": success}
     except Exception as e:
         logger.error(f"Reconciliation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to reconcile system. Please try again later."
+        )

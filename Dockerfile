@@ -1,27 +1,16 @@
 FROM python:3.12-slim AS build
 WORKDIR /app
-COPY pyproject.toml setup.py ./
-COPY thalos_prime thalos_prime
-RUN python -m pip install --upgrade pip && pip install --no-cache-dir .
+COPY requirements.txt .
+RUN python -m pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.12-slim
 RUN useradd --create-home appuser
 WORKDIR /app
 COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-FROM python:3.11-slim
-RUN useradd --create-home appuser && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
-COPY . /app
+COPY --chown=appuser:appuser . /app
 USER appuser
-ENV PYTHONUNBUFFERED=1 \
-    THALOS_LIBRARY_PATH=/app/data
+ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/status')" || exit 1
-CMD ["uvicorn", "thalos_prime.api.server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://127.0.0.1:8000/health || exit 1

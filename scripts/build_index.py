@@ -24,16 +24,16 @@ def build_index() -> None:
     corpus_dir = settings.get_corpus_path()
 
     if not corpus_dir.exists():
-        print(f"Error: Corpus directory not found: {corpus_dir}")
-        return
+        print(f"Error: Corpus directory not found: {corpus_dir}", file=sys.stderr)
+        raise SystemExit(1)
 
     # Read all documents
     documents = []
     doc_files = sorted(corpus_dir.glob("*.txt"))
 
     if not doc_files:
-        print(f"Error: No .txt files found in {corpus_dir}")
-        return
+        print(f"Error: No .txt files found in {corpus_dir}", file=sys.stderr)
+        raise SystemExit(1)
 
     print(f"Found {len(doc_files)} documents")
 

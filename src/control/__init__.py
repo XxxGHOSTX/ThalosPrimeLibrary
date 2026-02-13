@@ -119,6 +119,8 @@ class ControlPlane:
                 self.state = LifecycleState.VALIDATED
                 logger.info("Validation successful", hashes=validation_results)
             else:
+                # Reset to a stable state to avoid remaining stuck in VALIDATING
+                self.state = LifecycleState.INITIALIZED
                 logger.warning("Validation incomplete", results=validation_results)
 
             # Log validation event

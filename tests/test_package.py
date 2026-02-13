@@ -2,8 +2,6 @@
 Tests for the main package
 """
 
-import os
-import pytest
 import thalos_prime
 
 
@@ -23,11 +21,11 @@ def test_package_local_library_path(monkeypatch):
     """Test that the package defines LOCAL_LIBRARY_PATH"""
     # Clear any environment variable to test the default
     monkeypatch.delenv('THALOS_LIBRARY_PATH', raising=False)
-    
+
     # Import fresh to get the default
     from importlib import reload
     reload(thalos_prime)
-    
+
     assert hasattr(thalos_prime, 'LOCAL_LIBRARY_PATH')
     expected_path = r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
     assert thalos_prime.LOCAL_LIBRARY_PATH == expected_path
@@ -37,9 +35,9 @@ def test_package_local_library_path_with_env_var(monkeypatch):
     """Test that the package respects THALOS_LIBRARY_PATH environment variable"""
     custom_path = "/custom/env/path"
     monkeypatch.setenv('THALOS_LIBRARY_PATH', custom_path)
-    
+
     # Import fresh to get the value from env var
     from importlib import reload
     reload(thalos_prime)
-    
+
     assert thalos_prime.LOCAL_LIBRARY_PATH == custom_path
