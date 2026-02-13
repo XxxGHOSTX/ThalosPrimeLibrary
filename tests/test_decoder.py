@@ -12,7 +12,7 @@ from thalos_prime.lob_decoder import (
 )
 
 
-def test_babel_decoder_initialization():
+def test_babel_decoder_initialization() -> None:
     """Test decoder initialization with default weights"""
     decoder = BabelDecoder()
     
@@ -26,7 +26,7 @@ def test_babel_decoder_initialization():
     assert abs(total - 1.0) < 0.0001
 
 
-def test_babel_decoder_custom_weights():
+def test_babel_decoder_custom_weights() -> None:
     """Test decoder with custom weights"""
     decoder = BabelDecoder(
         weight_language=0.4,
@@ -45,7 +45,7 @@ def test_babel_decoder_custom_weights():
     assert abs(total - 1.0) < 0.0001
 
 
-def test_score_coherence_basic():
+def test_score_coherence_basic() -> None:
     """Test basic coherence scoring"""
     decoder = BabelDecoder()
     
@@ -58,7 +58,7 @@ def test_score_coherence_basic():
     assert coherence.confidence_level in ['high', 'medium', 'sparse', 'minimal']
 
 
-def test_score_coherence_with_query():
+def test_score_coherence_with_query() -> None:
     """Test coherence scoring with query matching"""
     decoder = BabelDecoder()
     
@@ -72,7 +72,7 @@ def test_score_coherence_with_query():
     assert coherence.overall_score > 0
 
 
-def test_score_language_common_words():
+def test_score_language_common_words() -> None:
     """Test language scoring with common English words"""
     decoder = BabelDecoder()
     
@@ -84,7 +84,7 @@ def test_score_language_common_words():
     assert score > 0.5
 
 
-def test_score_language_gibberish():
+def test_score_language_gibberish() -> None:
     """Test language scoring with gibberish"""
     decoder = BabelDecoder()
     
@@ -96,7 +96,7 @@ def test_score_language_gibberish():
     assert score < 0.3
 
 
-def test_score_structure_with_punctuation():
+def test_score_structure_with_punctuation() -> None:
     """Test structure scoring with good punctuation"""
     decoder = BabelDecoder()
     
@@ -108,7 +108,7 @@ def test_score_structure_with_punctuation():
     assert score > 0.3
 
 
-def test_score_structure_no_punctuation():
+def test_score_structure_no_punctuation() -> None:
     """Test structure scoring with no punctuation"""
     decoder = BabelDecoder()
     
@@ -120,7 +120,7 @@ def test_score_structure_no_punctuation():
     assert score < 0.3
 
 
-def test_score_ngrams():
+def test_score_ngrams() -> None:
     """Test n-gram coherence scoring"""
     decoder = BabelDecoder()
     
@@ -132,7 +132,7 @@ def test_score_ngrams():
     assert score > 0.0
 
 
-def test_score_exact_match_full():
+def test_score_exact_match_full() -> None:
     """Test exact match with full query match"""
     decoder = BabelDecoder()
     
@@ -144,7 +144,7 @@ def test_score_exact_match_full():
     assert score == 1.0
 
 
-def test_score_exact_match_partial():
+def test_score_exact_match_partial() -> None:
     """Test exact match with partial word match"""
     decoder = BabelDecoder()
     
@@ -156,7 +156,7 @@ def test_score_exact_match_partial():
     assert 0 < score < 1.0
 
 
-def test_score_exact_match_none():
+def test_score_exact_match_none() -> None:
     """Test exact match with no match"""
     decoder = BabelDecoder()
     
@@ -168,7 +168,7 @@ def test_score_exact_match_none():
     assert score == 0.0
 
 
-def test_confidence_levels():
+def test_confidence_levels() -> None:
     """Test that confidence levels are assigned correctly"""
     decoder = BabelDecoder()
     
@@ -187,7 +187,7 @@ def test_confidence_levels():
     assert low_score.confidence_level in ['minimal', 'sparse']
 
 
-def test_decode_page_basic():
+def test_decode_page_basic() -> None:
     """Test basic page decoding"""
     decoder = BabelDecoder()
     
@@ -204,7 +204,7 @@ def test_decode_page_basic():
     assert isinstance(decoded.coherence, CoherenceScore)
 
 
-def test_decode_page_with_query():
+def test_decode_page_with_query() -> None:
     """Test page decoding with query"""
     decoder = BabelDecoder()
     
@@ -218,7 +218,7 @@ def test_decode_page_with_query():
     assert decoded.provenance['query'] == query
 
 
-def test_decode_page_remote_source():
+def test_decode_page_remote_source() -> None:
     """Test page decoding with remote source"""
     decoder = BabelDecoder()
     
@@ -231,7 +231,7 @@ def test_decode_page_remote_source():
     assert decoded.provenance['source'] == 'remote'
 
 
-def test_decode_page_provenance():
+def test_decode_page_provenance() -> None:
     """Test that provenance is recorded correctly"""
     decoder = BabelDecoder()
     
@@ -249,7 +249,7 @@ def test_decode_page_provenance():
     assert decoded.provenance['address'] == address
 
 
-def test_coherence_score_metrics():
+def test_coherence_score_metrics() -> None:
     """Test that detailed metrics are included"""
     decoder = BabelDecoder()
     
@@ -265,7 +265,7 @@ def test_coherence_score_metrics():
     assert 'sentence_count' in coherence.metrics
 
 
-def test_count_sentences():
+def test_count_sentences() -> None:
     """Test sentence counting"""
     decoder = BabelDecoder()
     
@@ -285,7 +285,7 @@ def test_count_sentences():
     assert count3 >= 1
 
 
-def test_convenience_function_score_coherence():
+def test_convenience_function_score_coherence() -> None:
     """Test module-level score_coherence function"""
     text = "the quick brown fox"
     coherence = score_coherence(text)
@@ -294,7 +294,7 @@ def test_convenience_function_score_coherence():
     assert 0 <= coherence.overall_score <= 100
 
 
-def test_convenience_function_decode_page():
+def test_convenience_function_decode_page() -> None:
     """Test module-level decode_page function"""
     address = "conv123"
     text = "convenience test text"
@@ -305,7 +305,7 @@ def test_convenience_function_decode_page():
     assert decoded.address == address
 
 
-def test_enable_llm():
+def test_enable_llm() -> None:
     """Test enabling LLM normalization"""
     decoder = BabelDecoder()
     
@@ -317,7 +317,7 @@ def test_enable_llm():
     assert decoder.llm_provider == 'openai'
 
 
-def test_normalize_with_llm_disabled():
+def test_normalize_with_llm_disabled() -> None:
     """Test that normalization returns None when LLM is disabled"""
     decoder = BabelDecoder()
     
@@ -331,7 +331,7 @@ def test_normalize_with_llm_disabled():
     assert decoded.normalized_text is None
 
 
-def test_different_queries_different_scores():
+def test_different_queries_different_scores() -> None:
     """Test that different queries produce different scores"""
     decoder = BabelDecoder()
     
