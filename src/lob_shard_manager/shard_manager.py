@@ -1,3 +1,6 @@
+from typing import Any, Dict, List, Optional
+
+from .shard import Shard
 from .shard_store import ShardStore
 
 from .utils import make_shard_id
@@ -8,7 +11,7 @@ from .utils import make_shard_id
 
 class ShardManager:
 
-    def __init__(self, capacity=100, shard_prefix="shard"):
+    def __init__(self, capacity: int = 100, shard_prefix: str = "shard") -> None:
 
         self.capacity = capacity
 
@@ -16,13 +19,13 @@ class ShardManager:
 
         self.store = ShardStore()
 
-        self.index = {}
+        self.index: Dict[str, str] = {}
 
         self._next_id = 1
 
 
 
-    def _create_shard(self):
+    def _create_shard(self) -> Shard:
 
         shard_id = make_shard_id(self._next_id, prefix=self.shard_prefix)
 
@@ -32,7 +35,7 @@ class ShardManager:
 
 
 
-    def _find_or_create_shard(self):
+    def _find_or_create_shard(self) -> Shard:
 
         for shard_id in self.store.list_shards():
 
@@ -46,7 +49,7 @@ class ShardManager:
 
 
 
-    def add_entry(self, key, value):
+    def add_entry(self, key: str, value: Any) -> str:
 
         if key in self.index:
 
@@ -72,7 +75,7 @@ class ShardManager:
 
 
 
-    def get_entry(self, key, default=None):
+    def get_entry(self, key: str, default: Any = None) -> Any:
 
         shard_id = self.index.get(key)
 
@@ -90,21 +93,21 @@ class ShardManager:
 
 
 
-    def find_shard_for_key(self, key):
+    def find_shard_for_key(self, key: str) -> Optional[str]:
 
         return self.index.get(key)
 
 
 
-    def list_shards(self):
+    def list_shards(self) -> List[str]:
 
         return self.store.list_shards()
 
 
 
-    def shard_stats(self):
+    def shard_stats(self) -> List[Dict[str, Any]]:
 
-        stats = []
+        stats: List[Dict[str, Any]] = []
 
         for shard_id in self.store.list_shards():
 

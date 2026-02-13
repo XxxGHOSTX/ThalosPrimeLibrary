@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Optional, Tuple
+
 from fastapi import FastAPI, Request
 
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -28,7 +30,7 @@ COMMON_WORDS = {
 
 # Cache for search results
 
-_SEARCH_CACHE = {}
+_SEARCH_CACHE: Dict[str, Tuple[List[Dict[str, Any]], float]] = {}
 
 _CACHE_TIMEOUT = 3600
 
@@ -478,13 +480,13 @@ MATRIX_HTML = """<!DOCTYPE html>
 
 SESSION_LIMIT = 20
 
-_sessions = {}
+_sessions: Dict[str, List[Dict[str, str]]] = {}
 
 
 
 
 
-def _normalize_message(message):
+def _normalize_message(message: Optional[str]) -> str:
 
     return " ".join((message or "").strip().split())
 
@@ -492,7 +494,7 @@ def _normalize_message(message):
 
 
 
-def _score_coherence(text, query):
+def _score_coherence(text: str, query: str) -> int:
 
     if not text:
 
@@ -522,7 +524,7 @@ def _score_coherence(text, query):
 
 
 
-def _snippet(text, length=240):
+def _snippet(text: Optional[str], length: int = 240) -> str:
 
     return (text or "")[:length].replace("\n", " ").strip()
 
@@ -532,7 +534,7 @@ def _snippet(text, length=240):
 
 
 
-def _format_babel_reply(query, pages):
+def _format_babel_reply(query: str, pages: List[Dict[str, Any]]) -> str:
 
     lines = ["BABEL_RESPONSE:", f"QUERY: {query}"]
 
@@ -583,7 +585,7 @@ from src.semantic_parser import semantic_deconstruct
 
 
 
-def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
+def build_reply(message: str, history: List[Dict[str, str]], allow_search: bool = True, mode: str = DEFAULT_MODE) -> str:
 
     text = _normalize_message(message)
 
@@ -655,7 +657,7 @@ def build_reply(message, history, allow_search=True, mode=DEFAULT_MODE):
             return f"BABEL_CORE: Pipeline error: {str(e)}\nFallback: {text}"
 
 
-def _render_nexus_block(semantic: dict) -> str:
+def _render_nexus_block(semantic: Dict[str, Any]) -> str:
     dims = semantic.get("dimensions", {})
     node = semantic.get("node", "unknown")
     fragments = semantic.get("fragments", [])
@@ -674,7 +676,7 @@ def _render_nexus_block(semantic: dict) -> str:
 
 
 
-def _cached_search(query, max_results=3):
+def _cached_search(query: str, max_results: int = 3) -> List[Dict[str, Any]]:
 
     cache_key = f"{query}:{max_results}"
 
@@ -702,7 +704,7 @@ def _cached_search(query, max_results=3):
 
 @app.get("/", response_class=HTMLResponse)
 
-def index():
+def index() -> HTMLResponse:
 
     return HTMLResponse(MATRIX_HTML)
 
@@ -712,7 +714,7 @@ def index():
 
 @app.post("/chat")
 
-async def chat(request: Request):
+async def chat(request: Request) -> JSONResponse:
 
     raw_body = await request.body()
 
@@ -760,6 +762,6 @@ async def chat(request: Request):
 
 @app.get("/api/status")
 
-async def status():
+async def status() -> Dict[str, str]:
 
     return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}

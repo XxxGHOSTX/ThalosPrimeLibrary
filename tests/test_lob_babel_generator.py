@@ -10,7 +10,7 @@ from src.lob_babel_generator import address_to_page, query_to_hex
 
 class TestBabelGenerator(unittest.TestCase):
 
-    def test_deterministic(self):
+    def test_deterministic(self) -> None:
 
         hex_addr = query_to_hex("thalos prime test")
 

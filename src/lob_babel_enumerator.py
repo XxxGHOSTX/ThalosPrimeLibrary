@@ -1,6 +1,6 @@
 import hashlib
 
-from typing import List, Dict
+from typing import Dict, List, Tuple
 
 
 
@@ -26,7 +26,7 @@ def _hash_to_hex(text: str) -> str:
 
 
 
-def enumerate_addresses(query: str, max_per_size: int = 3, ngram_sizes=(1, 2, 3)) -> List[Dict[str, str]]:
+def enumerate_addresses(query: str, max_per_size: int = 3, ngram_sizes: Tuple[int, ...] = (1, 2, 3)) -> List[Dict[str, str]]:
 
     tokens = [t for t in query.strip().split() if t]
 

@@ -16,7 +16,7 @@ import string
 
 import random
 
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 
@@ -44,7 +44,7 @@ EXPANSION_WORDS = {
 
 
 
-def normalize_input(user_input: str) -> Dict:
+def normalize_input(user_input: str) -> Dict[str, Any]:
 
     """
 
@@ -238,7 +238,7 @@ def score_page(page: str, token: str, processed_input: str) -> float:
 
 
 
-def deterministic_expand(input_data: Dict) -> str:
+def deterministic_expand(input_data: Dict[str, Any]) -> str:
 
     """
 
@@ -392,7 +392,7 @@ def deterministic_expand(input_data: Dict) -> str:
 
     # Add character frequency table
 
-    char_freq = {}
+    char_freq: Dict[str, int] = {}
 
     for c in processed:
 
@@ -532,7 +532,7 @@ def deterministic_expand(input_data: Dict) -> str:
 
 
 
-def synthesize_response(search_results: List[Dict]) -> str:
+def synthesize_response(search_results: List[Dict[str, Any]]) -> str:
 
     """
 
@@ -562,7 +562,7 @@ def synthesize_response(search_results: List[Dict]) -> str:
 
     # Extended character analysis
 
-    char_freq = {}
+    char_freq: Dict[str, int] = {}
 
     for char in text:
 
@@ -586,7 +586,7 @@ def synthesize_response(search_results: List[Dict]) -> str:
 
     # Word length distribution
 
-    word_lengths = {}
+    word_lengths: Dict[int, int] = {}
 
     for w in words:
 
