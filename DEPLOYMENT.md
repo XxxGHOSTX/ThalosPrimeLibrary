@@ -18,6 +18,13 @@ This guide covers all deployment options for the Thalos Prime Library, from simp
 
 ## Quick Start
 
+**Automated deployment script:**
+```bash
+# Interactive deployment menu
+chmod +x deploy.sh
+./deploy.sh
+```
+
 **For Python library usage:**
 ```bash
 pip install -e .
@@ -35,6 +42,9 @@ python run_thalos.py
 ```bash
 docker build -t thalos-prime .
 docker run -p 8000:8000 thalos-prime
+
+# Or with Docker Compose (recommended):
+docker-compose up -d
 ```
 
 ---
@@ -337,36 +347,28 @@ docker run -d \
 
 ### Docker Compose (Recommended for Production)
 
-Create a `docker-compose.yml` file:
+A `docker-compose.yml` file is provided in the repository for easy deployment:
 
-```yaml
-version: '3.8'
-
-services:
-  thalos-prime:
-    build: .
-    container_name: thalos-prime
-    ports:
-      - "8000:8000"
-    environment:
-      - THALOS_LIBRARY_PATH=/app/data
-      - THALOS_LOG_LEVEL=INFO
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-```
-
-Then run:
 ```bash
+# Start the service
 docker-compose up -d
-docker-compose logs -f  # View logs
-docker-compose down     # Stop
+
+# View logs
+docker-compose logs -f
+
+# Stop the service
+docker-compose down
+
+# Rebuild and restart
+docker-compose up --build -d
 ```
+
+The docker-compose configuration includes:
+- Health checks
+- Automatic restarts
+- Volume mounts for persistent data
+- Environment variable configuration
+- Network isolation
 
 ---
 

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  thalos-prime:
+    build: .
+    container_name: thalos-prime
+    ports:
+      - "8000:8000"
+    environment:
+      - THALOS_LIBRARY_PATH=/app/data
+      - THALOS_LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount local data directory for persistent storage
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - thalos-network
+
+networks:
+  thalos-network:
+    driver: bridge
+
+# Optionally add volumes for persistent data
+volumes:
+  thalos-data:
+    driver: local
