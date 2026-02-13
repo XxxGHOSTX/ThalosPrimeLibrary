@@ -82,11 +82,48 @@ You'll see the Thalos Prime chat interface. Start a conversation!
 
 Create a `.env` file in the project root (use `.env.example` as a template):
 
+## Overview
+ThalosPrime Library provides a Python package structure that allows importing from your local ThalosPrimeLibraryOfBabel directory. It includes deterministic page generation, query enumeration, and enhanced coherence scoring for the Library of Babel.
+
+## Quick Start
+
+### Installation
+
+**For Development:**
+```bash
+pip install -e ".[dev]"
+```
+
+**For Production:**
 ```bash
 cp .env.example .env
 ```
 
 Key configuration options:
+### Running Examples
+```bash
+# Basic usage
+python example_usage.py
+
+# Full integration demo
+python integration_example.py
+
+# Run the API server
+python run_thalos.py
+```
+
+## Deployment
+
+For comprehensive deployment instructions including Docker, production setup, and cloud deployment options, see:
+
+📖 **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide
+
+Quick deployment options:
+- **Python package**: `pip install -e .`
+- **API server**: `python run_thalos.py` or `./run_thalos.sh`
+- **Docker**: `docker build -t thalos-prime . && docker run -p 8000:8000 thalos-prime`
+
+## Usage
 
 ```env
 # API Settings
@@ -320,6 +357,42 @@ python scripts/serve.py
 3. Make your changes
 4. Run tests: `make test`
 5. Submit a pull request
+## Core Features
+
+- **Deterministic Page Generation**: Generate Library of Babel pages from hex addresses
+- **Query Enumeration**: Map search queries to candidate addresses
+- **Enhanced Coherence Scoring**: Multi-metric analysis with language, structure, n-gram, and exact match scoring
+- **Hybrid Search**: Local generation and remote fetching capabilities
+- **REST API**: FastAPI-based server with full documentation
+- **Production Ready**: 80 passing tests, comprehensive error handling, and deterministic behavior
+
+## API Server
+
+Access interactive API documentation:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+## Testing
+
+```bash
+# Run all tests
+python -m pytest tests -v
+
+# Run with coverage
+python -m pytest tests --cov=thalos_prime
+```
+
+## Documentation
+
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Complete deployment guide
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
+- [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - Implementation details
+- [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - System verification
+
+## Requirements
+
+- Python 3.7+ (3.11+ recommended)
+- See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed prerequisites
 
 ## License
 

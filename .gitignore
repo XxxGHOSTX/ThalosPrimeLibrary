@@ -62,3 +62,9 @@ data/
 
 # Ruff
 .ruff_cache/
+# Local data directory (but keep README)
+data/*
+!data/README.md
+
+# Lock files
+.thalos_prime.lock
