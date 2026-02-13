@@ -7,7 +7,7 @@ to generate deterministic candidate addresses where matching text might be found
 """
 
 import hashlib
-from typing import List, Dict, Set, Tuple, Any
+from typing import List, Dict, Set, Tuple, Any, cast
 
 
 class BabelEnumerator:
@@ -78,7 +78,7 @@ class BabelEnumerator:
                     })
         
         # Sort by score (highest first) and limit results
-        candidates.sort(key=lambda x: float(x['score']), reverse=True)
+        candidates.sort(key=lambda x: cast(float, x['score']), reverse=True)
         return candidates[:max_results]
     
     def _extract_ngrams(self, text: str) -> List[str]:
