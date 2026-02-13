@@ -51,7 +51,7 @@ class TestApiChat(unittest.TestCase):
         self.assertEqual(result.get("status"), "ok")
 
 
-    def test_build_reply_graph_mode(self):
+    def test_build_reply_with_search_enabled(self):
 
         reply = build_reply("example query", [], allow_search=True)
 

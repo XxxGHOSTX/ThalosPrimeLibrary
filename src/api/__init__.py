@@ -27,6 +27,26 @@ except ModuleNotFoundError:
 
             return self._decorate
 
+        def put(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def delete(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def patch(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def head(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
+        def options(self, *args: Any, **kwargs: Any):
+
+            return self._decorate
+
         def _decorate(self, func):
 
             @wraps(func)
