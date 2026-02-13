@@ -33,13 +33,13 @@ class LifecycleValidator(ast.NodeVisitor):
 
     def __init__(self) -> None:
         """Initialize the validator."""
-        self.classes: Dict[str, Dict[str, bool]] = {}
+        self.classes: Dict[str, Dict[str, bool | None]] = {}
         self.current_class: str | None = None
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Visit class definition and check for lifecycle methods."""
         self.current_class = node.name
-        self.classes[node.name] = {method: False for method in REQUIRED_LIFECYCLE_METHODS}
+        self.classes[node.name] = {method: None for method in REQUIRED_LIFECYCLE_METHODS}
 
         # Check methods in this class
         for item in node.body:
@@ -54,7 +54,7 @@ class LifecycleValidator(ast.NodeVisitor):
         self.current_class = None
 
 
-def is_subsystem_class(class_name: str, methods: Dict[str, bool]) -> bool:
+def is_subsystem_class(class_name: str, methods: Dict[str, bool | None]) -> bool:
     """Determine if a class should be considered a subsystem.
 
     A class is considered a subsystem if:
@@ -105,11 +105,13 @@ def validate_file(file_path: Path) -> Tuple[List[str], int]:
         methods_without_types: List[str] = []
 
         for method_name in REQUIRED_LIFECYCLE_METHODS:
-            if not methods[method_name]:
-                if method_name in methods and methods[method_name] is False:
-                    methods_without_types.append(method_name)
-                else:
-                    missing_methods.append(method_name)
+            method_value = methods[method_name]
+            if method_value is None:
+                # Method doesn't exist
+                missing_methods.append(method_name)
+            elif method_value is False:
+                # Method exists but without return type annotation
+                methods_without_types.append(method_name)
 
         if missing_methods:
             errors.append(
