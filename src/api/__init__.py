@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 
     FASTAPI_AVAILABLE = False
 
-    class _UnavailableFastAPI:
+    class _UnavailableFastAPI:  # pragma: no cover
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
 
