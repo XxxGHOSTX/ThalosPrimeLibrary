@@ -38,7 +38,7 @@ except ModuleNotFoundError:
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
 
-            raise RuntimeError("FastAPI dependency not installed; response generation unavailable.")
+            super().__init__(*args, **kwargs)
 
     FastAPI = _UnavailableFastAPI  # type: ignore[assignment]
 

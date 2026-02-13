@@ -1,5 +1,6 @@
 import unittest
 import asyncio
+import src.api as api
 
 
 
@@ -34,25 +35,22 @@ class TestApiChat(unittest.TestCase):
         self.assertIn("BABEL_CORE", reply)
 
 
+    @unittest.skipIf(api.FASTAPI_AVAILABLE, "FastAPI is installed; placeholder path not active")
     def test_status_endpoint_requires_fastapi(self):
 
-        # The placeholder app still exposes the status endpoint but it must raise
-        # a deterministic error when FastAPI is not installed.
-        import src.api as api
+        with self.assertRaises(RuntimeError):
 
-        if api.FASTAPI_AVAILABLE:
+            asyncio.run(api.status())
 
-            result = asyncio.run(api.status())
 
-            self.assertIsInstance(result, dict)
+    @unittest.skipUnless(api.FASTAPI_AVAILABLE, "FastAPI is not installed")
+    def test_status_endpoint_available_with_fastapi(self):
 
-            self.assertEqual(result.get("status"), "ok")
+        result = asyncio.run(api.status())
 
-        else:
+        self.assertIsInstance(result, dict)
 
-            with self.assertRaises(RuntimeError):
-
-                asyncio.run(api.status())
+        self.assertEqual(result.get("status"), "ok")
 
 
     def test_build_reply_graph_mode(self):
