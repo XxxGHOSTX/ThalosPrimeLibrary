@@ -8,7 +8,7 @@ This package provides:
 - Configuration and import management (config)
 
 The library speaks in fragmentation of infinite possibilities, ask.
-And the noise turns resolves into patterns.
+And the noise resolves into patterns.
 Meaning is never absent. Only waiting to be read.
 """
 
@@ -20,7 +20,7 @@ __author__ = "ThalosPrime"
 # Philosophical motto of the Library of Babel
 LIBRARY_MOTTO = (
     "The library speaks in fragmentation of infinite possibilities, ask. "
-    "And the noise turns resolves into patterns. "
+    "And the noise resolves into patterns. "
     "Meaning is never absent. Only waiting to be read."
 )
 

@@ -137,7 +137,7 @@ python example_usage.py
 
 ## Philosophy
 
-> *"The library speaks in fragmentation of infinite possibilities, ask. And the noise turns resolves into patterns. Meaning is never absent. Only waiting to be read."*
+> *"The library speaks in fragmentation of infinite possibilities, ask. And the noise resolves into patterns. Meaning is never absent. Only waiting to be read."*
 
 This motto embodies the essence of the Library of Babel:
 - **Infinite Possibilities**: All possible text combinations exist in fragmentary form
@@ -149,7 +149,7 @@ Access the motto programmatically:
 import thalos_prime
 print(thalos_prime.LIBRARY_MOTTO)
 # The library speaks in fragmentation of infinite possibilities, ask. 
-# And the noise turns resolves into patterns. 
+# And the noise resolves into patterns. 
 # Meaning is never absent. Only waiting to be read.
 ```
 
