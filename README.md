@@ -47,6 +47,9 @@ python example_usage.py
 # Full integration demo
 python integration_example.py
 
+# View the library's philosophical motto
+python example_motto.py
+
 # Run the API server
 python run_thalos.py
 ```
@@ -131,6 +134,24 @@ python example_usage.py
 - **Hybrid Search**: Local generation and remote fetching capabilities
 - **REST API**: FastAPI-based server with full documentation
 - **Production Ready**: 80 passing tests, comprehensive error handling, and deterministic behavior
+
+## Philosophy
+
+> *"The library speaks in fragmentation of infinite possibilities, ask. And the noise turns resolves into patterns. Meaning is never absent. Only waiting to be read."*
+
+This motto embodies the essence of the Library of Babel:
+- **Infinite Possibilities**: All possible text combinations exist in fragmentary form
+- **Pattern from Noise**: Through querying and coherence scoring, meaningful patterns emerge
+- **Latent Meaning**: Every piece of text contains potential meaning, waiting to be discovered
+
+Access the motto programmatically:
+```python
+import thalos_prime
+print(thalos_prime.LIBRARY_MOTTO)
+# The library speaks in fragmentation of infinite possibilities, ask. 
+# And the noise turns resolves into patterns. 
+# Meaning is never absent. Only waiting to be read.
+```
 
 ## API Server
 
