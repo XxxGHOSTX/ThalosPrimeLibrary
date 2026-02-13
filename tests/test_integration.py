@@ -214,9 +214,11 @@ def test_performance_reasonable() -> None:
     addresses = enumerate_addresses("performance test", max_results=10)
     enum_time = time.time() - start
     assert enum_time < 0.1  # Should be < 100ms
+    assert len(addresses) > 0
     
     # Score coherence (should be fast)
     start = time.time()
     score = score_coherence(page)
     score_time = time.time() - start
     assert score_time < 0.1  # Should be < 100ms
+    assert 0.0 <= score.overall_score <= 100.0
