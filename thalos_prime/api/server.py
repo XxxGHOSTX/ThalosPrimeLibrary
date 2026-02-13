@@ -7,9 +7,9 @@ middleware, and route registration.
 
 import time
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, AsyncIterator, Any, Callable, Awaitable
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exception_handlers import (
@@ -35,7 +35,7 @@ START_TIME = time.time()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
     Application lifespan manager.
     Handles startup and shutdown events.
@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"Error during cleanup: {e}")
 
 
-async def initialize_services():
+async def initialize_services() -> None:
     """Initialize all application services"""
     # Initialize cache
     logger.info("Initializing cache service...")
@@ -81,7 +81,7 @@ async def initialize_services():
     logger.info("Service initialization complete")
 
 
-async def cleanup_services():
+async def cleanup_services() -> None:
     """Cleanup all application services"""
     # Close database connections
     logger.info("Closing database connections...")
@@ -150,7 +150,7 @@ def create_app() -> FastAPI:
     
     # Add custom middleware
     @app.middleware("http")
-    async def add_process_time_header(request: Request, call_next):
+    async def add_process_time_header(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         """Add X-Process-Time header to all responses"""
         start_time = time.time()
         response = await call_next(request)
@@ -159,7 +159,7 @@ def create_app() -> FastAPI:
         return response
     
     @app.middleware("http")
-    async def log_requests(request: Request, call_next):
+    async def log_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         """Log all incoming requests"""
         logger.info(f"Request: {request.method} {request.url.path}")
         response = await call_next(request)
@@ -168,7 +168,7 @@ def create_app() -> FastAPI:
     
     # Custom exception handlers
     @app.exception_handler(HTTPException)
-    async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    async def custom_http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
         """Handle HTTP exceptions with custom error response"""
         error_response = ErrorResponse(
             error=f"HTTP{exc.status_code}",
@@ -181,7 +181,7 @@ def create_app() -> FastAPI:
         )
     
     @app.exception_handler(RequestValidationError)
-    async def custom_validation_exception_handler(request: Request, exc: RequestValidationError):
+    async def custom_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         """Handle validation errors with custom error response"""
         error_response = ErrorResponse(
             error="ValidationError",
@@ -194,7 +194,7 @@ def create_app() -> FastAPI:
         )
     
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         """Handle unexpected exceptions"""
         logger.error(f"Unexpected error: {exc}", exc_info=True)
         error_response = ErrorResponse(
@@ -212,7 +212,7 @@ def create_app() -> FastAPI:
     
     # Add health check endpoint
     @app.get("/health", tags=["Health"])
-    async def health_check():
+    async def health_check() -> dict[str, Any]:
         """Health check endpoint"""
         uptime = time.time() - START_TIME
         return {
@@ -224,7 +224,7 @@ def create_app() -> FastAPI:
     return app
 
 
-def register_routes(app: FastAPI):
+def register_routes(app: FastAPI) -> None:
     """
     Register all API routes.
     
@@ -257,10 +257,10 @@ def register_routes(app: FastAPI):
         create_placeholder_routes(app)
 
 
-def create_placeholder_routes(app: FastAPI):
+def create_placeholder_routes(app: FastAPI) -> None:
     """Create placeholder routes when actual routes are not available"""
     @app.get("/api/v1/status")
-    async def status():
+    async def status() -> dict[str, str]:
         return {"status": "ok", "message": "Thalos Prime API is running"}
 
 

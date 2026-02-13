@@ -48,7 +48,7 @@ async def generate_page(request: GenerateRequest) -> GenerateResponse:
         
         # Validate if requested
         valid = True
-        if request.validate:
+        if request.validate_page:
             is_valid, error = generator.validate_page(page_text)
             valid = is_valid
         

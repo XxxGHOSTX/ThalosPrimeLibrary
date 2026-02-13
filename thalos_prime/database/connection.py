@@ -7,7 +7,9 @@ Handles SQLAlchemy database connections, session management, and pooling.
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
+from sqlalchemy.engine import Engine
 from contextlib import contextmanager
+from typing import Optional, Iterator, Any
 import logging
 
 from thalos_prime.api.config import config
@@ -23,7 +25,7 @@ class DatabaseManager:
     Provides connection pooling, session management, and database initialization.
     """
     
-    def __init__(self, database_url: str = None):
+    def __init__(self, database_url: Optional[str] = None) -> None:
         """
         Initialize database manager.
         
@@ -31,11 +33,11 @@ class DatabaseManager:
             database_url: Database connection URL (uses config if not provided)
         """
         self.database_url = database_url or config.database_url
-        self.engine = None
-        self.SessionLocal = None
+        self.engine: Optional[Engine] = None
+        self.SessionLocal: Any = None
         self._initialized = False
     
-    def init_engine(self):
+    def init_engine(self) -> None:
         """Initialize SQLAlchemy engine with connection pooling"""
         if self._initialized:
             logger.warning("Database already initialized")
@@ -55,11 +57,11 @@ class DatabaseManager:
         
         # Add event listeners
         @event.listens_for(self.engine, "connect")
-        def receive_connect(dbapi_conn, connection_record):
+        def receive_connect(dbapi_conn: Any, connection_record: Any) -> None:
             logger.debug("Database connection established")
         
         @event.listens_for(self.engine, "checkout")
-        def receive_checkout(dbapi_conn, connection_record, connection_proxy):
+        def receive_checkout(dbapi_conn: Any, connection_record: Any, connection_proxy: Any) -> None:
             logger.debug("Database connection checked out from pool")
         
         # Create session factory
@@ -72,7 +74,7 @@ class DatabaseManager:
         self._initialized = True
         logger.info("Database engine initialized successfully")
     
-    def create_tables(self):
+    def create_tables(self) -> None:
         """Create all database tables"""
         if not self.engine:
             self.init_engine()
@@ -81,7 +83,7 @@ class DatabaseManager:
         Base.metadata.create_all(bind=self.engine)
         logger.info("Database tables created successfully")
     
-    def drop_tables(self):
+    def drop_tables(self) -> None:
         """Drop all database tables (use with caution!)"""
         if not self.engine:
             self.init_engine()
@@ -91,7 +93,7 @@ class DatabaseManager:
         logger.info("Database tables dropped")
     
     @contextmanager
-    def get_session(self) -> Session:
+    def get_session(self) -> Iterator[Session]:
         """
         Get a database session (context manager).
         
@@ -106,6 +108,9 @@ class DatabaseManager:
         if not self._initialized:
             self.init_engine()
         
+        if self.SessionLocal is None:
+            raise RuntimeError("SessionLocal is not initialized")
+        
         session = self.SessionLocal()
         try:
             yield session
@@ -117,7 +122,7 @@ class DatabaseManager:
         finally:
             session.close()
     
-    def close(self):
+    def close(self) -> None:
         """Close database engine and connections"""
         if self.engine:
             logger.info("Closing database connections...")
@@ -130,7 +135,7 @@ class DatabaseManager:
 _db_manager = None
 
 
-def init_database(database_url: str = None) -> DatabaseManager:
+def init_database(database_url: Optional[str] = None) -> DatabaseManager:
     """
     Initialize global database manager.
     
@@ -169,7 +174,7 @@ def get_db_manager() -> DatabaseManager:
 
 
 @contextmanager
-def get_db_session():
+def get_db_session() -> Iterator[Session]:
     """
     Get database session (convenience function).
     
@@ -185,7 +190,7 @@ def get_db_session():
         yield session
 
 
-def close_database():
+def close_database() -> None:
     """Close global database connections"""
     global _db_manager
     
