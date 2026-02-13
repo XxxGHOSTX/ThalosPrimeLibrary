@@ -81,6 +81,7 @@ def test_setup_imports_with_temp_directory(tmp_path: Path) -> None:
     
     # Should return True and add the path to sys.path
     assert result is True
+    assert len(sys.path) >= initial_path_count + 1
     assert test_path in sys.path or str(Path(test_path).resolve()) in sys.path
 
 
