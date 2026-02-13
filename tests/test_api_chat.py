@@ -71,6 +71,7 @@ class TestApiChat(unittest.TestCase):
         reply = build_reply("example query", [], allow_search=True)
 
         self.assertIn("BABEL_GRAPH_RESPONSE", reply)
+        self.assertIn("PROVENANCE:", reply)
 
 
 
