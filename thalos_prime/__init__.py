@@ -65,6 +65,12 @@ from thalos_prime.lob_decoder import (
     score_coherence,
     decode_page
 )
+from thalos_prime.ingest import (
+    CanonicalArtifact,
+    canonicalize_text,
+    compute_meaning_hash,
+    ingest_fragment,
+)
 
 __all__ = [
     # Version info
@@ -95,7 +101,13 @@ __all__ = [
     'DecodedPage',
     'score_coherence',
     'decode_page',
-    
+
+    # Ingestion
+    'CanonicalArtifact',
+    'canonicalize_text',
+    'compute_meaning_hash',
+    'ingest_fragment',
+
     # Synthesis
     'deep_synthesis',
 ]
