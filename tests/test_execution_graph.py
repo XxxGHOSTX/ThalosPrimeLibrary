@@ -10,7 +10,7 @@ from src.core.execution_graph import execute_graph
 
 class TestExecutionGraph(unittest.TestCase):
 
-    def test_graph_returns_result(self):
+    def test_graph_returns_result(self) -> None:
 
         results = execute_graph("sample query", max_results=2, mode="deterministic")
 
@@ -20,7 +20,7 @@ class TestExecutionGraph(unittest.TestCase):
 
 
 
-    def test_provenance_present(self):
+    def test_provenance_present(self) -> None:
 
         results = execute_graph("entropy", max_results=1, mode="deterministic")
 

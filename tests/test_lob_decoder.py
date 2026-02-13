@@ -10,7 +10,7 @@ from src.lob_decoder import score_coherence, decode_pages
 
 class TestDecoder(unittest.TestCase):
 
-    def test_score(self):
+    def test_score(self) -> None:
 
         text = "Thalos Prime created a test sentence."
 
@@ -20,7 +20,7 @@ class TestDecoder(unittest.TestCase):
 
 
 
-    def test_decode_pages(self):
+    def test_decode_pages(self) -> None:
 
         pages = [{"address": {"hex": "ABC"}, "text": "Hello world."}]
 

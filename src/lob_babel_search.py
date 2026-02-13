@@ -36,7 +36,7 @@ class _TextCollector(html.parser.HTMLParser):
 
         self._stack: List[str] = []
 
-        self._chunks: List[str] = []
+        self._chunks: List[Tuple[str, str]] = []
 
 
 
@@ -252,7 +252,13 @@ def search_and_fetch(query: str, max_results: int = 10, base_urls: Optional[List
 
         try:
 
-            page = fetch_page(info["url"], timeout=timeout)
+            url = info["url"]
+
+            if url is None:
+
+                continue
+
+            page = fetch_page(url, timeout=timeout)
 
         except Exception:
 
