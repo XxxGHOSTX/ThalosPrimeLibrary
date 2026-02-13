@@ -9,7 +9,7 @@ from pathlib import Path
 from thalos_prime.config import LibraryConfig, get_config, setup_local_imports
 
 
-def test_library_config_default_path(monkeypatch):
+def test_library_config_default_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that LibraryConfig has the correct default path"""
     # Clear the environment variable to test the actual default
     monkeypatch.delenv('THALOS_LIBRARY_PATH', raising=False)
@@ -24,7 +24,7 @@ def test_library_config_default_path(monkeypatch):
     assert config.get_local_library_path() == expected_path
 
 
-def test_library_config_with_env_var(monkeypatch):
+def test_library_config_with_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that LibraryConfig respects the environment variable"""
     custom_path = "/custom/env/path"
     monkeypatch.setenv('THALOS_LIBRARY_PATH', custom_path)
@@ -38,14 +38,14 @@ def test_library_config_with_env_var(monkeypatch):
     assert config.get_local_library_path() == custom_path
 
 
-def test_library_config_custom_path():
+def test_library_config_custom_path() -> None:
     """Test that LibraryConfig accepts a custom path"""
     custom_path = r"C:\Custom\Path"
     config = LibraryConfig(local_library_path=custom_path)
     assert config.get_local_library_path() == custom_path
 
 
-def test_library_config_set_path():
+def test_library_config_set_path() -> None:
     """Test that LibraryConfig can change paths"""
     config = LibraryConfig()
     new_path = r"C:\New\Path"
@@ -53,14 +53,14 @@ def test_library_config_set_path():
     assert config.get_local_library_path() == new_path
 
 
-def test_get_config_singleton():
+def test_get_config_singleton() -> None:
     """Test that get_config returns the same instance"""
     config1 = get_config()
     config2 = get_config()
     assert config1 is config2
 
 
-def test_setup_imports_nonexistent_path():
+def test_setup_imports_nonexistent_path() -> None:
     """Test that setup_imports handles nonexistent paths gracefully"""
     # Use a path that definitely doesn't exist
     result = setup_local_imports(custom_path="/nonexistent/path/12345")
@@ -68,7 +68,7 @@ def test_setup_imports_nonexistent_path():
     assert result is False
 
 
-def test_setup_imports_with_temp_directory(tmp_path):
+def test_setup_imports_with_temp_directory(tmp_path: Path) -> None:
     """Test that setup_imports successfully adds an existing path"""
     # Create a temporary directory that exists
     test_path = str(tmp_path)
@@ -84,7 +84,7 @@ def test_setup_imports_with_temp_directory(tmp_path):
     assert test_path in sys.path or str(Path(test_path).resolve()) in sys.path
 
 
-def test_library_config_added_to_path_flag():
+def test_library_config_added_to_path_flag() -> None:
     """Test that the _added_to_path flag works correctly"""
     config = LibraryConfig()
     assert config._added_to_path is False
