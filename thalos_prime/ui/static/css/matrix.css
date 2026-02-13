@@ -1,0 +1,337 @@
+/* Matrix Theme - Core Styles */
+
+:root {
+    /* Matrix Green Theme */
+    --matrix-bg: #000000;
+    --matrix-primary: #00ff41;
+    --matrix-secondary: #00b82d;
+    --matrix-accent: #00ff88;
+    --matrix-dim: #004d1a;
+    --matrix-text: #00ff41;
+    --matrix-text-dim: #008f27;
+    
+    /* UI Colors */
+    --bg-primary: rgba(0, 0, 0, 0.95);
+    --bg-secondary: rgba(0, 20, 10, 0.9);
+    --bg-tertiary: rgba(0, 40, 20, 0.8);
+    --border-color: #00ff41;
+    --border-dim: rgba(0, 255, 65, 0.3);
+    
+    /* Typography */
+    --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+    --font-display: 'Orbitron', sans-serif;
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    
+    /* Animation */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--matrix-text);
+    background: var(--matrix-bg);
+}
+
+body {
+    position: relative;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-dim);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--matrix-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--matrix-primary);
+}
+
+/* Selection */
+::selection {
+    background: var(--matrix-primary);
+    color: var(--matrix-bg);
+}
+
+/* Matrix Canvas Background */
+#matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.15;
+}
+
+/* App Container */
+#app-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Header Styles */
+#main-header {
+    background: var(--bg-primary);
+    border-bottom: 2px solid var(--border-color);
+    padding: var(--spacing-md);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.logo h1 {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 10px var(--matrix-primary),
+                 0 0 20px var(--matrix-primary),
+                 0 0 30px var(--matrix-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.logo .subtitle {
+    font-size: 0.9rem;
+    color: var(--matrix-text-dim);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: center;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.9rem;
+}
+
+.status-item .label {
+    color: var(--matrix-text-dim);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.status-item .value {
+    color: var(--matrix-primary);
+    font-weight: bold;
+}
+
+.status-online {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Mode Selector */
+.mode-selector {
+    background: var(--bg-secondary);
+    color: var(--matrix-primary);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.mode-selector:hover {
+    background: var(--bg-tertiary);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+.mode-selector:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+/* Main Content Layout */
+#main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar */
+#sidebar {
+    width: 250px;
+    background: var(--bg-primary);
+    border-right: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.nav-menu {
+    padding: var(--spacing-md);
+}
+
+.nav-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--matrix-text);
+    border: 1px solid var(--border-dim);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.nav-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--matrix-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+    transform: translateX(4px);
+}
+
+.nav-btn.active {
+    background: var(--bg-tertiary);
+    border-color: var(--matrix-primary);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+}
+
+.nav-btn .icon {
+    font-size: 1.2rem;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    margin-top: auto;
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-dim);
+}
+
+.version-info {
+    font-size: 0.75rem;
+    color: var(--matrix-text-dim);
+}
+
+.version-info p {
+    margin-bottom: var(--spacing-xs);
+}
+
+.version-info span {
+    color: var(--matrix-primary);
+}
+
+/* Content Area */
+#content-area {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.view {
+    display: none;
+    padding: var(--spacing-xl);
+    min-height: 100%;
+}
+
+.view.active {
+    display: block;
+}
+
+/* Footer */
+#main-footer {
+    background: var(--bg-primary);
+    border-top: 2px solid var(--border-color);
+    padding: var(--spacing-md);
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--matrix-text-dim);
+}
+
+.footer-content p {
+    margin: var(--spacing-xs) 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 60px;
+    }
+    
+    .nav-btn span:not(.icon) {
+        display: none;
+    }
+    
+    .sidebar-footer {
+        display: none;
+    }
+    
+    .logo h1 {
+        font-size: 1.5rem;
+    }
+    
+    .status-bar {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    #sidebar {
+        position: absolute;
+        left: -250px;
+        z-index: 100;
+        transition: left var(--transition-normal);
+    }
+    
+    #sidebar.open {
+        left: 0;
+    }
+}

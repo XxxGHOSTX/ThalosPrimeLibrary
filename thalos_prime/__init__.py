@@ -1,5 +1,11 @@
 """
 ThalosPrime Library - Main Package
+
+This package provides:
+- Deterministic page generation (lob_babel_generator)
+- Query to address enumeration (lob_babel_enumerator)
+- Enhanced coherence scoring (lob_decoder)
+- Configuration and import management (config)
 """
 
 __version__ = "0.1.0"
@@ -19,3 +25,50 @@ LOCAL_LIBRARY_PATH = os.getenv(
 # Add to path if the directory exists and is not already in sys.path
 if os.path.exists(LOCAL_LIBRARY_PATH) and LOCAL_LIBRARY_PATH not in sys.path:
     sys.path.insert(0, LOCAL_LIBRARY_PATH)
+
+# Export main components for easy access
+from thalos_prime.lob_babel_generator import (
+    BabelGenerator,
+    address_to_page,
+    text_to_address,
+    normalize_text
+)
+
+from thalos_prime.lob_babel_enumerator import (
+    BabelEnumerator,
+    enumerate_addresses,
+    query_to_addresses
+)
+
+from thalos_prime.lob_decoder import (
+    BabelDecoder,
+    CoherenceScore,
+    DecodedPage,
+    score_coherence,
+    decode_page
+)
+
+__all__ = [
+    # Version info
+    '__version__',
+    '__author__',
+    'LOCAL_LIBRARY_PATH',
+    
+    # Generator
+    'BabelGenerator',
+    'address_to_page',
+    'text_to_address',
+    'normalize_text',
+    
+    # Enumerator
+    'BabelEnumerator',
+    'enumerate_addresses',
+    'query_to_addresses',
+    
+    # Decoder
+    'BabelDecoder',
+    'CoherenceScore',
+    'DecodedPage',
+    'score_coherence',
+    'decode_page',
+]
