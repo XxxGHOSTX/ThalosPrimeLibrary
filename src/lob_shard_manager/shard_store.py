@@ -1,3 +1,5 @@
+from typing import Dict, List, Optional
+
 from .shard import Shard
 
 
@@ -6,13 +8,13 @@ from .shard import Shard
 
 class ShardStore:
 
-    def __init__(self):
+    def __init__(self) -> None:
 
-        self.shards = {}
+        self.shards: Dict[str, Shard] = {}
 
 
 
-    def create_shard(self, shard_id, capacity=100):
+    def create_shard(self, shard_id: str, capacity: int = 100) -> Shard:
 
         if shard_id in self.shards:
 
@@ -26,13 +28,13 @@ class ShardStore:
 
 
 
-    def get_shard(self, shard_id):
+    def get_shard(self, shard_id: str) -> Optional[Shard]:
 
         return self.shards.get(shard_id)
 
 
 
-    def list_shards(self):
+    def list_shards(self) -> List[str]:
 
         return list(self.shards.keys())
 

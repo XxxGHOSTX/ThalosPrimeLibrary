@@ -1,7 +1,7 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
-def semantic_deconstruct(text: str) -> Dict:
+def semantic_deconstruct(text: str) -> Dict[str, Any]:
     """
     Lightweight semantic decomposition that classifies the prompt across
     multiple modalities and emits a structured "nexus" payload.

@@ -96,7 +96,7 @@ def normalize_text(text: str, provider: Optional[str] = None) -> str:
 
 
 
-def decode_pages(pages: List[Dict], query: str, with_normalization: bool = False) -> List[Dict]:
+def decode_pages(pages: List[Dict[str, Any]], query: str, with_normalization: bool = False) -> List[Dict[str, Any]]:
 
     out = []
 

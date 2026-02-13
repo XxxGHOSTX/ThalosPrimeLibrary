@@ -1,11 +1,11 @@
 import re
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 
 MAX_PEPTIDE_LENGTH = 30
 
 
-def translate_constraints(text: str) -> Optional[Dict]:
+def translate_constraints(text: str) -> Optional[Dict[str, Any]]:
     """
     Lightweight translator: turn natural language into domain + parameters.
     Currently recognizes peptide/AA queries and extracts a target length.

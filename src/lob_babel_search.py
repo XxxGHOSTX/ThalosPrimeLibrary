@@ -8,6 +8,8 @@ import urllib.parse
 
 import urllib.request
 
+from typing import Any, Dict, List, Optional, Tuple
+
 
 
 DEFAULT_BASE_URLS = [
@@ -28,23 +30,23 @@ DEFAULT_TIMEOUT = 10
 
 class _TextCollector(html.parser.HTMLParser):
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         super().__init__()
 
-        self._stack = []
+        self._stack: List[str] = []
 
-        self._chunks = []
+        self._chunks: List[str] = []
 
 
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
 
         self._stack.append(tag)
 
 
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
 
         if self._stack:
 
@@ -52,7 +54,7 @@ class _TextCollector(html.parser.HTMLParser):
 
 
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
 
         if not data or not data.strip():
 
@@ -68,7 +70,7 @@ class _TextCollector(html.parser.HTMLParser):
 
 
 
-def _fetch_url(url, timeout=DEFAULT_TIMEOUT):
+def _fetch_url(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
 
     request = urllib.request.Request(
 
@@ -86,7 +88,7 @@ def _fetch_url(url, timeout=DEFAULT_TIMEOUT):
 
 
 
-def _extract_book_links(html, base_url):
+def _extract_book_links(html: str, base_url: str) -> List[str]:
 
     hrefs = re.findall(r"href=[\"']([^\"']+)[\"']", html, flags=re.IGNORECASE)
 
@@ -110,13 +112,13 @@ def _extract_book_links(html, base_url):
 
 
 
-def _extract_address_info(url):
+def _extract_address_info(url: str) -> Dict[str, Optional[str]]:
 
     parsed = urllib.parse.urlparse(url)
 
     query = urllib.parse.parse_qs(parsed.query)
 
-    def _first(key):
+    def _first(key: str) -> Optional[str]:
 
         return query.get(key, [None])[0]
 
@@ -140,7 +142,7 @@ def _extract_address_info(url):
 
 
 
-def _extract_page_text(html):
+def _extract_page_text(html: str) -> str:
 
     parser = _TextCollector()
 
@@ -180,7 +182,7 @@ def _extract_page_text(html):
 
 
 
-def search_library(query, max_results=10, base_urls=None, timeout=DEFAULT_TIMEOUT):
+def search_library(query: str, max_results: int = 10, base_urls: Optional[List[str]] = None, timeout: int = DEFAULT_TIMEOUT) -> List[Dict[str, Optional[str]]]:
 
     base_urls = base_urls or DEFAULT_BASE_URLS
 
@@ -228,7 +230,7 @@ def search_library(query, max_results=10, base_urls=None, timeout=DEFAULT_TIMEOU
 
 
 
-def fetch_page(address_url, timeout=DEFAULT_TIMEOUT):
+def fetch_page(address_url: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, Any]:
 
     html = _fetch_url(address_url, timeout=timeout)
 
@@ -242,7 +244,7 @@ def fetch_page(address_url, timeout=DEFAULT_TIMEOUT):
 
 
 
-def search_and_fetch(query, max_results=10, base_urls=None, timeout=DEFAULT_TIMEOUT):
+def search_and_fetch(query: str, max_results: int = 10, base_urls: Optional[List[str]] = None, timeout: int = DEFAULT_TIMEOUT) -> List[Dict[str, Any]]:
 
     results = []
 
@@ -264,7 +266,7 @@ def search_and_fetch(query, max_results=10, base_urls=None, timeout=DEFAULT_TIME
 
 
 
-def search_fragments(query, max_results_per_fragment=5, base_urls=None, timeout=DEFAULT_TIMEOUT):
+def search_fragments(query: str, max_results_per_fragment: int = 5, base_urls: Optional[List[str]] = None, timeout: int = DEFAULT_TIMEOUT) -> List[Dict[str, Any]]:
 
     fragments = [part for part in re.split(r"\s+", query.strip()) if part]
 
@@ -294,7 +296,7 @@ def search_fragments(query, max_results_per_fragment=5, base_urls=None, timeout=
 
 
 
-def _cli():
+def _cli() -> None:
 
     parser = argparse.ArgumentParser(description="Search Library of Babel for a query.")
 
