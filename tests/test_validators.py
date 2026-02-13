@@ -6,8 +6,6 @@ Tests the validators to ensure they correctly detect violations.
 import tempfile
 from pathlib import Path
 
-import pytest
-
 
 def test_lifecycle_validator_detects_missing_methods() -> None:
     """Test that lifecycle validator detects missing lifecycle methods."""
@@ -91,9 +89,9 @@ def test_prohibited_patterns_detector_finds_catch_all_exceptions() -> None:
     from tools.detect_prohibited_patterns import validate_file
 
     test_code = '''
-def some_function():
+def some_function() -> None:
     try:
-        risky_operation()
+        x = 1 / 0
     except Exception:
         pass
 '''

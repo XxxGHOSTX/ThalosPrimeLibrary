@@ -43,7 +43,7 @@ validate:
 	python tools/detect_prohibited_patterns.py
 
 check: typecheck lint test validate
-	@echo "All checks passed!"
+	@echo "✅ All checks passed!"
 
 pre-commit-install:
 	pre-commit install

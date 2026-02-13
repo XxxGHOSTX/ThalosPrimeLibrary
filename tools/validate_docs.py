@@ -122,8 +122,8 @@ def validate_directory(directory: Path) -> List[str]:
     python_files = sorted(directory.rglob("*.py"))
 
     for file_path in python_files:
-        # Skip __pycache__ and test files
-        if "__pycache__" in str(file_path):
+        # Skip __pycache__ and test files (files starting with 'test_')
+        if "__pycache__" in str(file_path) or file_path.name.startswith("test_"):
             continue
 
         issues = validate_file(file_path)

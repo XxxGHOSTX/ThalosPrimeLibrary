@@ -11,7 +11,6 @@ Scans production code for prohibited patterns:
 """
 
 import ast
-import re
 import sys
 from pathlib import Path
 from typing import List
@@ -87,7 +86,7 @@ def check_file_content(file_path: Path) -> List[str]:
     try:
         with open(file_path, encoding="utf-8") as f:
             lines = f.readlines()
-    except Exception as e:
+    except (OSError, IOError) as e:
         return [f"{file_path}: Error reading file - {e}"]
 
     for lineno, line in enumerate(lines, 1):

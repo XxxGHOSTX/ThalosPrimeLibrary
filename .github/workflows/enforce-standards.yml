@@ -39,13 +39,13 @@ jobs:
       - name: Type Check - mypy
         run: |
           echo "::group::Running mypy"
-          mypy thalos_prime tests --strict --show-error-codes --no-implicit-optional || true
+          mypy thalos_prime tests --strict --show-error-codes --no-implicit-optional
           echo "::endgroup::"
 
       - name: Type Check - pyright
         run: |
           echo "::group::Running pyright"
-          pyright thalos_prime tests || true
+          pyright thalos_prime tests
           echo "::endgroup::"
 
       - name: Lint - ruff
@@ -101,14 +101,14 @@ jobs:
       - name: Security Check - bandit
         run: |
           echo "::group::Running bandit security scan"
-          bandit -r thalos_prime -f json -o bandit-report.json || true
+          bandit -r thalos_prime -f json -o bandit-report.json
           bandit -r thalos_prime
           echo "::endgroup::"
 
       - name: Dependency Vulnerability Check - pip-audit
         run: |
           echo "::group::Running pip-audit"
-          pip-audit --desc --skip-editable || true
+          pip-audit --desc --skip-editable
           echo "::endgroup::"
 
       - name: Check for TODO/FIXME in production code

@@ -14,7 +14,7 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 
 # Pattern definitions for non-deterministic operations
@@ -60,10 +60,14 @@ class DeterminismChecker(ast.NodeVisitor):
         self.current_function: str | None = None
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Visit function definitions."""
+        """Visit function definitions with per-function seed tracking."""
+        previous_function = self.current_function
+        previous_random_seed_set = self.random_seed_set
         self.current_function = node.name
+        self.random_seed_set = set()
         self.generic_visit(node)
-        self.current_function = None
+        self.current_function = previous_function
+        self.random_seed_set = previous_random_seed_set
 
     def visit_Call(self, node: ast.Call) -> None:
         """Visit function calls to detect non-deterministic operations."""

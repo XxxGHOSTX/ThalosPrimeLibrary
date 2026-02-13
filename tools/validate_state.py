@@ -11,7 +11,7 @@ Validates that:
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import List, Set, Tuple
 
 
 class StateValidator(ast.NodeVisitor):
@@ -27,12 +27,13 @@ class StateValidator(ast.NodeVisitor):
         self.issues: List[str] = []
         self.state_classes: Set[str] = set()
         self.global_vars: List[Tuple[int, str]] = []
+        self.in_class = False
+        self.in_function = False
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Visit class definitions to find state classes."""
         class_name = node.name
         has_to_dict = False
-        has_from_dict = False
         has_checkpoint = False
 
         # Check if class name suggests it's a state class
@@ -47,8 +48,6 @@ class StateValidator(ast.NodeVisitor):
                 method_name = item.name
                 if method_name == "to_dict":
                     has_to_dict = True
-                elif method_name == "from_dict":
-                    has_from_dict = True
                 elif method_name == "checkpoint":
                     has_checkpoint = True
 
@@ -60,15 +59,25 @@ class StateValidator(ast.NodeVisitor):
                     f"lacks serialization method (to_dict or checkpoint)"
                 )
 
+        # Track scope
+        was_in_class = self.in_class
+        self.in_class = True
         self.generic_visit(node)
+        self.in_class = was_in_class
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Visit function definitions to track scope."""
+        was_in_function = self.in_function
+        self.in_function = True
+        self.generic_visit(node)
+        self.in_function = was_in_function
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        """Visit assignments to detect global variables."""
-        # Check if this is a module-level assignment
-        if isinstance(node, ast.Assign):
+        """Visit assignments to detect module-level global variables."""
+        # Only record module-level assignments (not in classes or functions)
+        if not self.in_class and not self.in_function:
             for target in node.targets:
                 if isinstance(target, ast.Name):
-                    # Module-level assignments outside classes are globals
                     self.global_vars.append((node.lineno, target.id))
 
         self.generic_visit(node)
