@@ -11,6 +11,20 @@ This package provides:
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
 
+# Library of Babel endpoints
+LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
+LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
+LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
+
+# Helper to retrieve endpoints
+def get_babel_endpoints():
+    """Return Library of Babel endpoint URLs."""
+    return {
+        "base": LIBRARY_OF_BABEL_BASE_URL,
+        "search_html": LIBRARY_OF_BABEL_SEARCH_URL,
+        "search_api": LIBRARY_OF_BABEL_SEARCH_API,
+    }
+
 # This allows importing from the local ThalosPrimeLibraryOfBabel
 import sys
 import os
