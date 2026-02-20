@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+from thalos_prime.library_of_sense.api.query_handler import QueryHandler
+from thalos_prime.library_of_sense.api.response_builder import ResponseBuilder
 from thalos_prime.library_of_sense.core.interfaces import QueryContext, QueryDomain
 from thalos_prime.library_of_sense.core.orchestrator import QueryOrchestrator
 from thalos_prime.library_of_sense.core.state_manager import StateManager
+from thalos_prime.library_of_sense.retrieval.computational import ComputationalRetriever
 from thalos_prime.library_of_sense.retrieval.knowledge_graph import (
     GraphTriple,
     KnowledgeGraphRetriever,
 )
-from thalos_prime.library_of_sense.retrieval.computational import ComputationalRetriever
 from thalos_prime.library_of_sense.synthesis.knowledge_fusion import KnowledgeFusion
-from thalos_prime.library_of_sense.api.query_handler import QueryHandler
-from thalos_prime.library_of_sense.api.response_builder import ResponseBuilder
 
 
 class TestQueryHandlerLifecycle:

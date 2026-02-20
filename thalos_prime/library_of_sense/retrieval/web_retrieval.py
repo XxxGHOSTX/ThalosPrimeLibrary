@@ -10,7 +10,6 @@ import logging
 from typing import Final
 from urllib.parse import urlparse
 
-import requests
 from requests import Session
 from requests.exceptions import RequestException, Timeout
 
@@ -41,6 +40,7 @@ class WebRetrievalHandler:
         Args:
             timeout: HTTP request timeout in seconds.
             seed: Deterministic seed for replay identification.
+
         """
         self._timeout = timeout
         self._seed = seed
@@ -62,6 +62,7 @@ class WebRetrievalHandler:
 
         Raises:
             RuntimeError: If the handler is not initialized.
+
         """
         self._lifecycle.transition(LifecycleState.VALIDATING, "Validating configuration")
         if self._session is None:
@@ -120,6 +121,7 @@ class WebRetrievalHandler:
 
         Returns:
             ValidationResult indicating configuration validity.
+
         """
         if self._session is None:
             return ValidationResult(
@@ -141,6 +143,7 @@ class WebRetrievalHandler:
             RuntimeError: If the handler is not initialized.
             Timeout: If the request exceeds the configured timeout.
             RequestException: If an HTTP error occurs.
+
         """
         if self._session is None:
             msg = "WebRetrievalHandler not initialized"
@@ -148,7 +151,8 @@ class WebRetrievalHandler:
         response = self._session.get(url, timeout=self._timeout)
         response.raise_for_status()
         self._request_count += 1
-        return response.text
+        text: str = response.text
+        return text
 
     def query(self, query: str, context: QueryContext) -> RetrievalResult:
         """Query the web for content matching the given query string.
@@ -159,6 +163,7 @@ class WebRetrievalHandler:
 
         Returns:
             RetrievalResult with fetched content, or empty result on error.
+
         """
         parsed = urlparse(query)
         if parsed.scheme not in {"http", "https"}:

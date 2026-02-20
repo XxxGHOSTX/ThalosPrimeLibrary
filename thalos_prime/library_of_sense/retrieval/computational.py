@@ -37,6 +37,7 @@ class ComputationalRetriever:
 
         Returns:
             RetrievalResult with symbolic and numeric evaluation results.
+
         """
         _ = context
         try:
@@ -68,6 +69,7 @@ class ComputationalRetriever:
 
         Returns:
             ValidationResult indicating sympy is available and functional.
+
         """
         test_expr = sympy.sympify("1 + 1")
         if int(test_expr) != _SYMPY_SANITY_CHECK:

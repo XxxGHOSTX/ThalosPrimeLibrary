@@ -5,13 +5,12 @@ from __future__ import annotations
 import pytest
 
 from thalos_prime.library_of_sense.core.interfaces import QueryContext
-from thalos_prime.library_of_sense.reasoning.symbolic_engine import SymbolicReasoningEngine
-from thalos_prime.library_of_sense.reasoning.proof_checker import ProofChecker
 from thalos_prime.library_of_sense.reasoning.constraint_solver import (
     ConstraintProblem,
     ConstraintSolver,
 )
-
+from thalos_prime.library_of_sense.reasoning.proof_checker import ProofChecker
+from thalos_prime.library_of_sense.reasoning.symbolic_engine import SymbolicReasoningEngine
 
 # ---------------------------------------------------------------------------
 # SymbolicReasoningEngine
@@ -27,7 +26,7 @@ class TestSymbolicReasoningEngine:
 
     def test_simplify_invalid_expression_raises(self) -> None:
         engine = SymbolicReasoningEngine()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Cannot parse"):
             engine.simplify_expression("@@@invalid@@@")
 
     def test_differentiate_valid(self) -> None:
@@ -38,7 +37,7 @@ class TestSymbolicReasoningEngine:
 
     def test_differentiate_invalid_raises(self) -> None:
         engine = SymbolicReasoningEngine()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Cannot differentiate"):
             engine.differentiate("@@@", "x")
 
     def test_reason_valid_expression(self) -> None:

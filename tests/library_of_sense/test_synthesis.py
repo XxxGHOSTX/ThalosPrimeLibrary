@@ -7,10 +7,10 @@ from thalos_prime.library_of_sense.core.interfaces import (
     RetrievalResult,
     SynthesisResult,
 )
-from thalos_prime.library_of_sense.synthesis.knowledge_fusion import KnowledgeFusion
-from thalos_prime.library_of_sense.synthesis.conflict_resolution import ConflictResolver
-from thalos_prime.library_of_sense.synthesis.verification import ResultVerifier
 from thalos_prime.library_of_sense.synthesis.answer_generator import AnswerGenerator
+from thalos_prime.library_of_sense.synthesis.conflict_resolution import ConflictResolver
+from thalos_prime.library_of_sense.synthesis.knowledge_fusion import KnowledgeFusion
+from thalos_prime.library_of_sense.synthesis.verification import ResultVerifier
 
 
 def _make_result(source: str, content: str, confidence: float) -> RetrievalResult:

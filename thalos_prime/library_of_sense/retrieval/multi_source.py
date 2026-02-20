@@ -7,13 +7,15 @@ and ranks results by confidence for downstream synthesis.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
-from thalos_prime.library_of_sense.core.interfaces import (
-    QueryContext,
-    RetrievalResult,
-    RetrievalSource,
-    ValidationResult,
-)
+if TYPE_CHECKING:
+    from thalos_prime.library_of_sense.core.interfaces import (
+        QueryContext,
+        RetrievalResult,
+        RetrievalSource,
+        ValidationResult,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class MultiSourceRetriever:
 
         Args:
             min_confidence: Minimum confidence threshold for including results.
+
         """
         self._sources: list[RetrievalSource] = []
         self._min_confidence = min_confidence
@@ -35,6 +38,7 @@ class MultiSourceRetriever:
 
         Args:
             source: RetrievalSource to add.
+
         """
         self._sources.append(source)
 
@@ -47,6 +51,7 @@ class MultiSourceRetriever:
 
         Returns:
             Filtered and confidence-ranked list of RetrievalResult.
+
         """
         results: list[RetrievalResult] = []
         for source in self._sources:
@@ -66,6 +71,7 @@ class MultiSourceRetriever:
 
         Returns:
             List of ValidationResult for each registered source.
+
         """
         return [source.validate() for source in self._sources]
 
@@ -74,6 +80,7 @@ class MultiSourceRetriever:
 
         Returns:
             Count of registered retrieval sources.
+
         """
         return len(self._sources)
 

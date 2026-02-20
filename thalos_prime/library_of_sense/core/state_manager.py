@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Final
 
 from thalos_prime.library_of_sense.core.lifecycle import LifecycleState, SubsystemLifecycle
@@ -29,14 +29,15 @@ class LibrarySenseState:
     synthesis_count: int = 0
     error_count: int = 0
     active_sources: list[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize state to dictionary.
 
         Returns:
             Dictionary representation of current state.
+
         """
         return {
             "version": self.version,
@@ -63,6 +64,7 @@ class StateManager:
 
         Args:
             seed: Deterministic seed for replay identification.
+
         """
         self._seed = seed
         self._state = LibrarySenseState(seed=seed)
@@ -85,6 +87,7 @@ class StateManager:
 
         Raises:
             RuntimeError: If the state is inconsistent.
+
         """
         self._lifecycle.transition(LifecycleState.VALIDATING, "Validating state invariants")
         if self._state.version < 1:
@@ -110,11 +113,9 @@ class StateManager:
         Corrects any counter inconsistencies and transitions back to READY.
         """
         self._lifecycle.transition(LifecycleState.RECONCILING, "Reconciling state")
-        if self._state.error_count < 0:
-            self._state.error_count = 0
-        if self._state.query_count < 0:
-            self._state.query_count = 0
-        self._state.updated_at = datetime.now(timezone.utc)
+        self._state.error_count = max(self._state.error_count, 0)
+        self._state.query_count = max(self._state.query_count, 0)
+        self._state.updated_at = datetime.now(UTC)
         self._lifecycle.transition(LifecycleState.READY, "Reconciliation complete")
         logger.info("StateManager reconciliation complete")
 
@@ -152,28 +153,29 @@ class StateManager:
     def increment_query_count(self) -> None:
         """Increment the query counter and update timestamp."""
         self._state.query_count += 1
-        self._state.updated_at = datetime.now(timezone.utc)
+        self._state.updated_at = datetime.now(UTC)
 
     def increment_retrieval_count(self) -> None:
         """Increment the retrieval counter and update timestamp."""
         self._state.retrieval_count += 1
-        self._state.updated_at = datetime.now(timezone.utc)
+        self._state.updated_at = datetime.now(UTC)
 
     def increment_synthesis_count(self) -> None:
         """Increment the synthesis counter and update timestamp."""
         self._state.synthesis_count += 1
-        self._state.updated_at = datetime.now(timezone.utc)
+        self._state.updated_at = datetime.now(UTC)
 
     def increment_error_count(self) -> None:
         """Increment the error counter and update timestamp."""
         self._state.error_count += 1
-        self._state.updated_at = datetime.now(timezone.utc)
+        self._state.updated_at = datetime.now(UTC)
 
     def add_source(self, source_name: str) -> None:
         """Register an active retrieval source.
 
         Args:
             source_name: Identifier of the retrieval source to register.
+
         """
         if source_name not in self._state.active_sources:
             self._state.active_sources.append(source_name)
@@ -183,6 +185,7 @@ class StateManager:
 
         Returns:
             Current LibrarySenseState instance.
+
         """
         return self._state
 
@@ -192,6 +195,7 @@ class StateManager:
 
         Returns:
             Current LifecycleState value.
+
         """
         return self._lifecycle.state
 

@@ -34,6 +34,7 @@ class CodeEntity:
 
         Returns:
             Dictionary representation of this code entity.
+
         """
         return {
             "name": self.name,
@@ -64,6 +65,7 @@ class CodeSearchRetriever:
 
         Returns:
             Number of entities added to the index.
+
         """
         try:
             tree = ast.parse(source, filename=filename)
@@ -107,6 +109,7 @@ class CodeSearchRetriever:
 
         Returns:
             List of matching CodeEntity instances.
+
         """
         query_lower = query.lower()
         return [
@@ -125,6 +128,7 @@ class CodeSearchRetriever:
 
         Returns:
             RetrievalResult with matching entities as content.
+
         """
         _ = context
         matches = self.search(query)
@@ -155,6 +159,7 @@ class CodeSearchRetriever:
 
         Returns:
             ValidationResult indicating this source is ready.
+
         """
         return ValidationResult(
             valid=True,

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from thalos_prime.library_of_sense.code_generation.validator import CodeValidator
-from thalos_prime.library_of_sense.code_generation.generator import FunctionSpec, CodeGenerator
 from thalos_prime.library_of_sense.code_generation.executor import CodeExecutor
-
+from thalos_prime.library_of_sense.code_generation.generator import CodeGenerator, FunctionSpec
+from thalos_prime.library_of_sense.code_generation.validator import CodeValidator
 
 # ---------------------------------------------------------------------------
 # CodeValidator

@@ -7,12 +7,12 @@ subsystem components, enforcing strict typing and deterministic behavior.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 
-class QueryDomain(str, Enum):
+class QueryDomain(StrEnum):
     """Supported query domains for Library of Sense retrieval."""
 
     GENERAL = "general"
@@ -32,13 +32,14 @@ class QueryContext:
     max_depth: int = 3
     timeout_seconds: float = 30.0
     seed: int = 0
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize context to dictionary.
 
         Returns:
             Dictionary representation of this context.
+
         """
         return {
             "domain": self.domain.value,
@@ -58,13 +59,14 @@ class RetrievalResult:
     content: str
     confidence: float
     metadata: dict[str, str] = field(default_factory=dict)
-    retrieved_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    retrieved_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.
 
         Returns:
             Dictionary representation of this result.
+
         """
         return {
             "source": self.source,
@@ -88,6 +90,7 @@ class ValidationResult:
 
         Returns:
             Dictionary representation of this result.
+
         """
         return {
             "valid": self.valid,
@@ -111,6 +114,7 @@ class SynthesisResult:
 
         Returns:
             Dictionary representation of this result.
+
         """
         return {
             "answer": self.answer,
@@ -135,6 +139,7 @@ class ReasoningResult:
 
         Returns:
             Dictionary representation of this result.
+
         """
         return {
             "conclusion": self.conclusion,
@@ -157,6 +162,7 @@ class RetrievalSource(Protocol):
 
         Returns:
             RetrievalResult containing the retrieved content.
+
         """
         ...
 
@@ -165,6 +171,7 @@ class RetrievalSource(Protocol):
 
         Returns:
             ValidationResult indicating whether the source is correctly configured.
+
         """
         ...
 
@@ -206,6 +213,7 @@ class KnowledgeSynthesizer(Protocol):
 
         Returns:
             SynthesisResult with the synthesized answer.
+
         """
         ...
 
@@ -227,18 +235,19 @@ class ReasoningEngine(Protocol):
 
         Returns:
             ReasoningResult with conclusions and proof steps.
+
         """
         ...
 
 
 __all__ = [
-    "QueryDomain",
-    "QueryContext",
-    "RetrievalResult",
-    "ValidationResult",
-    "SynthesisResult",
-    "ReasoningResult",
-    "RetrievalSource",
     "KnowledgeSynthesizer",
+    "QueryContext",
+    "QueryDomain",
     "ReasoningEngine",
+    "ReasoningResult",
+    "RetrievalResult",
+    "RetrievalSource",
+    "SynthesisResult",
+    "ValidationResult",
 ]

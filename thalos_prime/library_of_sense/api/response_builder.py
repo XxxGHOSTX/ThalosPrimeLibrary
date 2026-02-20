@@ -7,10 +7,11 @@ and SynthesisResult objects with versioned schema.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Final
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Final
 
-from thalos_prime.library_of_sense.synthesis.answer_generator import StructuredAnswer
+if TYPE_CHECKING:
+    from thalos_prime.library_of_sense.synthesis.answer_generator import StructuredAnswer
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class ResponseBuilder:
 
         Returns:
             Dictionary with versioned response schema.
+
         """
         return {
             "schema_version": _SCHEMA_VERSION,
@@ -43,7 +45,7 @@ class ResponseBuilder:
             "sources": answer.sources,
             "reasoning_steps": answer.reasoning_steps,
             "generated_at": answer.generated_at.isoformat(),
-            "response_at": datetime.now(timezone.utc).isoformat(),
+            "response_at": datetime.now(UTC).isoformat(),
         }
 
     def build_error(self, query: str, message: str) -> dict[str, object]:
@@ -55,13 +57,14 @@ class ResponseBuilder:
 
         Returns:
             Dictionary with error response schema.
+
         """
         logger.error("ResponseBuilder: error for query %r: %s", query, message)
         return {
             "schema_version": _SCHEMA_VERSION,
             "query": query,
             "error": message,
-            "response_at": datetime.now(timezone.utc).isoformat(),
+            "response_at": datetime.now(UTC).isoformat(),
         }
 
 

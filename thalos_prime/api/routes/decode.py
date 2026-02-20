@@ -155,7 +155,7 @@ async def decode_batch(items: list[dict[str, Any]]) -> dict[str, Any]:
                 'confidence_level': decoded.coherence.confidence_level,
                 'success': True
             })
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError, KeyError, AttributeError) as e:
             results.append({
                 'address': item.get('address', 'unknown'),
                 'error': str(e),

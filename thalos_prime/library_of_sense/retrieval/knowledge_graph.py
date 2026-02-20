@@ -7,7 +7,7 @@ entity-relationship retrieval with RDF triple support.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import networkx as nx
 
@@ -34,6 +34,7 @@ class GraphTriple:
 
         Returns:
             Dictionary representation of this triple.
+
         """
         return {
             "subject": self.subject,
@@ -60,6 +61,7 @@ class KnowledgeGraphRetriever:
 
         Args:
             triple: GraphTriple to insert into the graph.
+
         """
         self._graph.add_edge(
             triple.subject,
@@ -83,6 +85,7 @@ class KnowledgeGraphRetriever:
 
         Returns:
             List of GraphTriple instances with this subject.
+
         """
         triples: list[GraphTriple] = []
         if subject not in self._graph:
@@ -107,12 +110,14 @@ class KnowledgeGraphRetriever:
 
         Returns:
             List of entity names forming the path, or empty list if no path exists.
+
         """
         try:
             path: list[str] = nx.shortest_path(self._graph, source, target)
-            return path
         except (nx.NetworkXNoPath, nx.NodeNotFound):
             return []
+        else:
+            return path
 
     def query(self, query: str, context: QueryContext) -> RetrievalResult:
         """Query the knowledge graph for the given entity.
@@ -123,6 +128,7 @@ class KnowledgeGraphRetriever:
 
         Returns:
             RetrievalResult with related triples as content.
+
         """
         _ = context
         triples = self.query_subject(query)
@@ -152,6 +158,7 @@ class KnowledgeGraphRetriever:
 
         Returns:
             ValidationResult indicating this source is ready.
+
         """
         return ValidationResult(
             valid=True,
@@ -188,6 +195,7 @@ class KnowledgeGraphRetriever:
 
         Returns:
             Count of added triples.
+
         """
         return self._triple_count
 

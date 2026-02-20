@@ -35,6 +35,7 @@ class ConflictResolver:
 
         Returns:
             List of groups, each containing similar RetrievalResult instances.
+
         """
         groups: list[list[RetrievalResult]] = []
         for result in results:
@@ -64,6 +65,7 @@ class ConflictResolver:
 
         Returns:
             SynthesisResult representing the consensus answer.
+
         """
         _ = context
         if not results:

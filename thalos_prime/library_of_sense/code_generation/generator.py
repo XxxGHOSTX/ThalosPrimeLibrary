@@ -9,9 +9,12 @@ from __future__ import annotations
 import ast
 import logging
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 from thalos_prime.library_of_sense.code_generation.validator import CodeValidator
+
+if TYPE_CHECKING:
+    from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,7 @@ class FunctionSpec:
 
         Returns:
             Dictionary representation of this function specification.
+
         """
         return {
             "name": self.name,
@@ -59,12 +63,10 @@ class CodeGenerator:
 
         Returns:
             Python source code string for the function.
+
         """
         params_str = ", ".join(spec.params) if spec.params else ""
-        if params_str:
-            params_str = f"self, {params_str}"
-        else:
-            params_str = "self"
+        params_str = f"self, {params_str}" if params_str else "self"
 
         lines: list[str] = [
             f"def {spec.name}({params_str}) -> {spec.return_type}:",
@@ -74,8 +76,7 @@ class CodeGenerator:
             lines.append(f'    """{spec.docstring}"""')
 
         body_lines = spec.body.strip().splitlines()
-        for line in body_lines:
-            lines.append(f"    {line}")
+        lines.extend(f"    {line}" for line in body_lines)
 
         return "\n".join(lines)
 
@@ -94,6 +95,7 @@ class CodeGenerator:
 
         Returns:
             Python source code string for the class.
+
         """
         lines: list[str] = [
             f"class {class_name}:",
@@ -102,8 +104,7 @@ class CodeGenerator:
         ]
         for spec in methods:
             method_src = self.generate_function(spec)
-            for line in method_src.splitlines():
-                lines.append(f"    {line}")
+            lines.extend(f"    {line}" for line in method_src.splitlines())
             lines.append("")
 
         return "\n".join(lines)
@@ -116,6 +117,7 @@ class CodeGenerator:
 
         Returns:
             ValidationResult from syntax validation.
+
         """
         return self._validator.validate_syntax(source)
 
@@ -127,6 +129,7 @@ class CodeGenerator:
 
         Returns:
             List of description strings for top-level classes and functions.
+
         """
         try:
             tree = ast.parse(source)
@@ -144,4 +147,4 @@ class CodeGenerator:
         return descriptions
 
 
-__all__ = ["FunctionSpec", "CodeGenerator"]
+__all__ = ["CodeGenerator", "FunctionSpec"]

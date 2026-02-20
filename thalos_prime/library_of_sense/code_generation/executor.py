@@ -33,6 +33,7 @@ class ExecutionResult:
 
         Returns:
             Dictionary representation of this execution result.
+
         """
         return {
             "stdout": self.stdout,
@@ -47,6 +48,7 @@ class ExecutionResult:
 
         Returns:
             True if return_code is 0 and execution did not time out.
+
         """
         return self.return_code == 0 and not self.timed_out
 
@@ -63,6 +65,7 @@ class CodeExecutor:
 
         Args:
             timeout: Maximum execution time in seconds before termination.
+
         """
         self._timeout = timeout
 
@@ -77,6 +80,7 @@ class CodeExecutor:
 
         Returns:
             ExecutionResult with stdout, stderr, return code, and timeout flag.
+
         """
         with tempfile.NamedTemporaryFile(
             mode="w",
@@ -115,4 +119,4 @@ class CodeExecutor:
             tmp_path.unlink(missing_ok=True)
 
 
-__all__ = ["ExecutionResult", "CodeExecutor"]
+__all__ = ["CodeExecutor", "ExecutionResult"]

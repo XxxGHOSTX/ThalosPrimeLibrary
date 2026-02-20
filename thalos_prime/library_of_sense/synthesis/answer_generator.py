@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from thalos_prime.library_of_sense.core.interfaces import (
-    QueryContext,
-    SynthesisResult,
-)
+if TYPE_CHECKING:
+    from thalos_prime.library_of_sense.core.interfaces import (
+        QueryContext,
+        SynthesisResult,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +31,14 @@ class StructuredAnswer:
     reasoning_steps: list[str]
     verified: bool
     domain: str
-    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.
 
         Returns:
             Dictionary representation of this structured answer.
+
         """
         return {
             "query": self.query,
@@ -67,6 +70,7 @@ class AnswerGenerator:
 
         Returns:
             StructuredAnswer with formatted content and provenance.
+
         """
         source_labels = [r.source for r in synthesis.sources]
 
@@ -94,4 +98,4 @@ class AnswerGenerator:
         )
 
 
-__all__ = ["StructuredAnswer", "AnswerGenerator"]
+__all__ = ["AnswerGenerator", "StructuredAnswer"]

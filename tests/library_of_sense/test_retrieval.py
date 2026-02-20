@@ -5,15 +5,14 @@ from __future__ import annotations
 import pytest
 
 from thalos_prime.library_of_sense.core.interfaces import QueryContext, QueryDomain
-from thalos_prime.library_of_sense.retrieval.multi_source import MultiSourceRetriever
-from thalos_prime.library_of_sense.retrieval.web_retrieval import WebRetrievalHandler
+from thalos_prime.library_of_sense.retrieval.code_search import CodeSearchRetriever
+from thalos_prime.library_of_sense.retrieval.computational import ComputationalRetriever
 from thalos_prime.library_of_sense.retrieval.knowledge_graph import (
     GraphTriple,
     KnowledgeGraphRetriever,
 )
-from thalos_prime.library_of_sense.retrieval.code_search import CodeSearchRetriever
-from thalos_prime.library_of_sense.retrieval.computational import ComputationalRetriever
-
+from thalos_prime.library_of_sense.retrieval.multi_source import MultiSourceRetriever
+from thalos_prime.library_of_sense.retrieval.web_retrieval import WebRetrievalHandler
 
 # ---------------------------------------------------------------------------
 # MultiSourceRetriever

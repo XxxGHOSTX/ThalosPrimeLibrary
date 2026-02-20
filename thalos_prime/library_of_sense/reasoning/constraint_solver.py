@@ -32,6 +32,7 @@ class ConstraintProblem:
 
         Returns:
             Dictionary representation of this constraint problem.
+
         """
         return {
             "int_vars": list(self.int_vars),
@@ -53,6 +54,7 @@ class SolverResult:
 
         Returns:
             Dictionary representation of this solver result.
+
         """
         return {
             "status": self.status,
@@ -76,6 +78,7 @@ class ConstraintSolver:
 
         Returns:
             SolverResult with satisfiability status and model values.
+
         """
         solver = z3.Solver()
         z3_vars: dict[str, z3.ExprRef] = {}
@@ -135,6 +138,7 @@ class ConstraintSolver:
 
         Returns:
             ValidationResult indicating satisfiability.
+
         """
         result = self.solve(problem)
         return ValidationResult(
@@ -144,4 +148,4 @@ class ConstraintSolver:
         )
 
 
-__all__ = ["ConstraintProblem", "SolverResult", "ConstraintSolver"]
+__all__ = ["ConstraintProblem", "ConstraintSolver", "SolverResult"]

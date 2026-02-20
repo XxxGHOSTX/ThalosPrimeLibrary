@@ -11,12 +11,12 @@ import logging
 from typing import Final
 
 from thalos_prime.library_of_sense.core.interfaces import (
+    KnowledgeSynthesizer,
     QueryContext,
     QueryDomain,
     ReasoningEngine,
     RetrievalSource,
     SynthesisResult,
-    KnowledgeSynthesizer,
 )
 from thalos_prime.library_of_sense.core.lifecycle import LifecycleState, SubsystemLifecycle
 from thalos_prime.library_of_sense.core.orchestrator import QueryOrchestrator
@@ -44,6 +44,7 @@ class QueryHandler:
 
         Args:
             seed: Deterministic seed for replay identification.
+
         """
         self._seed = seed
         self._state_manager = StateManager(seed=seed)
@@ -64,6 +65,7 @@ class QueryHandler:
 
         Raises:
             RuntimeError: If state manager validation fails.
+
         """
         self._lifecycle.transition(LifecycleState.VALIDATING, "Validating configuration")
         self._state_manager.validate()
@@ -106,6 +108,7 @@ class QueryHandler:
 
         Args:
             source: RetrievalSource to register.
+
         """
         self._orchestrator.register_source(source)
         if hasattr(source, "__class__"):
@@ -116,6 +119,7 @@ class QueryHandler:
 
         Args:
             synthesizer: KnowledgeSynthesizer to register.
+
         """
         self._orchestrator.register_synthesizer(synthesizer)
 
@@ -127,6 +131,7 @@ class QueryHandler:
         Args:
             domain: QueryDomain this engine handles.
             engine: ReasoningEngine to register.
+
         """
         self._orchestrator.register_reasoning_engine(domain, engine)
 
@@ -143,6 +148,7 @@ class QueryHandler:
 
         Returns:
             StructuredAnswer with the generated answer and provenance.
+
         """
         if context is None:
             context = QueryContext(seed=self._seed)
@@ -164,6 +170,7 @@ class QueryHandler:
 
         Returns:
             SynthesisResult with the answer and source provenance.
+
         """
         if context is None:
             context = QueryContext(seed=self._seed)

@@ -31,6 +31,7 @@ class ResultVerifier:
 
         Args:
             min_confidence: Minimum confidence required to mark a result as verified.
+
         """
         self._min_confidence = min_confidence
 
@@ -47,6 +48,7 @@ class ResultVerifier:
 
         Returns:
             True if any source shares at least one word with the answer.
+
         """
         answer_words = set(answer.lower().split())
         for source in sources:
@@ -63,6 +65,7 @@ class ResultVerifier:
 
         Returns:
             ValidationResult indicating whether the synthesis is verified.
+
         """
         if not synthesis.answer.strip():
             return ValidationResult(
@@ -98,6 +101,7 @@ class ResultVerifier:
 
         Returns:
             The input SynthesisResult with verified flag updated.
+
         """
         result = self.verify(synthesis)
         synthesis.verified = result.valid

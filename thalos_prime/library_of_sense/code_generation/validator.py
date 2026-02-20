@@ -25,6 +25,7 @@ class CodeValidator:
 
         Returns:
             ValidationResult with parse result.
+
         """
         try:
             ast.parse(source)
@@ -44,6 +45,7 @@ class CodeValidator:
 
         Returns:
             ValidationResult indicating docstring compliance.
+
         """
         try:
             tree = ast.parse(source)
@@ -53,13 +55,13 @@ class CodeValidator:
                 message=f"Cannot parse for docstring check: {exc}",
             )
 
-        missing: list[str] = []
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
-                if not node.name.startswith("_") and not ast.get_docstring(node):
-                    missing.append(
-                        f"{type(node).__name__} '{node.name}' at line {node.lineno}"
-                    )
+        missing: list[str] = [
+            f"{type(node).__name__} '{node.name}' at line {node.lineno}"
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef))
+            and not node.name.startswith("_")
+            and not ast.get_docstring(node)
+        ]
 
         if missing:
             return ValidationResult(
@@ -77,6 +79,7 @@ class CodeValidator:
 
         Returns:
             Number of function definitions found.
+
         """
         try:
             tree = ast.parse(source)

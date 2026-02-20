@@ -37,6 +37,7 @@ class SymbolicReasoningEngine:
 
         Raises:
             ValueError: If the expression cannot be parsed.
+
         """
         try:
             expr: Expr = sympy.sympify(expr_str)
@@ -65,6 +66,7 @@ class SymbolicReasoningEngine:
 
         Raises:
             ValueError: If the expression cannot be parsed.
+
         """
         try:
             var: Symbol = symbols(var_name)
@@ -90,6 +92,7 @@ class SymbolicReasoningEngine:
 
         Returns:
             ReasoningResult with simplified form and proof steps.
+
         """
         _ = context
         try:

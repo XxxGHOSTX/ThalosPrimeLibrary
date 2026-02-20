@@ -31,6 +31,7 @@ class ProofChecker:
 
         Returns:
             ValidationResult indicating whether lhs == rhs symbolically.
+
         """
         try:
             left = sympy.sympify(lhs)
@@ -65,6 +66,7 @@ class ProofChecker:
 
         Returns:
             ValidationResult indicating whether the identity holds.
+
         """
         try:
             expr = sympy.sympify(expression)

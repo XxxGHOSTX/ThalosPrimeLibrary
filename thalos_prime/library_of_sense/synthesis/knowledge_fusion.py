@@ -32,6 +32,7 @@ class KnowledgeFusion:
         Args:
             dedup_threshold: Similarity threshold above which results are considered
                 duplicate and merged.
+
         """
         self._dedup_threshold = dedup_threshold
 
@@ -46,6 +47,7 @@ class KnowledgeFusion:
 
         Returns:
             True if the Jaccard similarity exceeds the dedup threshold.
+
         """
         set_a = set(a.lower().split())
         set_b = set(b.lower().split())
@@ -66,6 +68,7 @@ class KnowledgeFusion:
 
         Returns:
             Deduplicated list with highest-confidence results preserved.
+
         """
         unique: list[RetrievalResult] = []
         for candidate in results:
@@ -90,6 +93,7 @@ class KnowledgeFusion:
 
         Returns:
             SynthesisResult with the fused answer and confidence.
+
         """
         _ = context
         if not results:

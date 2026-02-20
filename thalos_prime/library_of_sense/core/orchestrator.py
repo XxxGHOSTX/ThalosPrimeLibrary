@@ -7,6 +7,7 @@ deterministically using registered source and synthesizer components.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from thalos_prime.library_of_sense.core.interfaces import (
     KnowledgeSynthesizer,
@@ -19,7 +20,9 @@ from thalos_prime.library_of_sense.core.interfaces import (
     SynthesisResult,
     ValidationResult,
 )
-from thalos_prime.library_of_sense.core.state_manager import StateManager
+
+if TYPE_CHECKING:
+    from thalos_prime.library_of_sense.core.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +40,7 @@ class QueryOrchestrator:
         Args:
             state_manager: StateManager instance for tracking operation state.
             seed: Deterministic seed for reproducible query processing.
+
         """
         self._state_manager = state_manager
         self._seed = seed
@@ -49,6 +53,7 @@ class QueryOrchestrator:
 
         Args:
             source: RetrievalSource to register.
+
         """
         self._sources.append(source)
 
@@ -57,6 +62,7 @@ class QueryOrchestrator:
 
         Args:
             synthesizer: KnowledgeSynthesizer to register.
+
         """
         self._synthesizers.append(synthesizer)
 
@@ -70,6 +76,7 @@ class QueryOrchestrator:
         Args:
             domain: QueryDomain this engine handles.
             engine: ReasoningEngine to register.
+
         """
         self._reasoning_engines[domain] = engine
 
@@ -78,6 +85,7 @@ class QueryOrchestrator:
 
         Returns:
             List of ValidationResult for each registered source.
+
         """
         return [source.validate() for source in self._sources]
 
@@ -94,6 +102,7 @@ class QueryOrchestrator:
 
         Returns:
             List of RetrievalResult from all sources.
+
         """
         results: list[RetrievalResult] = []
         for source in self._sources:
@@ -115,6 +124,7 @@ class QueryOrchestrator:
 
         Returns:
             SynthesisResult with the best synthesized answer.
+
         """
         if not self._synthesizers:
             answer = " ".join(r.content for r in results) if results else ""
@@ -137,6 +147,7 @@ class QueryOrchestrator:
 
         Returns:
             ReasoningResult if a reasoning engine is registered for the domain, else None.
+
         """
         engine = self._reasoning_engines.get(context.domain)
         if engine is None:
@@ -152,6 +163,7 @@ class QueryOrchestrator:
 
         Returns:
             SynthesisResult containing the final answer.
+
         """
         self._state_manager.increment_query_count()
         logger.info(

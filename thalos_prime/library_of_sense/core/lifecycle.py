@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 
 logger = logging.getLogger(__name__)
 
 
-class LifecycleState(str, Enum):
+class LifecycleState(StrEnum):
     """Enumeration of valid lifecycle states for Library of Sense subsystems."""
 
     UNINITIALIZED = "uninitialized"
@@ -38,7 +38,7 @@ class LifecycleEvent:
     from_state: LifecycleState
     to_state: LifecycleState
     seed: int
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     details: str = ""
 
     def to_dict(self) -> dict[str, object]:
@@ -46,6 +46,7 @@ class LifecycleEvent:
 
         Returns:
             Dictionary representation of this event.
+
         """
         return {
             "subsystem": self.subsystem,
@@ -66,6 +67,7 @@ class SubsystemLifecycle:
         Args:
             subsystem_name: Unique identifier for the subsystem.
             seed: Deterministic seed for replay identification.
+
         """
         self._subsystem_name = subsystem_name
         self._seed = seed
@@ -78,6 +80,7 @@ class SubsystemLifecycle:
 
         Returns:
             Current LifecycleState value.
+
         """
         return self._state
 
@@ -87,6 +90,7 @@ class SubsystemLifecycle:
         Args:
             new_state: The target lifecycle state.
             details: Optional details about this transition.
+
         """
         event = LifecycleEvent(
             subsystem=self._subsystem_name,
@@ -110,8 +114,9 @@ class SubsystemLifecycle:
 
         Returns:
             List of LifecycleEvent records in chronological order.
+
         """
         return list(self._events)
 
 
-__all__ = ["LifecycleState", "LifecycleEvent", "SubsystemLifecycle"]
+__all__ = ["LifecycleEvent", "LifecycleState", "SubsystemLifecycle"]
