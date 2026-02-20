@@ -57,11 +57,15 @@ class DatabaseManager:
         
         # Add event listeners
         @event.listens_for(self.engine, "connect")
-        def receive_connect(dbapi_conn: Any, connection_record: Any) -> None:
+        def receive_connect(dbapi_conn: object, connection_record: object) -> None:
             logger.debug("Database connection established")
-        
+
         @event.listens_for(self.engine, "checkout")
-        def receive_checkout(dbapi_conn: Any, connection_record: Any, connection_proxy: Any) -> None:
+        def receive_checkout(
+            dbapi_conn: object,
+            connection_record: object,
+            connection_proxy: object,
+        ) -> None:
             logger.debug("Database connection checked out from pool")
         
         # Create session factory
@@ -122,6 +126,54 @@ class DatabaseManager:
         finally:
             session.close()
     
+    def initialize(self) -> None:
+        """Initialize the database manager by setting up the engine.
+
+        Calls init_engine() to establish the connection pool and session factory.
+        """
+        self.init_engine()
+
+    def validate(self) -> None:
+        """Validate that the database manager is properly initialized.
+
+        Raises:
+            RuntimeError: If not initialized or engine is None.
+        """
+        if not self._initialized:
+            msg = "DatabaseManager is not initialized; call initialize() first"
+            raise RuntimeError(msg)
+        if self.engine is None:
+            msg = "DatabaseManager engine is None after initialization"
+            raise RuntimeError(msg)
+        logger.info("DatabaseManager validation passed")
+
+    def operate(self) -> None:
+        """Ensure database tables exist, creating them if necessary."""
+        if self._initialized:
+            self.create_tables()
+        logger.info("DatabaseManager operating")
+
+    def reconcile(self) -> None:
+        """Reconcile database state by disposing and reinitializing the engine if needed."""
+        if self.engine is not None:
+            logger.info("DatabaseManager reconciling: disposing engine")
+            self.engine.dispose()
+            self._initialized = False
+        self.init_engine()
+        logger.info("DatabaseManager reconciliation complete")
+
+    def checkpoint(self) -> None:
+        """Log the current state of the database manager as a checkpoint."""
+        logger.info(
+            "DatabaseManager checkpoint: initialized=%s engine=%s",
+            self._initialized,
+            self.engine,
+        )
+
+    def terminate(self) -> None:
+        """Terminate the database manager and release all resources."""
+        self.close()
+
     def close(self) -> None:
         """Close database engine and connections"""
         if self.engine:
