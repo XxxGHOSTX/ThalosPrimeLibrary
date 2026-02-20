@@ -191,7 +191,7 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         """Handle unexpected exceptions"""
-        logger.error(f"Unexpected error: {exc}")
+        logger.exception(f"Unexpected error: {exc}")
         error_response = ErrorResponse(
             error="InternalServerError",
             message="An unexpected error occurred",

@@ -121,9 +121,9 @@ class DatabaseManager:
         try:
             yield session
             session.commit()
-        except Exception as e:
+        except Exception:
             session.rollback()
-            logger.exception(f"Session error: {e}")
+            logger.exception("Session error")
             raise
         finally:
             session.close()

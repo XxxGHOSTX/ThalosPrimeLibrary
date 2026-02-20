@@ -75,9 +75,6 @@ def test_setup_imports_with_temp_directory(tmp_path: Path) -> None:
     # Create a temporary directory that exists
     test_path = str(tmp_path)
 
-    # Get the initial sys.path length
-    len(sys.path)
-
     # Set up imports with the temporary path
     result = setup_local_imports(custom_path=test_path)
 
