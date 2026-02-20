@@ -1,16 +1,11 @@
 import unittest
 
-
-
 from src.lob_shard_manager.shard_manager import ShardManager
-
-
-
 
 
 class TestShardManager(unittest.TestCase):
 
-    def test_add_and_get(self):
+    def test_add_and_get(self) -> None:
 
         manager = ShardManager(capacity=2)
 

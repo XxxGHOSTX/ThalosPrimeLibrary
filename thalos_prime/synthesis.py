@@ -1,5 +1,4 @@
-"""
-Deep Synthesis helpers for Thalos Prime.
+"""Deep Synthesis helpers for Thalos Prime.
 
 Provides a deterministic, structured "Nexus" style response that
 decomposes the prompt and maps results to the canonical Library of Babel
@@ -9,7 +8,6 @@ systems.
 """
 
 from collections import Counter
-from typing import Dict, List
 
 from . import (
     LIBRARY_OF_BABEL_BASE_URL,
@@ -18,7 +16,7 @@ from . import (
 )
 
 
-def _detect_modalities(prompt: str) -> List[str]:
+def _detect_modalities(prompt: str) -> list[str]:
     """Heuristic modality detection for dynamic feedback."""
     modalities = []
     lowered = prompt.lower()
@@ -35,9 +33,8 @@ def _detect_modalities(prompt: str) -> List[str]:
     return modalities
 
 
-def deep_synthesis(prompt: str) -> Dict[str, object]:
-    """
-    Produce a structured "Nexus Result" for a prompt.
+def deep_synthesis(prompt: str) -> dict[str, object]:
+    """Produce a structured "Nexus Result" for a prompt.
 
     This is a deterministic scaffold: it performs lightweight semantic
     decomposition and returns multi-dimensional views (physical/chemical,
@@ -48,7 +45,7 @@ def deep_synthesis(prompt: str) -> Dict[str, object]:
     token_frequencies = Counter(tokens)
     modalities = _detect_modalities(prompt)
 
-    def _block(view: str) -> Dict[str, object]:
+    def _block(view: str) -> dict[str, object]:
         return {
             "view": view,
             "relevance": "Relevant to Input",

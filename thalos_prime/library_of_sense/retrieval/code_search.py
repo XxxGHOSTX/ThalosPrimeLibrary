@@ -84,7 +84,7 @@ class CodeSearchRetriever:
                         docstring=docstring,
                         line_number=node.lineno,
                         source_file=filename,
-                    )
+                    ),
                 )
                 added += 1
             elif isinstance(node, ast.ClassDef):
@@ -96,7 +96,7 @@ class CodeSearchRetriever:
                         docstring=docstring,
                         line_number=node.lineno,
                         source_file=filename,
-                    )
+                    ),
                 )
                 added += 1
         return added
