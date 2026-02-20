@@ -135,7 +135,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             reply = f"Found {len(results)} results for '{request.message}'. "
             reply += f"Best coherence score: {best_score:.1f}/100 ({results[0].coherence.confidence_level}). "
             # snippet is always set in our PageResult construction above
-            assert results[0].snippet is not None
+            assert results[0].snippet is not None  # nosec B101
             reply += f"Top result preview: {results[0].snippet[:100]}..."
         else:
             reply = f"No results found for '{request.message}'. Try a different query."

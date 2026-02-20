@@ -98,7 +98,7 @@ class ConstraintSolver:
                 logger.warning("ConstraintSolver: %s", msg)
                 return SolverResult(status="unknown", model={}, message=msg)
             try:
-                constraint_expr = eval(  # noqa: S307 - sandboxed with empty builtins and validated pattern
+                constraint_expr = eval(  # noqa: S307 # nosec B307 - sandboxed with empty builtins and validated pattern
                     constraint_str,
                     {"__builtins__": {}},
                     z3_vars,

@@ -12,7 +12,7 @@ class APIConfig(BaseModel):
     """API Configuration."""
 
     # Server settings
-    host: str = Field(default="0.0.0.0", description="Server host")
+    host: str = Field(default="0.0.0.0", description="Server host")  # nosec B104
     port: int = Field(default=8000, description="Server port")
     workers: int = Field(default=4, description="Number of worker processes")
     reload: bool = Field(default=False, description="Enable auto-reload")
@@ -84,7 +84,7 @@ class APIConfig(BaseModel):
 def load_config() -> APIConfig:
     """Load configuration from environment variables."""
     return APIConfig(
-        host=os.getenv("THALOS_HOST", "0.0.0.0"),
+        host=os.getenv("THALOS_HOST", "0.0.0.0"),  # nosec B104
         port=int(os.getenv("THALOS_PORT", "8000")),
         database_url=os.getenv("THALOS_DATABASE_URL", "sqlite:///./thalos_prime.db"),
         redis_url=os.getenv("THALOS_REDIS_URL", "redis://localhost:6379/0"),

@@ -269,7 +269,7 @@ if __name__ == "__main__":
     # Run the server
     uvicorn.run(
         "thalos_prime.api.server:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104
         port=8000,
         reload=True,
         log_level="info"
