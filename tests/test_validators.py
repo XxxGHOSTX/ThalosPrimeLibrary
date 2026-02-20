@@ -65,11 +65,11 @@ def test_prohibited_patterns_detector_finds_todos() -> None:
     """Test that prohibited patterns detector finds TODO comments."""
     from tools.detect_prohibited_patterns import check_file_content
 
-    test_code = '''
+    test_code = """
 def some_function():
     # TODO: implement this later
     pass
-'''
+"""
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(test_code)
@@ -88,13 +88,13 @@ def test_prohibited_patterns_detector_finds_catch_all_exceptions() -> None:
     """Test that prohibited patterns detector finds catch-all exceptions."""
     from tools.detect_prohibited_patterns import validate_file
 
-    test_code = '''
+    test_code = """
 def some_function() -> None:
     try:
         x = 1 / 0
     except Exception:
         pass
-'''
+"""
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(test_code)
@@ -113,12 +113,12 @@ def test_determinism_validator_detects_random_without_seed() -> None:
     """Test that determinism validator detects random operations without seed."""
     from tools.validate_determinism import validate_file
 
-    test_code = '''
+    test_code = """
 import random
 
 def generate_value():
     return random.random()
-'''
+"""
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(test_code)
@@ -137,12 +137,12 @@ def test_determinism_validator_detects_uuid4() -> None:
     """Test that determinism validator detects uuid4 generation."""
     from tools.validate_determinism import validate_file
 
-    test_code = '''
+    test_code = """
 import uuid
 
 def generate_id():
     return uuid.uuid4()
-'''
+"""
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(test_code)

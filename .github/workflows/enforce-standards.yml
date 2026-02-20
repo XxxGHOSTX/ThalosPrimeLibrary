@@ -101,14 +101,14 @@ jobs:
       - name: Security Check - bandit
         run: |
           echo "::group::Running bandit security scan"
-          bandit -r thalos_prime -f json -o bandit-report.json
-          bandit -r thalos_prime
+          bandit -r thalos_prime -c pyproject.toml -f json -o bandit-report.json
+          bandit -r thalos_prime -c pyproject.toml
           echo "::endgroup::"
 
       - name: Dependency Vulnerability Check - pip-audit
         run: |
           echo "::group::Running pip-audit"
-          pip-audit --desc --skip-editable
+          pip-audit --desc --requirement requirements.txt
           echo "::endgroup::"
 
       - name: Check for TODO/FIXME in production code

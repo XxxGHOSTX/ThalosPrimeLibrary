@@ -1,5 +1,4 @@
-"""
-ThalosPrime Library - Main Package
+"""ThalosPrime Library - Main Package.
 
 This package provides:
 - Deterministic page generation (lob_babel_generator)
@@ -7,8 +6,6 @@ This package provides:
 - Enhanced coherence scoring (lob_decoder)
 - Configuration and import management (config)
 """
-
-from typing import Dict
 
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
@@ -19,14 +16,14 @@ LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
 LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
 
 # This allows importing from the local ThalosPrimeLibraryOfBabel
-import sys
 import os
+import sys
 
 # Get the local library path from environment variable or use default
 # Users can set THALOS_LIBRARY_PATH environment variable to customize
 LOCAL_LIBRARY_PATH = os.getenv(
-    'THALOS_LIBRARY_PATH',
-    r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
+    "THALOS_LIBRARY_PATH",
+    r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel",
 )
 
 # Add to path if the directory exists and is not already in sys.path
@@ -34,7 +31,7 @@ if os.path.exists(LOCAL_LIBRARY_PATH) and LOCAL_LIBRARY_PATH not in sys.path:
     sys.path.insert(0, LOCAL_LIBRARY_PATH)
 
 
-def get_babel_endpoints() -> Dict[str, str]:
+def get_babel_endpoints() -> dict[str, str]:
     """Return the canonical Library of Babel endpoints used by Thalos Prime."""
     return {
         "base": LIBRARY_OF_BABEL_BASE_URL,
@@ -43,27 +40,25 @@ def get_babel_endpoints() -> Dict[str, str]:
     }
 
 # Re-export synthesis helpers
-from .synthesis import deep_synthesis  # noqa: E402,F401
+from thalos_prime.lob_babel_enumerator import (
+    BabelEnumerator,
+    enumerate_addresses,
+    query_to_addresses,
+)
+
 # Export main components for easy access
 from thalos_prime.lob_babel_generator import (
     BabelGenerator,
     address_to_page,
+    normalize_text,
     text_to_address,
-    normalize_text
 )
-
-from thalos_prime.lob_babel_enumerator import (
-    BabelEnumerator,
-    enumerate_addresses,
-    query_to_addresses
-)
-
 from thalos_prime.lob_decoder import (
     BabelDecoder,
     CoherenceScore,
     DecodedPage,
+    decode_page,
     score_coherence,
-    decode_page
 )
 from thalos_prime.ingest import (
     CanonicalArtifact,
@@ -72,29 +67,14 @@ from thalos_prime.ingest import (
     ingest_fragment,
 )
 
+from .synthesis import deep_synthesis
+
 __all__ = [
-    # Version info
-    '__version__',
-    '__author__',
-    'LOCAL_LIBRARY_PATH',
-    
     # Library of Babel endpoints
-    'LIBRARY_OF_BABEL_BASE_URL',
-    'LIBRARY_OF_BABEL_SEARCH_URL',
-    'LIBRARY_OF_BABEL_SEARCH_API',
-    'get_babel_endpoints',
-    
-    # Generator
-    'BabelGenerator',
-    'address_to_page',
-    'text_to_address',
-    'normalize_text',
-    
-    # Enumerator
-    'BabelEnumerator',
-    'enumerate_addresses',
-    'query_to_addresses',
-    
+    "LIBRARY_OF_BABEL_BASE_URL",
+    "LIBRARY_OF_BABEL_SEARCH_API",
+    "LIBRARY_OF_BABEL_SEARCH_URL",
+    "LOCAL_LIBRARY_PATH",
     # Decoder
     'BabelDecoder',
     'CoherenceScore',
@@ -108,6 +88,24 @@ __all__ = [
     'compute_meaning_hash',
     'ingest_fragment',
 
+    "BabelDecoder",
+    # Enumerator
+    "BabelEnumerator",
+    # Generator
+    "BabelGenerator",
+    "CoherenceScore",
+    "DecodedPage",
+    "__author__",
+    # Version info
+    "__version__",
+    "address_to_page",
+    "decode_page",
     # Synthesis
-    'deep_synthesis',
+    "deep_synthesis",
+    "enumerate_addresses",
+    "get_babel_endpoints",
+    "normalize_text",
+    "query_to_addresses",
+    "score_coherence",
+    "text_to_address",
 ]
