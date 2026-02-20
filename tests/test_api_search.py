@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.api import _score_coherence
-
-
-
 
 
 class TestApiSearch(unittest.TestCase):

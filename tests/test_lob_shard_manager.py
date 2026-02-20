@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.lob_shard_manager.shard_manager import ShardManager
-
-
-
 
 
 class TestShardManager(unittest.TestCase):

@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.api import build_reply
-
-
-
 
 
 class TestApiChat(unittest.TestCase):

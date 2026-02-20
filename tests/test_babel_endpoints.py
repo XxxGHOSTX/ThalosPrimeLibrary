@@ -1,5 +1,4 @@
-"""
-Tests for Library of Babel endpoint helpers
+"""Tests for Library of Babel endpoint helpers
 """
 
 import thalos_prime

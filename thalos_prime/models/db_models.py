@@ -3,19 +3,25 @@
 These models define the database schema for persistent storage.
 """
 
-from datetime import datetime
 import uuid
 from typing import Any
 
 from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, DateTime, Text, JSON,
-    ForeignKey, Index, UniqueConstraint
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
 )
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from sqlalchemy.engine import Engine
-
 
 Base: Any = declarative_base()
 
@@ -55,7 +61,7 @@ class User(Base):  # type: ignore[misc]
 
     def __repr__(self) -> str:
         """Return string representation of User."""
-        return f"<User(username=\"{self.username}\", email=\"{self.email}\")>"
+        return f'<User(username="{self.username}", email="{self.email}")>'
 
 
 class Session(Base):  # type: ignore[misc]
@@ -93,7 +99,7 @@ class Session(Base):  # type: ignore[misc]
     def __repr__(self) -> str:
         """Return string representation of Session."""
         return (
-            f"<Session(session_id=\"{self.session_id}\", "
+            f'<Session(session_id="{self.session_id}", '
             f"user_id={self.user_id})>"
         )
 
@@ -141,8 +147,8 @@ class Query(Base):  # type: ignore[misc]
     def __repr__(self) -> str:
         """Return string representation of Query."""
         return (
-            f"<Query(query_text=\"{self.query_text[:50]}...\", "
-            f"mode=\"{self.search_mode}\")>"
+            f'<Query(query_text="{self.query_text[:50]}...", '
+            f'mode="{self.search_mode}")>'
         )
 
 
@@ -180,7 +186,7 @@ class CachedResult(Base):  # type: ignore[misc]
     def __repr__(self) -> str:
         """Return string representation of CachedResult."""
         return (
-            f"<CachedResult(address=\"{self.address_hex[:20]}...\", "
+            f'<CachedResult(address="{self.address_hex[:20]}...", '
             f"score={self.coherence_score})>"
         )
 
@@ -212,7 +218,7 @@ class GeneratedPage(Base):  # type: ignore[misc]
     def __repr__(self) -> str:
         """Return string representation of GeneratedPage."""
         return (
-            f"<GeneratedPage(address=\"{self.address_hex[:20]}...\", "
+            f'<GeneratedPage(address="{self.address_hex[:20]}...", '
             f"accesses={self.access_count})>"
         )
 
@@ -245,7 +251,7 @@ class APILog(Base):  # type: ignore[misc]
     def __repr__(self) -> str:
         """Return string representation of APILog."""
         return (
-            f"<APILog(endpoint=\"{self.endpoint}\", "
+            f'<APILog(endpoint="{self.endpoint}", '
             f"status={self.status_code})>"
         )
 
