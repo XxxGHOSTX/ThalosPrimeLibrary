@@ -60,6 +60,12 @@ from thalos_prime.lob_decoder import (
     decode_page,
     score_coherence,
 )
+from thalos_prime.ingest import (
+    CanonicalArtifact,
+    canonicalize_text,
+    compute_meaning_hash,
+    ingest_fragment,
+)
 
 from .synthesis import deep_synthesis
 
@@ -70,6 +76,18 @@ __all__ = [
     "LIBRARY_OF_BABEL_SEARCH_URL",
     "LOCAL_LIBRARY_PATH",
     # Decoder
+    'BabelDecoder',
+    'CoherenceScore',
+    'DecodedPage',
+    'score_coherence',
+    'decode_page',
+
+    # Ingestion
+    'CanonicalArtifact',
+    'canonicalize_text',
+    'compute_meaning_hash',
+    'ingest_fragment',
+
     "BabelDecoder",
     # Enumerator
     "BabelEnumerator",

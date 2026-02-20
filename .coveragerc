@@ -1,4 +1,10 @@
 [run]
+omit =
+    thalos_prime/api/*
+    thalos_prime/database/*
+    thalos_prime/models/api_models.py
+    thalos_prime/models/db_models.py
+
 source = thalos_prime
 omit =
     thalos_prime/api/*

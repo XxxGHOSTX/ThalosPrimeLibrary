@@ -1,0 +1,23 @@
+{
+  "$id": "https://thalos.local/schemas/hdr.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Human Direction Record",
+  "type": "object",
+  "required": ["hdr_id", "author", "intent", "created_at", "norm_content_hash"],
+  "properties": {
+    "hdr_id": {"type": "string"},
+    "author": {"type": "string"},
+    "intent": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "norm_content_hash": {"type": "string"},
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "source": {"type": "string"},
+        "orig_url": {"type": "string"},
+        "ingest_id": {"type": "string"}
+      }
+    }
+  },
+  "additionalProperties": false
+}

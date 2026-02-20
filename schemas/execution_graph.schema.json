@@ -1,0 +1,48 @@
+{
+  "$id": "https://thalos.local/schemas/execution_graph.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Execution Graph",
+  "type": "object",
+  "required": ["eg_id", "version", "nodes"],
+  "properties": {
+    "eg_id": {"type": "string"},
+    "version": {"type": "string"},
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "type"],
+        "properties": {
+          "node_id": {"type": "string"},
+          "type": {"type": "string"},
+          "payload_schema": {"type": "string"},
+          "expected_output_schema": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from_node", "to_node"],
+        "properties": {
+          "from_node": {"type": "string"},
+          "to_node": {"type": "string"},
+          "condition": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_by": {"type": "string"},
+        "hash": {"type": "string"},
+        "provenance": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
