@@ -23,6 +23,16 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+    "requests>=2.31.0",
+    "aiohttp>=3.13.3",
+    "sympy>=1.12",
+    "networkx>=3.2.0",
+    "z3-solver>=4.12.0",
+    "rdflib>=7.0.0",
+    "beautifulsoup4>=4.12.0",
+    "libcst>=1.1.0",
+]
 
 [project.optional-dependencies]
 dev = [
