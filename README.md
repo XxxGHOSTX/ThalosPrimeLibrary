@@ -51,6 +51,98 @@ python integration_example.py
 python run_thalos.py
 ```
 
+## Thalos Prime Deterministic Pipeline (`thalos_prime.py`)
+
+The `thalos_prime.py` module implements a fully deterministic chatbot-to-Babel
+pipeline that traverses [libraryofbabel.info](https://libraryofbabel.info),
+extracts English-like tokens, scores them with BM25, and assembles a volume of
+exactly **1,312,000 characters** (410 pages × 3,200 chars/page).
+
+### Architecture
+
+The pipeline enforces strict **Control Plane / Data Plane** separation:
+
+| Layer | Components | Responsibility |
+|---|---|---|
+| **Control Plane** | `ControlPlane` | Lifecycle orchestration, seed management, JSONL logging, deterministic halt |
+| **Data Plane** | `BabelClient`, `TraversalPlanner`, `WordExtractor`, `ConstraintSolver`, `VolumeAssembler` | Computational work only; no coordination logic |
+
+### Lifecycle
+
+Every subsystem implements the six lifecycle methods:
+`initialize()` → `validate()` → `operate()` → `reconcile()` → `checkpoint()` → `terminate()`
+
+Any invariant violation raises `DeterministicHalt` with a full state snapshot.
+No silent degradation is permitted.
+
+### Determinism Guarantees
+
+- A single `--seed` integer controls all pseudo-randomness via an isolated `random.Random(seed)`.
+- Stable sorting: BM25 results sorted by `(score DESC, doc_id ASC)`.
+- No implicit async, no module-level RNG state.
+- Checkpoints include seed, state hash (blake2b), and schema version.
+- Replay with the same `--seed` and `--query` produces identical output.
+
+### CLI Usage
+
+```bash
+# Live mode (requires network access to libraryofbabel.info)
+python thalos_prime.py \
+    --query "test query" \
+    --seed 12345 \
+    --output ./output.txt \
+    --workdir ./thalos_workdir
+
+# Dry-run mode (fully offline, deterministic synthetic corpus)
+python thalos_prime.py \
+    --query "test" \
+    --seed 12345 \
+    --output ./output.txt \
+    --workdir ./thalos_workdir \
+    --dry-run \
+    --max-pages 10
+```
+
+**Arguments:**
+
+| Argument | Required | Description |
+|---|---|---|
+| `--query` | Yes | Natural language query string |
+| `--seed` | Yes | Non-negative integer seed for deterministic replay |
+| `--output` | Yes | Path to write the assembled volume |
+| `--workdir` | Yes | Directory for checkpoints and JSONL event logs |
+| `--max-pages` | No | Maximum pages to fetch (default: 410) |
+| `--dry-run` | No | Skip network; use synthetic deterministic corpus |
+
+### Invariants
+
+- **Output length**: exactly 1,312,000 characters; any deviation halts with `DeterministicHalt`.
+- **Page length**: each of the 410 pages is exactly 3,200 characters; padded with spaces, hard-trimmed if over.
+- **robots.txt**: any disallowed crawl or fetch failure halts deterministically.
+- **Retry policy**: up to 3 bounded retries with deterministic delay; all failures logged.
+
+### Observability
+
+Each run writes to `--workdir`:
+- `checkpoint_<timestamp>_seed<N>.json` — JSON state snapshot with blake2b hash
+- `events_<timestamp>_seed<N>.jsonl` — JSONL event log with timestamps, state hashes, and event types
+
+### State Fields
+
+`SystemState` tracks: `seed`, `traversal_index`, `traversal_path`, `corpus_size`,
+`plan_pages`, `assembled_length`, `output_path`, `last_checkpoint`, `version`.
+
+### Running Tests (Offline)
+
+The deterministic offline test suite requires no network access:
+
+```bash
+pytest tests/test_thalos_prime_pipeline.py -v
+```
+
+All 64 tests cover: halt semantics, state serialization, BM25 scoring,
+volume assembly (length invariant), traversal determinism, and full dry-run pipeline.
+
 ## Deployment
 
 For comprehensive deployment instructions including Docker, production setup, and cloud deployment options, see:

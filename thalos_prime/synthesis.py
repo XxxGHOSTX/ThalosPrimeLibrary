@@ -18,7 +18,7 @@ from . import (
 
 def _detect_modalities(prompt: str) -> list[str]:
     """Heuristic modality detection for dynamic feedback."""
-    modalities = []
+    modalities: list[str] = []
     lowered = prompt.lower()
     if any(k in lowered for k in ["dna", "gene", "protein", "peptide", "genomic"]):
         modalities.append("Genomic")
