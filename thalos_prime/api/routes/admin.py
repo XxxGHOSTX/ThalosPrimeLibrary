@@ -1,4 +1,4 @@
-"""Admin Routes - Administrative endpoints
+"""Admin Routes - Administrative endpoints.
 
 Provides administrative and monitoring functionality.
 """
@@ -20,7 +20,7 @@ ADMIN_API_KEY = os.getenv("THALOS_ADMIN_API_KEY", "admin-key-change-in-productio
 
 
 def verify_admin_key(x_api_key: str | None = Header(None)) -> bool:
-    """Verify admin API key"""
+    """Verify admin API key."""
     if x_api_key != ADMIN_API_KEY:
         raise HTTPException(status_code=403, detail="Invalid admin API key")
     return True
@@ -59,14 +59,14 @@ async def get_system_status() -> dict[str, Any]:
                 "cpu_percent": cpu_percent,
                 "memory_mb": memory_info.rss / 1024 / 1024,
                 "memory_percent": memory_percent,
-                "threads": process.num_threads()
+                "threads": process.num_threads(),
             },
             "system": {
                 "total_memory_mb": system_memory.total / 1024 / 1024,
                 "available_memory_mb": system_memory.available / 1024 / 1024,
                 "memory_percent": system_memory.percent,
-                "cpu_count": psutil.cpu_count()
-            }
+                "cpu_count": psutil.cpu_count(),
+            },
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Status check failed: {e!s}")
@@ -90,12 +90,12 @@ async def get_metrics() -> dict[str, Any]:
         "sessions": {
             "total": len(SESSIONS),
             "active": sum(1 for s in SESSIONS.values()
-                         if time.time() - s["last_activity"] < 3600)
+                         if time.time() - s["last_activity"] < 3600),
         },
         "cache": {
-            "search_entries": len(SEARCH_CACHE)
+            "search_entries": len(SEARCH_CACHE),
         },
-        "timestamp": time.time()
+        "timestamp": time.time(),
     }
 
 
@@ -116,7 +116,7 @@ async def clear_all_caches() -> dict[str, Any]:
 
     return {
         "message": "All caches cleared",
-        "search_cache_entries": search_count
+        "search_cache_entries": search_count,
     }
 
 
@@ -150,7 +150,7 @@ async def cleanup_sessions(max_age_hours: int = 24) -> dict[str, Any]:
     return {
         "message": "Session cleanup completed",
         "removed_sessions": len(old_sessions),
-        "remaining_sessions": len(SESSIONS)
+        "remaining_sessions": len(SESSIONS),
     }
 
 
@@ -176,7 +176,7 @@ async def get_configuration() -> dict[str, Any]:
         "enable_remote_search": config.enable_remote_search,
         "llm_enabled": config.llm_enabled,
         "llm_provider": config.llm_provider if config.llm_enabled else None,
-        "rate_limit_enabled": config.rate_limit_enabled
+        "rate_limit_enabled": config.rate_limit_enabled,
     }
 
 
@@ -192,7 +192,7 @@ async def detailed_health_check() -> dict[str, Any]:
     """
     health: dict[str, Any] = {
         "overall": "healthy",
-        "components": {}
+        "components": {},
     }
 
     # Check generator
@@ -201,12 +201,12 @@ async def detailed_health_check() -> dict[str, Any]:
         test_page = address_to_page("test")
         health["components"]["generator"] = {
             "status": "healthy",
-            "test_passed": len(test_page) == 3200
+            "test_passed": len(test_page) == 3200,
         }
     except (ImportError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         health["components"]["generator"] = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": str(e),
         }
         health["overall"] = "degraded"
 
@@ -216,12 +216,12 @@ async def detailed_health_check() -> dict[str, Any]:
         test_addrs = enumerate_addresses("test", max_results=1)
         health["components"]["enumerator"] = {
             "status": "healthy",
-            "test_passed": len(test_addrs) > 0
+            "test_passed": len(test_addrs) > 0,
         }
     except (ImportError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         health["components"]["enumerator"] = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": str(e),
         }
         health["overall"] = "degraded"
 
@@ -231,12 +231,12 @@ async def detailed_health_check() -> dict[str, Any]:
         test_score = score_coherence("test text")
         health["components"]["decoder"] = {
             "status": "healthy",
-            "test_passed": hasattr(test_score, "overall_score")
+            "test_passed": hasattr(test_score, "overall_score"),
         }
     except (ImportError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         health["components"]["decoder"] = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": str(e),
         }
         health["overall"] = "degraded"
 
@@ -259,5 +259,5 @@ async def shutdown_server() -> dict[str, str]:
     # For now, just return a message
     return {
         "message": "Shutdown command received",
-        "warning": "Shutdown not implemented in this version"
+        "warning": "Shutdown not implemented in this version",
     }

@@ -25,7 +25,7 @@ LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
 # Users can set THALOS_LIBRARY_PATH environment variable to customize
 LOCAL_LIBRARY_PATH = os.getenv(
     "THALOS_LIBRARY_PATH",
-    r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
+    r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel",
 )
 
 # Add to path if the directory exists and is not already in sys.path

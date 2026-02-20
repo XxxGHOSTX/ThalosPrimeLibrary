@@ -1,4 +1,4 @@
-"""Enumerate Routes - Address enumeration endpoints
+"""Enumerate Routes - Address enumeration endpoints.
 
 Provides query-to-address mapping functionality.
 """
@@ -19,7 +19,7 @@ router = APIRouter()
 enumerator = BabelEnumerator()
 
 
-@router.post("/", response_model=EnumerateResponse)
+@router.post("/")
 async def enumerate(request: EnumerateRequest) -> EnumerateResponse:
     """Enumerate addresses for a query.
 
@@ -40,7 +40,7 @@ async def enumerate(request: EnumerateRequest) -> EnumerateResponse:
         results = enumerate_addresses(
             request.query,
             max_results=request.max_results,
-            depth=request.depth
+            depth=request.depth,
         )
 
         # Calculate enumeration time
@@ -53,8 +53,8 @@ async def enumerate(request: EnumerateRequest) -> EnumerateResponse:
             metadata={
                 "enumeration_time_ms": enumeration_time_ms,
                 "depth": request.depth,
-                "avg_score": sum(r["score"] for r in results) / len(results) if results else 0
-            }
+                "avg_score": sum(r["score"] for r in results) / len(results) if results else 0,
+            },
         )
 
     except Exception as e:
@@ -79,7 +79,7 @@ async def get_addresses_only(query: str, count: int = 10) -> dict[str, Any]:
         return {
             "query": query,
             "addresses": addresses,
-            "count": len(addresses)
+            "count": len(addresses),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Address enumeration failed: {e!s}")
@@ -102,7 +102,7 @@ async def extract_ngrams(text: str, min_size: int = 2, max_size: int = 5) -> dic
         # Create enumerator with custom sizes
         custom_enumerator = BabelEnumerator(
             max_ngram_size=max_size,
-            min_ngram_size=min_size
+            min_ngram_size=min_size,
         )
 
         ngrams = custom_enumerator._extract_ngrams(text)
@@ -112,7 +112,7 @@ async def extract_ngrams(text: str, min_size: int = 2, max_size: int = 5) -> dic
             "ngrams": ngrams,
             "count": len(ngrams),
             "min_size": min_size,
-            "max_size": max_size
+            "max_size": max_size,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"N-gram extraction failed: {e!s}")
@@ -138,7 +138,7 @@ async def find_common_addresses(query1: str, query2: str, max_results: int = 10)
             "query1": query1,
             "query2": query2,
             "common_addresses": common,
-            "count": len(common)
+            "count": len(common),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Common address search failed: {e!s}")
@@ -166,7 +166,7 @@ async def enumerate_substrings(text: str, substring_length: int = 10) -> dict[st
                 {"substring": sub, "address": addr}
                 for sub, addr in results[:100]  # Limit to 100 for performance
             ],
-            "total_count": len(results)
+            "total_count": len(results),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Substring enumeration failed: {e!s}")

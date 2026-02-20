@@ -1,4 +1,4 @@
-"""Generate Routes - Page generation endpoints
+"""Generate Routes - Page generation endpoints.
 
 Provides deterministic page generation from addresses or queries.
 """
@@ -15,7 +15,7 @@ router = APIRouter()
 generator = BabelGenerator()
 
 
-@router.post("/", response_model=GenerateResponse)
+@router.post("/")
 async def generate_page(request: GenerateRequest) -> GenerateResponse:
     """Generate a Library of Babel page.
 
@@ -58,11 +58,11 @@ async def generate_page(request: GenerateRequest) -> GenerateResponse:
                 shelf=None,
                 volume=None,
                 page=None,
-                url=None
+                url=None,
             ),
             text=page_text,
             valid=valid,
-            generation_time_ms=generation_time_ms
+            generation_time_ms=generation_time_ms,
         )
 
     except Exception as e:
@@ -99,20 +99,20 @@ async def generate_batch(addresses: list[str], validate: bool = True) -> dict[st
                 "address": address,
                 "text": page_text,
                 "valid": valid,
-                "success": True
+                "success": True,
             })
         except (RuntimeError, ValueError, TypeError, AttributeError) as e:
             results.append({
                 "address": address,
                 "error": str(e),
-                "success": False
+                "success": False,
             })
 
     return {
         "total": len(addresses),
         "successful": sum(1 for r in results if r.get("success")),
         "failed": sum(1 for r in results if not r.get("success")),
-        "results": results
+        "results": results,
     }
 
 
@@ -138,7 +138,7 @@ async def generate_random_page(seed: str | None = None) -> dict[str, Any]:
             "address": address,
             "text": page_text,
             "seed": seed,
-            "length": len(page_text)
+            "length": len(page_text),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Random generation failed: {e!s}")
@@ -164,7 +164,7 @@ async def validate_page(address: str, text: str) -> dict[str, Any]:
             "valid": is_valid,
             "error": error if not is_valid else None,
             "length": len(text),
-            "expected_length": generator.PAGE_LENGTH
+            "expected_length": generator.PAGE_LENGTH,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Validation failed: {e!s}")

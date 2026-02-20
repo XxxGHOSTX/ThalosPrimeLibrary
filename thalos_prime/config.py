@@ -1,5 +1,5 @@
 """Configuration for ThalosPrime Library
-Manages paths and import configurations
+Manages paths and import configurations.
 """
 
 import logging
@@ -13,16 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 class LibraryConfig:
-    """Configuration class for managing library paths and imports"""
+    """Configuration class for managing library paths and imports."""
 
     # Default local library path (Windows) - can be overridden via THALOS_LIBRARY_PATH env var
     DEFAULT_LOCAL_LIBRARY_PATH = os.getenv(
         "THALOS_LIBRARY_PATH",
-        r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel"
+        r"C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel",
     )
 
     def __init__(self, local_library_path: str | None = None) -> None:
-        """Initialize the library configuration
+        """Initialize the library configuration.
 
         Args:
             local_library_path: Optional custom path to the local library.
@@ -33,7 +33,7 @@ class LibraryConfig:
         self._added_to_path: bool = False
 
     def setup_imports(self) -> bool:
-        """Set up the import paths to include the local library
+        """Set up the import paths to include the local library.
 
         Returns:
             bool: True if the path was added successfully, False otherwise
@@ -52,7 +52,7 @@ class LibraryConfig:
                 f"You can set the THALOS_LIBRARY_PATH environment variable or "
                 f"call setup_local_imports() with a custom path.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             logger.warning("Local library path does not exist: %s", lib_path)
             return False
@@ -69,11 +69,11 @@ class LibraryConfig:
         return True
 
     def get_local_library_path(self) -> str:
-        """Get the configured local library path"""
+        """Get the configured local library path."""
         return self.local_library_path
 
     def set_local_library_path(self, path: str) -> None:
-        """Set a new local library path
+        """Set a new local library path.
 
         Args:
             path: New path to the local library
@@ -88,12 +88,12 @@ _config = LibraryConfig()
 
 
 def get_config() -> LibraryConfig:
-    """Get the global configuration instance"""
+    """Get the global configuration instance."""
     return _config
 
 
 def setup_local_imports(custom_path: str | None = None) -> bool:
-    """Convenience function to set up local library imports
+    """Convenience function to set up local library imports.
 
     Args:
         custom_path: Optional custom path to the local library

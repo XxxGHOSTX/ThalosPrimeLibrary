@@ -1,4 +1,4 @@
-"""Integration test for Phase 1 & 2 features
+"""Integration test for Phase 1 & 2 features.
 
 This test verifies the complete pipeline from query to scored pages.
 """
@@ -18,7 +18,7 @@ from thalos_prime import (
 
 
 def test_full_pipeline() -> None:
-    """Test complete pipeline: query → addresses → pages → scoring"""
+    """Test complete pipeline: query → addresses → pages → scoring."""
     query = "test query"
 
     # Step 1: Enumerate addresses
@@ -49,7 +49,7 @@ def test_full_pipeline() -> None:
 
 
 def test_generator_enumerator_integration() -> None:
-    """Test that generator can create pages for enumerated addresses"""
+    """Test that generator can create pages for enumerated addresses."""
     enum = BabelEnumerator()
     gen = BabelGenerator()
 
@@ -69,7 +69,7 @@ def test_generator_enumerator_integration() -> None:
 
 
 def test_enumerator_decoder_integration() -> None:
-    """Test that decoder can score pages from enumerated addresses"""
+    """Test that decoder can score pages from enumerated addresses."""
     enum = BabelEnumerator()
     gen = BabelGenerator()
     decoder = BabelDecoder()
@@ -89,7 +89,7 @@ def test_enumerator_decoder_integration() -> None:
 
 
 def test_determinism_across_modules() -> None:
-    """Test that operations are deterministic across all modules"""
+    """Test that operations are deterministic across all modules."""
     query = "test"
     address = "abc123"
 
@@ -97,7 +97,7 @@ def test_determinism_across_modules() -> None:
     addrs1 = enumerate_addresses(query, max_results=3)
     addrs2 = enumerate_addresses(query, max_results=3)
     assert len(addrs1) == len(addrs2)
-    for a1, a2 in zip(addrs1, addrs2):
+    for a1, a2 in zip(addrs1, addrs2, strict=False):
         assert a1["address"] == a2["address"]
 
     # Generation should be deterministic
@@ -113,7 +113,7 @@ def test_determinism_across_modules() -> None:
 
 
 def test_package_imports() -> None:
-    """Test that all main components are importable from package"""
+    """Test that all main components are importable from package."""
     import thalos_prime
 
     # Check exports
@@ -127,7 +127,7 @@ def test_package_imports() -> None:
 
 
 def test_query_to_pages_workflow() -> None:
-    """Test a realistic query-to-pages workflow"""
+    """Test a realistic query-to-pages workflow."""
     # User query
     query = "meaning of life"
 
@@ -155,7 +155,7 @@ def test_query_to_pages_workflow() -> None:
 
 
 def test_provenance_tracking() -> None:
-    """Test that provenance is correctly tracked through pipeline"""
+    """Test that provenance is correctly tracked through pipeline."""
     query = "test"
     address = "prov123"
     text = "test text with some words"
@@ -172,7 +172,7 @@ def test_provenance_tracking() -> None:
 
 
 def test_confidence_levels_correlation() -> None:
-    """Test that confidence levels correlate with score ranges"""
+    """Test that confidence levels correlate with score ranges."""
     decoder = BabelDecoder()
 
     # High coherence text
@@ -194,7 +194,7 @@ def test_confidence_levels_correlation() -> None:
 
 
 def test_performance_reasonable() -> None:
-    """Test that operations complete in reasonable time"""
+    """Test that operations complete in reasonable time."""
     import time
 
     # Generate page (should be fast)

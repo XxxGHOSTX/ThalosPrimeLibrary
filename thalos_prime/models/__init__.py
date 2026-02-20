@@ -1,4 +1,4 @@
-"""Thalos Prime Data Models
+"""Thalos Prime Data Models.
 
 Pydantic models for request/response validation and SQLAlchemy models for database.
 """

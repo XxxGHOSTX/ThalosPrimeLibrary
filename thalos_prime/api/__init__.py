@@ -1,4 +1,4 @@
-"""Thalos Prime API Module
+"""Thalos Prime API Module.
 
 This module provides the FastAPI REST server implementation for Thalos Prime,
 including all endpoints for search, generation, enumeration, and decoding.

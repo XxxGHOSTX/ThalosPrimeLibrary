@@ -1,5 +1,5 @@
 """Fragment enumerator for Library of Babel
-Maps queries/substrings to candidate addresses
+Maps queries/substrings to candidate addresses.
 
 The enumerator breaks down queries into n-grams and uses seeded hashing
 to generate deterministic candidate addresses where matching text might be found.
@@ -31,7 +31,7 @@ class BabelEnumerator:
         self,
         query: str,
         max_results: int = 20,
-        depth: int = 1
+        depth: int = 1,
     ) -> list[dict[str, Any]]:
         """Generate candidate addresses for a query.
 
@@ -72,7 +72,7 @@ class BabelEnumerator:
                         "address": address,
                         "ngrams": [ngram],
                         "score": self._score_address(ngram, query),
-                        "depth": depth_level
+                        "depth": depth_level,
                     })
 
         # Sort by score (highest first) and limit results
@@ -93,8 +93,8 @@ class BabelEnumerator:
         words = text.split()
 
         # Extract word-level n-grams
-        for raw_word in words:
-            word = raw_word.strip()
+        for word in words:
+            word = word.strip()
             if len(word) >= self.min_ngram_size:
                 ngrams.add(word)
 
@@ -159,7 +159,7 @@ class BabelEnumerator:
     def enumerate_substrings(
         self,
         text: str,
-        substring_length: int = 10
+        substring_length: int = 10,
     ) -> list[tuple[str, str]]:
         """Enumerate all substrings of a given length and their addresses.
 
@@ -189,7 +189,7 @@ class BabelEnumerator:
         self,
         query1: str,
         query2: str,
-        max_results: int = 10
+        max_results: int = 10,
     ) -> list[str]:
         """Find addresses that might contain both queries.
 

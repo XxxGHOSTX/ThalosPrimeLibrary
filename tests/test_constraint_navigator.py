@@ -13,7 +13,6 @@ class TestConstraintNavigator(unittest.TestCase):
 
     def test_defaults_length_when_missing(self) -> None:
         result = translate_constraints("Find peptide with motif")
-        self.assertIsNotNone(result)
         assert result is not None
         self.assertEqual(result["length"], 10)
 

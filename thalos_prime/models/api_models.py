@@ -1,4 +1,4 @@
-"""Pydantic models for API request/response validation
+"""Pydantic models for API request/response validation.
 
 These models define the schema for all API endpoints.
 """
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, validator
 
 
 class SearchMode(StrEnum):
-    """Search mode: local generation or remote fetch"""
+    """Search mode: local generation or remote fetch."""
 
     LOCAL = "local"
     REMOTE = "remote"
@@ -19,7 +19,7 @@ class SearchMode(StrEnum):
 
 
 class NormalizationMode(StrEnum):
-    """Text normalization mode"""
+    """Text normalization mode."""
 
     NONE = "none"
     HEURISTIC = "heuristic"
@@ -27,7 +27,7 @@ class NormalizationMode(StrEnum):
 
 
 class ConfidenceLevel(StrEnum):
-    """Coherence confidence level"""
+    """Coherence confidence level."""
 
     HIGH = "high"
     MEDIUM = "medium"
@@ -37,7 +37,7 @@ class ConfidenceLevel(StrEnum):
 
 # Address Information
 class AddressInfo(BaseModel):
-    """Library of Babel address information"""
+    """Library of Babel address information."""
 
     hex_address: str = Field(..., description="Hexadecimal address")
     wall: int | None = Field(None, description="Wall number")
@@ -54,14 +54,14 @@ class AddressInfo(BaseModel):
                 "shelf": 2,
                 "volume": 3,
                 "page": 4,
-                "url": "https://libraryofbabel.info/book.cgi?hex=abc123def456"
-            }
+                "url": "https://libraryofbabel.info/book.cgi?hex=abc123def456",
+            },
         }
 
 
 # Coherence Information
 class CoherenceInfo(BaseModel):
-    """Coherence scoring information"""
+    """Coherence scoring information."""
 
     overall_score: float = Field(..., ge=0, le=100, description="Overall coherence score (0-100)")
     language_score: float = Field(..., ge=0, le=100, description="Language detection score")
@@ -80,14 +80,14 @@ class CoherenceInfo(BaseModel):
                 "ngram_score": 45.0,
                 "exact_match_score": 100.0,
                 "confidence_level": "medium",
-                "metrics": {"word_count": 150, "sentence_count": 8}
-            }
+                "metrics": {"word_count": 150, "sentence_count": 8},
+            },
         }
 
 
 # Provenance Information
 class ProvenanceInfo(BaseModel):
-    """Provenance tracking information"""
+    """Provenance tracking information."""
 
     address: str = Field(..., description="Page address")
     source: str = Field(..., description="Source (local/remote)")
@@ -104,14 +104,14 @@ class ProvenanceInfo(BaseModel):
                 "query": "test query",
                 "timestamp": 1707768000.0,
                 "normalized": False,
-                "llm_provider": None
-            }
+                "llm_provider": None,
+            },
         }
 
 
 # Page Result
 class PageResult(BaseModel):
-    """Single page result with scores"""
+    """Single page result with scores."""
 
     address: AddressInfo = Field(..., description="Page address information")
     text: str = Field(..., description="Page text content (3200 chars)")
@@ -127,14 +127,14 @@ class PageResult(BaseModel):
                 "text": "the quick brown fox...",
                 "snippet": "the quick brown fox...",
                 "coherence": {"overall_score": 75.5, "confidence_level": "medium"},
-                "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0}
-            }
+                "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0},
+            },
         }
 
 
 # Chat Endpoint Models
 class ChatRequest(BaseModel):
-    """Request model for chat endpoint"""
+    """Request model for chat endpoint."""
 
     message: str = Field(..., min_length=1, max_length=5000, description="User message")
     session_id: str | None = Field(None, description="Session ID for conversation continuity")
@@ -144,7 +144,8 @@ class ChatRequest(BaseModel):
     @validator("message")
     def message_not_empty(self, v: str) -> str:
         if not v.strip():
-            raise ValueError("Message cannot be empty or whitespace only")
+            msg = "Message cannot be empty or whitespace only"
+            raise ValueError(msg)
         return v.strip()
 
     class Config:
@@ -153,13 +154,13 @@ class ChatRequest(BaseModel):
                 "message": "hello world",
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
                 "max_results": 5,
-                "mode": "hybrid"
-            }
+                "mode": "hybrid",
+            },
         }
 
 
 class ChatResponse(BaseModel):
-    """Response model for chat endpoint"""
+    """Response model for chat endpoint."""
 
     reply: str = Field(..., description="Bot reply message")
     session_id: str = Field(..., description="Session ID")
@@ -172,14 +173,14 @@ class ChatResponse(BaseModel):
                 "reply": "Found 5 results for your query...",
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
                 "results": [],
-                "metadata": {"query_time_ms": 150}
-            }
+                "metadata": {"query_time_ms": 150},
+            },
         }
 
 
 # Search Endpoint Models
 class SearchRequest(BaseModel):
-    """Request model for search endpoint"""
+    """Request model for search endpoint."""
 
     query: str = Field(..., min_length=1, max_length=1000, description="Search query")
     max_results: int = Field(default=10, ge=1, le=50, description="Maximum results")
@@ -189,7 +190,8 @@ class SearchRequest(BaseModel):
     @validator("query")
     def query_not_empty(self, v: str) -> str:
         if not v.strip():
-            raise ValueError("Query cannot be empty or whitespace only")
+            msg = "Query cannot be empty or whitespace only"
+            raise ValueError(msg)
         return v.strip()
 
     class Config:
@@ -198,13 +200,13 @@ class SearchRequest(BaseModel):
                 "query": "the meaning of life",
                 "max_results": 10,
                 "mode": "hybrid",
-                "min_score": 40.0
-            }
+                "min_score": 40.0,
+            },
         }
 
 
 class SearchResponse(BaseModel):
-    """Response model for search endpoint"""
+    """Response model for search endpoint."""
 
     query: str = Field(..., description="Original query")
     results: list[PageResult] = Field(..., description="Search results")
@@ -221,14 +223,14 @@ class SearchResponse(BaseModel):
                 "total_found": 10,
                 "mode": "hybrid",
                 "cached": False,
-                "metadata": {"search_time_ms": 250}
-            }
+                "metadata": {"search_time_ms": 250},
+            },
         }
 
 
 # Generate Endpoint Models
 class GenerateRequest(BaseModel):
-    """Request model for generate endpoint"""
+    """Request model for generate endpoint."""
 
     address: str | None = Field(None, description="Hex address to generate from")
     query: str | None = Field(None, description="Query to convert to address")
@@ -237,20 +239,21 @@ class GenerateRequest(BaseModel):
     @validator("address", "query")
     def at_least_one_field(self, v: str | None, values: dict[str, Any]) -> str | None:
         if not v and not values.get("address") and not values.get("query"):
-            raise ValueError("Either address or query must be provided")
+            msg = "Either address or query must be provided"
+            raise ValueError(msg)
         return v
 
     class Config:
         json_schema_extra = {
             "example": {
                 "address": "abc123def456",
-                "validate": True
-            }
+                "validate": True,
+            },
         }
 
 
 class GenerateResponse(BaseModel):
-    """Response model for generate endpoint"""
+    """Response model for generate endpoint."""
 
     address: AddressInfo = Field(..., description="Page address")
     text: str = Field(..., description="Generated page text")
@@ -263,14 +266,14 @@ class GenerateResponse(BaseModel):
                 "address": {"hex_address": "abc123", "url": "https://libraryofbabel.info/book.cgi?hex=abc123"},
                 "text": "generated page text...",
                 "valid": True,
-                "generation_time_ms": 0.5
-            }
+                "generation_time_ms": 0.5,
+            },
         }
 
 
 # Enumerate Endpoint Models
 class EnumerateRequest(BaseModel):
-    """Request model for enumerate endpoint"""
+    """Request model for enumerate endpoint."""
 
     query: str = Field(..., min_length=1, max_length=1000, description="Query to enumerate")
     max_results: int = Field(default=10, ge=1, le=100, description="Maximum addresses")
@@ -279,7 +282,8 @@ class EnumerateRequest(BaseModel):
     @validator("query")
     def query_not_empty(self, v: str) -> str:
         if not v.strip():
-            raise ValueError("Query cannot be empty or whitespace only")
+            msg = "Query cannot be empty or whitespace only"
+            raise ValueError(msg)
         return v.strip()
 
     class Config:
@@ -287,13 +291,13 @@ class EnumerateRequest(BaseModel):
             "example": {
                 "query": "hello world",
                 "max_results": 10,
-                "depth": 2
-            }
+                "depth": 2,
+            },
         }
 
 
 class EnumerateResponse(BaseModel):
-    """Response model for enumerate endpoint"""
+    """Response model for enumerate endpoint."""
 
     query: str = Field(..., description="Original query")
     addresses: list[dict[str, Any]] = Field(..., description="Enumerated addresses")
@@ -305,17 +309,17 @@ class EnumerateResponse(BaseModel):
             "example": {
                 "query": "hello world",
                 "addresses": [
-                    {"address": "abc123", "ngrams": ["hello", "world"], "score": 0.85}
+                    {"address": "abc123", "ngrams": ["hello", "world"], "score": 0.85},
                 ],
                 "total_found": 10,
-                "metadata": {"enumeration_time_ms": 5.0}
-            }
+                "metadata": {"enumeration_time_ms": 5.0},
+            },
         }
 
 
 # Decode Endpoint Models
 class DecodeRequest(BaseModel):
-    """Request model for decode endpoint"""
+    """Request model for decode endpoint."""
 
     address: str = Field(..., description="Page address")
     text: str = Field(..., min_length=1, description="Page text to decode")
@@ -328,13 +332,13 @@ class DecodeRequest(BaseModel):
                 "address": "abc123",
                 "text": "page text to analyze...",
                 "query": "test query",
-                "normalization": "heuristic"
-            }
+                "normalization": "heuristic",
+            },
         }
 
 
 class DecodeResponse(BaseModel):
-    """Response model for decode endpoint"""
+    """Response model for decode endpoint."""
 
     address: AddressInfo = Field(..., description="Page address")
     raw_text: str = Field(..., description="Original text")
@@ -349,14 +353,14 @@ class DecodeResponse(BaseModel):
                 "raw_text": "original text...",
                 "normalized_text": None,
                 "coherence": {"overall_score": 65.0, "confidence_level": "medium"},
-                "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0}
-            }
+                "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0},
+            },
         }
 
 
 # Status and Error Models
 class StatusResponse(BaseModel):
-    """Response model for status endpoint"""
+    """Response model for status endpoint."""
 
     status: str = Field(..., description="Service status")
     version: str = Field(..., description="API version")
@@ -369,13 +373,13 @@ class StatusResponse(BaseModel):
                 "status": "healthy",
                 "version": "1.0.0",
                 "uptime_seconds": 3600.0,
-                "features": {"local_generation": True, "remote_search": True, "llm_normalization": False}
-            }
+                "features": {"local_generation": True, "remote_search": True, "llm_normalization": False},
+            },
         }
 
 
 class ErrorResponse(BaseModel):
-    """Error response model"""
+    """Error response model."""
 
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
@@ -388,6 +392,6 @@ class ErrorResponse(BaseModel):
                 "error": "ValidationError",
                 "message": "Invalid request parameters",
                 "details": {"field": "query", "issue": "cannot be empty"},
-                "timestamp": "2026-02-12T20:00:00Z"
-            }
+                "timestamp": "2026-02-12T20:00:00Z",
+            },
         }

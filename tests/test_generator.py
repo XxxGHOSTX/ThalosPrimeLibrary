@@ -1,5 +1,4 @@
-"""Tests for the Babel generator module
-"""
+"""Tests for the Babel generator module."""
 
 from thalos_prime.lob_babel_generator import (
     BabelGenerator,
@@ -10,7 +9,7 @@ from thalos_prime.lob_babel_generator import (
 
 
 def test_babel_generator_initialization() -> None:
-    """Test that BabelGenerator initializes correctly"""
+    """Test that BabelGenerator initializes correctly."""
     gen = BabelGenerator()
     assert gen.CHARSET_SIZE == 29
     assert gen.PAGE_LENGTH == 3200
@@ -18,7 +17,7 @@ def test_babel_generator_initialization() -> None:
 
 
 def test_charset_contents() -> None:
-    """Test that the charset contains expected characters"""
+    """Test that the charset contains expected characters."""
     gen = BabelGenerator()
     # Should have space, comma, period, and a-z
     assert " " in gen.CHARSET
@@ -30,7 +29,7 @@ def test_charset_contents() -> None:
 
 
 def test_address_to_page_deterministic() -> None:
-    """Test that the same address always generates the same page"""
+    """Test that the same address always generates the same page."""
     gen = BabelGenerator()
     address = "abc123def456"
 
@@ -43,7 +42,7 @@ def test_address_to_page_deterministic() -> None:
 
 
 def test_address_to_page_length() -> None:
-    """Test that generated pages are exactly 3200 characters"""
+    """Test that generated pages are exactly 3200 characters."""
     gen = BabelGenerator()
 
     test_addresses = [
@@ -51,7 +50,7 @@ def test_address_to_page_length() -> None:
         "abc",
         "123456789abcdef",
         "f" * 100,
-        "a1b2c3d4e5f6"
+        "a1b2c3d4e5f6",
     ]
 
     for address in test_addresses:
@@ -60,7 +59,7 @@ def test_address_to_page_length() -> None:
 
 
 def test_address_to_page_valid_characters() -> None:
-    """Test that generated pages only contain valid characters"""
+    """Test that generated pages only contain valid characters."""
     gen = BabelGenerator()
     address = "test123"
 
@@ -71,7 +70,7 @@ def test_address_to_page_valid_characters() -> None:
 
 
 def test_different_addresses_different_pages() -> None:
-    """Test that different addresses generate different pages"""
+    """Test that different addresses generate different pages."""
     gen = BabelGenerator()
 
     page1 = gen.address_to_page("address1")
@@ -85,7 +84,7 @@ def test_different_addresses_different_pages() -> None:
 
 
 def test_normalize_text_length() -> None:
-    """Test that normalized text is exactly 3200 characters"""
+    """Test that normalized text is exactly 3200 characters."""
     gen = BabelGenerator()
 
     # Short text should be padded
@@ -100,7 +99,7 @@ def test_normalize_text_length() -> None:
 
 
 def test_normalize_text_lowercase() -> None:
-    """Test that text is converted to lowercase"""
+    """Test that text is converted to lowercase."""
     gen = BabelGenerator()
 
     text = "HELLO WORLD"
@@ -110,7 +109,7 @@ def test_normalize_text_lowercase() -> None:
 
 
 def test_normalize_text_invalid_characters() -> None:
-    """Test that invalid characters are replaced with space"""
+    """Test that invalid characters are replaced with space."""
     gen = BabelGenerator()
 
     text = "hello@world#123!"
@@ -127,7 +126,7 @@ def test_normalize_text_invalid_characters() -> None:
 
 
 def test_validate_page_valid() -> None:
-    """Test validation of a valid page"""
+    """Test validation of a valid page."""
     gen = BabelGenerator()
 
     # Generate a valid page
@@ -139,7 +138,7 @@ def test_validate_page_valid() -> None:
 
 
 def test_validate_page_wrong_length() -> None:
-    """Test validation catches wrong length"""
+    """Test validation catches wrong length."""
     gen = BabelGenerator()
 
     short_page = "hello world"
@@ -150,7 +149,7 @@ def test_validate_page_wrong_length() -> None:
 
 
 def test_validate_page_invalid_character() -> None:
-    """Test validation catches invalid characters"""
+    """Test validation catches invalid characters."""
     gen = BabelGenerator()
 
     # Create a page with an invalid character
@@ -162,7 +161,7 @@ def test_validate_page_invalid_character() -> None:
 
 
 def test_text_to_address() -> None:
-    """Test converting text to an address"""
+    """Test converting text to an address."""
     gen = BabelGenerator()
 
     text = "hello world"
@@ -178,7 +177,7 @@ def test_text_to_address() -> None:
 
 
 def test_text_to_address_different_texts() -> None:
-    """Test that different texts produce different addresses"""
+    """Test that different texts produce different addresses."""
     gen = BabelGenerator()
 
     addr1 = gen.text_to_address("hello")
@@ -192,7 +191,7 @@ def test_text_to_address_different_texts() -> None:
 
 
 def test_generate_random_address() -> None:
-    """Test random address generation"""
+    """Test random address generation."""
     gen = BabelGenerator()
 
     # With seed, should be deterministic
@@ -206,7 +205,7 @@ def test_generate_random_address() -> None:
 
 
 def test_convenience_functions() -> None:
-    """Test the module-level convenience functions"""
+    """Test the module-level convenience functions."""
     # Test address_to_page
     page = address_to_page("test123")
     assert len(page) == 3200
@@ -222,7 +221,7 @@ def test_convenience_functions() -> None:
 
 
 def test_roundtrip_consistency() -> None:
-    """Test that text->address->page is consistent"""
+    """Test that text->address->page is consistent."""
     gen = BabelGenerator()
 
     original_text = "the quick brown fox jumps over the lazy dog"

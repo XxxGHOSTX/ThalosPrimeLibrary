@@ -1,4 +1,4 @@
-"""Main Routes - Root endpoints
+"""Main Routes - Root endpoints.
 
 Provides the main landing page and UI serving.
 """
@@ -70,6 +70,6 @@ async def api_status() -> dict[str, Any]:
             "search": "/api/v1/search",
             "generate": "/api/v1/generate",
             "enumerate": "/api/v1/enumerate",
-            "decode": "/api/v1/decode"
-        }
+            "decode": "/api/v1/decode",
+        },
     }

@@ -1,4 +1,4 @@
-"""API Configuration Module
+"""API Configuration Module.
 
 Configuration settings for the Thalos Prime API.
 """
@@ -9,10 +9,10 @@ from pydantic import BaseModel, Field
 
 
 class APIConfig(BaseModel):
-    """API Configuration"""
+    """API Configuration."""
 
     # Server settings
-    host: str = Field(default="0.0.0.0", description="Server host")
+    host: str = Field(default="0.0.0.0", description="Server host")  # nosec B104
     port: int = Field(default=8000, description="Server port")
     workers: int = Field(default=4, description="Number of worker processes")
     reload: bool = Field(default=False, description="Enable auto-reload")
@@ -20,7 +20,7 @@ class APIConfig(BaseModel):
     # Database settings
     database_url: str = Field(
         default="sqlite:///./thalos_prime.db",
-        description="Database connection URL"
+        description="Database connection URL",
     )
     db_pool_size: int = Field(default=10, description="Database connection pool size")
     db_max_overflow: int = Field(default=20, description="Max database connections overflow")
@@ -28,7 +28,7 @@ class APIConfig(BaseModel):
     # Redis settings
     redis_url: str = Field(
         default="redis://localhost:6379/0",
-        description="Redis connection URL"
+        description="Redis connection URL",
     )
     redis_password: str | None = Field(default=None, description="Redis password")
 
@@ -60,7 +60,7 @@ class APIConfig(BaseModel):
     # Security settings
     secret_key: str = Field(
         default="change-this-secret-key-in-production",
-        description="Secret key for JWT"
+        description="Secret key for JWT",
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(default=30, description="Access token expiration")
@@ -72,7 +72,7 @@ class APIConfig(BaseModel):
     # CORS
     cors_origins: list[str] = Field(
         default_factory=lambda: ["*"],
-        description="Allowed CORS origins"
+        description="Allowed CORS origins",
     )
 
     class Config:
@@ -82,9 +82,9 @@ class APIConfig(BaseModel):
 
 # Load configuration from environment
 def load_config() -> APIConfig:
-    """Load configuration from environment variables"""
+    """Load configuration from environment variables."""
     return APIConfig(
-        host=os.getenv("THALOS_HOST", "0.0.0.0"),
+        host=os.getenv("THALOS_HOST", "0.0.0.0"),  # nosec B104
         port=int(os.getenv("THALOS_PORT", "8000")),
         database_url=os.getenv("THALOS_DATABASE_URL", "sqlite:///./thalos_prime.db"),
         redis_url=os.getenv("THALOS_REDIS_URL", "redis://localhost:6379/0"),

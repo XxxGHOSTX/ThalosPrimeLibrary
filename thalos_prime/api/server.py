@@ -1,4 +1,4 @@
-"""FastAPI Server Implementation for Thalos Prime
+"""FastAPI Server Implementation for Thalos Prime.
 
 This module provides the main FastAPI application with all configuration,
 middleware, and route registration.
@@ -22,7 +22,7 @@ from thalos_prime.models.api_models import ErrorResponse
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 async def initialize_services() -> None:
-    """Initialize all application services"""
+    """Initialize all application services."""
     # Initialize cache
     logger.info("Initializing cache service...")
 
@@ -77,7 +77,7 @@ async def initialize_services() -> None:
 
 
 async def cleanup_services() -> None:
-    """Cleanup all application services"""
+    """Cleanup all application services."""
     # Close database connections
     logger.info("Closing database connections...")
 
@@ -128,7 +128,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
-        openapi_url="/openapi.json"
+        openapi_url="/openapi.json",
     )
 
     # Configure CORS
@@ -146,7 +146,7 @@ def create_app() -> FastAPI:
     # Add custom middleware
     @app.middleware("http")
     async def add_process_time_header(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-        """Add X-Process-Time header to all responses"""
+        """Add X-Process-Time header to all responses."""
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
@@ -155,7 +155,7 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def log_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-        """Log all incoming requests"""
+        """Log all incoming requests."""
         logger.info(f"Request: {request.method} {request.url.path}")
         response = await call_next(request)
         logger.info(f"Response: {response.status_code}")
@@ -164,42 +164,42 @@ def create_app() -> FastAPI:
     # Custom exception handlers
     @app.exception_handler(HTTPException)
     async def custom_http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-        """Handle HTTP exceptions with custom error response"""
+        """Handle HTTP exceptions with custom error response."""
         error_response = ErrorResponse(
             error=f"HTTP{exc.status_code}",
             message=exc.detail,
-            details={"path": str(request.url.path)}
+            details={"path": str(request.url.path)},
         )
         return JSONResponse(
             status_code=exc.status_code,
-            content=error_response.dict()
+            content=error_response.dict(),
         )
 
     @app.exception_handler(RequestValidationError)
     async def custom_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-        """Handle validation errors with custom error response"""
+        """Handle validation errors with custom error response."""
         error_response = ErrorResponse(
             error="ValidationError",
             message="Request validation failed",
-            details={"errors": exc.errors()}
+            details={"errors": exc.errors()},
         )
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=error_response.dict()
+            content=error_response.dict(),
         )
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        """Handle unexpected exceptions"""
-        logger.exception(f"Unexpected error: {exc}")
+        """Handle unexpected exceptions."""
+        logger.error(f"Unexpected error: {exc}")
         error_response = ErrorResponse(
             error="InternalServerError",
             message="An unexpected error occurred",
-            details={"type": type(exc).__name__}
+            details={"type": type(exc).__name__},
         )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=error_response.dict()
+            content=error_response.dict(),
         )
 
     # Register routes
@@ -208,12 +208,12 @@ def create_app() -> FastAPI:
     # Add health check endpoint
     @app.get("/health", tags=["Health"])
     async def health_check() -> dict[str, Any]:
-        """Health check endpoint"""
+        """Health check endpoint."""
         uptime = time.time() - START_TIME
         return {
             "status": "healthy",
             "version": __version__,
-            "uptime_seconds": uptime
+            "uptime_seconds": uptime,
         }
 
     return app
@@ -253,7 +253,7 @@ def register_routes(app: FastAPI) -> None:
 
 
 def create_placeholder_routes(app: FastAPI) -> None:
-    """Create placeholder routes when actual routes are not available"""
+    """Create placeholder routes when actual routes are not available."""
     @app.get("/api/v1/status")
     async def status() -> dict[str, str]:
         return {"status": "ok", "message": "Thalos Prime API is running"}
@@ -269,8 +269,8 @@ if __name__ == "__main__":
     # Run the server
     uvicorn.run(
         "thalos_prime.api.server:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104
         port=8000,
         reload=True,
-        log_level="info"
+        log_level="info",
     )

@@ -23,6 +23,16 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+    "requests>=2.31.0",
+    "aiohttp>=3.13.3",
+    "sympy>=1.12",
+    "networkx>=3.2.0",
+    "z3-solver>=4.12.0",
+    "rdflib>=7.0.0",
+    "beautifulsoup4>=4.12.0",
+    "libcst>=1.1.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -36,7 +46,6 @@ dev = [
     "pre-commit>=3.6.0",
     "sympy>=1.12",
     "z3-solver>=4.12.0",
-    "requests>=2.31.0",
     "networkx>=3.2",
     "psutil>=5.9.0",
 ]
@@ -126,24 +135,16 @@ line-length = 100
 select = ["ALL"]
 ignore = [
     "COM812", "ISC001", "ANN101", "ANN102", "D203", "D213",
-    # Docstring style: period/mood requirements
-    "D400", "D415", "D401",
-    # Common valid patterns
-    "G004",    # logging f-string
-    "EM101",   # raw string in exception
-    "TRY003",  # long exception message
-    "S104",    # hardcoded bind all interfaces
-    "FAST001", # FastAPI redundant response_model
-    "B905",    # zip without explicit strict
-    "FBT001",  # boolean type hint positional argument
-    "FBT002",  # boolean default value positional argument
-    "PLC0415", # import not at top-level (conditional imports)
-    "D106",    # missing docstring in public nested class
-    "D200",    # unnecessary multiline docstring
-    "D205",    # missing blank line after summary
-    "PLR2004", # magic value comparison (common in business logic)
-    "D102",    # undocumented public method (covered by D100/D101)
-    "D104",    # undocumented public package
+    # Docstring punctuation - stylistic, not functional
+    "D400", "D415",
+    # Docstring mood - stylistic
+    "D401",
+    # Docstring blank line between summary and description - stylistic
+    "D205",
+    # Missing docstring in public package - empty __init__ files
+    "D104",
+    # Missing docstring in public nested class - Pydantic Config pattern
+    "D106",
 ]
 
 [tool.pytest.ini_options]
@@ -155,7 +156,12 @@ addopts = "-v --cov=thalos_prime --cov-report=term-missing"
 
 [tool.bandit]
 exclude_dirs = ["tests", "build", "dist"]
-skips = ["B101"]  # Skip assert_used test
+skips = [
+    "B101",   # Skip assert_used test
+    "B104",   # Skip hardcoded_bind_all_interfaces - intentional for API server
+    "B404",   # Skip blacklist_import_subprocess - used in controlled sandbox
+    "B603",   # Skip subprocess_without_shell_equals_true - controlled sandbox
+]
 
 # Suppress errors in tests that call untyped src/ functions
 [[tool.mypy.overrides]]
@@ -189,29 +195,82 @@ module = [
     "aiohttp.*",
     "libcst",
     "libcst.*",
+    "psutil",
+    "psutil.*",
 ]
 ignore_missing_imports = true
+
+# Legacy src/ directory - not part of thalos_prime package, no strict typing
+[[tool.mypy.overrides]]
+module = [
+    "src",
+    "src.*",
+]
+ignore_errors = true
+
+# Optional FastAPI/SQLAlchemy/Pydantic modules - decorators/subclassing
+# are untyped because those packages use Any when imports are missing
+[[tool.mypy.overrides]]
+module = [
+    "thalos_prime.api",
+    "thalos_prime.api.*",
+    "thalos_prime.models",
+    "thalos_prime.models.*",
+    "thalos_prime.database",
+    "thalos_prime.database.*",
+]
+disable_error_code = ["misc", "untyped-decorator"]
+
+# Test files that call legacy src/ untyped functions
+[[tool.mypy.overrides]]
+module = [
+    "tests.test_lob_shard_manager",
+    "tests.test_lob_babel_search",
+    "tests.test_api_chat",
+    "tests.test_api_search",
+    "tests.test_main",
+]
+disable_error_code = ["no-untyped-call"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
     "S101", "PLR2004", "D100", "D101", "D102", "D103", "D104",
     "ANN201", "ANN001", "ANN002", "ANN003",
-    "PT009",   # unittest-style assertions in TestCase classes
-    "SLF001",  # private member access in tests
-    "ARG001",  # unused function argument in test setup
-    "ARG002",  # unused method argument in test setup
-    "D200", "D400", "D415", "D401", "D205",  # docstring style
-    "PLC0415",  # import not at top-level (conditional imports in tests)
-    "E501",     # line too long in tests
-    "B905",     # zip without explicit strict in tests
+    # unittest-style assertions - legacy test style
+    "PT009",
+    # imports not at top-level (some test setup requires this)
+    "PLC0415", "E402",
+    # private member access is legitimate in unit tests
+    "SLF001",
 ]
-"thalos_prime/**/*.py" = [
-    "D400", "D415", "D401", "D200", "D205", "D104",  # docstring style
-    "PLR2004",   # magic value comparison
-    "PLC0415",   # import not at top-level (conditional imports)
-    "FBT001", "FBT002",  # boolean positional args in core module signatures
+# Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
+"thalos_prime/api/**/*.py" = [
+    "PLC0415", "PLR2004", "BLE001", "B904", "G004", "E501",
+    "ARG001", "ARG002", "TRY003", "EM101", "TRY401", "TRY300",
+    "TRY301", "ASYNC240", "ASYNC230", "S104", "RUF012", "D102",
+    "FBT001", "FBT002", "PTH118", "PTH120", "PTH110", "PTH123",
+    "PLW0603", "PLW0602", "FAST001", "A001", "S101", "SLF001",
+    "D106",  # Config inner classes in FastAPI models
+    "D205",  # docstring formatting
 ]
-"thalos_prime/__init__.py" = ["E402"]  # imports after sys.path manipulation are intentional
-"thalos_prime/api/**/*.py" = ["BLE001", "B904", "TRY300", "TRY301", "A001", "ARG001", "ARG002", "SLF001", "TRY401", "S101", "PTH110", "PTH118", "PTH120", "PTH123", "ASYNC230", "ASYNC240", "PLW0603", "PLW0602", "E501", "FURB116", "PLW2901", "RUF012", "FAST001", "FBT001", "FBT002", "G004", "S104", "D106"]
-"thalos_prime/database/**/*.py" = ["BLE001", "B904", "ARG001", "TRY401", "PLW0603", "PLW0602", "E501", "ARG002", "G004", "TRY003", "EM101"]
-"thalos_prime/models/**/*.py" = ["RUF012", "E501", "N805", "D106", "D102", "TRY003", "EM101"]
+"thalos_prime/models/**/*.py" = [
+    "RUF012", "D102", "D106", "BLE001", "B904", "PLC0415", "PLR2004",
+    "FBT001", "FBT002", "TRY003", "EM101", "E501",
+]
+"thalos_prime/database/**/*.py" = [
+    "RUF012", "BLE001", "B904", "PLC0415", "PLR2004", "E501",
+    "G004", "ARG001", "TRY401", "PLW0603", "PLW0602", "D104",
+]
+"thalos_prime/auth/__init__.py" = ["D104"]
+"thalos_prime/cache/__init__.py" = ["D104"]
+"thalos_prime/cli/__init__.py" = ["D104"]
+"thalos_prime/monitoring/__init__.py" = ["D104"]
+"thalos_prime/remote/__init__.py" = ["D104"]
+"thalos_prime/ui/__init__.py" = ["D104"]
+"thalos_prime/utils/__init__.py" = ["D104"]
+"thalos_prime/workers/__init__.py" = ["D104"]
+"thalos_prime/__init__.py" = ["E402", "PTH110"]
+"thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
+"thalos_prime/lob_babel_generator.py" = ["PLC0415", "SLF001", "D205", "D401"]
+"thalos_prime/lob_babel_enumerator.py" = ["PLR2004", "PLW2901", "D205", "D401"]
+"thalos_prime/config.py" = ["D205", "D401"]

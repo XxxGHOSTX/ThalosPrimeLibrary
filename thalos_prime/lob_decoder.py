@@ -1,4 +1,4 @@
-"""Enhanced decoder and coherence scoring for Library of Babel pages
+"""Enhanced decoder and coherence scoring for Library of Babel pages.
 
 This module provides advanced heuristics for scoring the coherence and
 readability of generated pages, with optional LLM-based normalization.
@@ -11,7 +11,7 @@ from typing import Any, ClassVar
 
 @dataclass
 class CoherenceScore:
-    """Result of coherence analysis"""
+    """Result of coherence analysis."""
 
     overall_score: float  # 0-100 scale
     language_score: float  # English word density
@@ -24,7 +24,7 @@ class CoherenceScore:
 
 @dataclass
 class DecodedPage:
-    """A decoded page with scores and metadata"""
+    """A decoded page with scores and metadata."""
 
     address: str
     raw_text: str
@@ -56,7 +56,7 @@ class BabelDecoder:
         "people", "into", "year", "your", "good", "some", "could", "them", "see", "other",
         "than", "then", "now", "look", "only", "come", "its", "over", "think", "also",
         "back", "after", "use", "two", "how", "our", "work", "first", "well", "way",
-        "even", "new", "want", "because", "any", "these", "give", "day", "most", "us"
+        "even", "new", "want", "because", "any", "these", "give", "day", "most", "us",
     }
 
     def __init__(
@@ -64,7 +64,7 @@ class BabelDecoder:
         weight_language: float = 0.30,
         weight_structure: float = 0.20,
         weight_ngram: float = 0.20,
-        weight_exact_match: float = 0.30
+        weight_exact_match: float = 0.30,
     ) -> None:
         """Initialize the decoder with configurable weights.
 
@@ -128,7 +128,7 @@ class BabelDecoder:
             "exact_match_score": exact_match_score,
             "text_length": len(text),
             "word_count": len(text.split()),
-            "sentence_count": self._count_sentences(text)
+            "sentence_count": self._count_sentences(text),
         }
 
         return CoherenceScore(
@@ -138,7 +138,7 @@ class BabelDecoder:
             ngram_score=ngram_score * 100,
             exact_match_score=exact_match_score * 100,
             confidence_level=confidence,
-            metrics=metrics
+            metrics=metrics,
         )
 
     def _score_language(self, text: str) -> float:
@@ -290,7 +290,7 @@ class BabelDecoder:
         text: str,
         query: str | None = None,
         source: str = "local",
-        normalize: bool = False
+        normalize: bool = False,
     ) -> DecodedPage:
         """Fully decode a page with coherence scoring and optional normalization.
 
@@ -319,7 +319,7 @@ class BabelDecoder:
             "source": source,
             "query": query,
             "normalized": normalize and self.llm_enabled,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         return DecodedPage(
@@ -329,10 +329,10 @@ class BabelDecoder:
             coherence=coherence,
             source=source,
             timestamp=time.time(),
-            provenance=provenance
+            provenance=provenance,
         )
 
-    def _normalize_with_llm(self, text: str, query: str | None = None) -> str:  # noqa: ARG002
+    def _normalize_with_llm(self, text: str, query: str | None = None) -> str:
         """Normalize text using LLM (placeholder for future implementation).
 
         Args:
@@ -347,7 +347,7 @@ class BabelDecoder:
         # For now, just return the original text
         return text
 
-    def enable_llm(self, provider: str, **kwargs: object) -> None:  # noqa: ARG002
+    def enable_llm(self, provider: str, **kwargs: object) -> None:
         """Enable LLM normalization.
 
         Args:
@@ -382,7 +382,7 @@ def decode_page(
     address: str,
     text: str,
     query: str | None = None,
-    source: str = "local"
+    source: str = "local",
 ) -> DecodedPage:
     """Convenience function to decode a page.
 

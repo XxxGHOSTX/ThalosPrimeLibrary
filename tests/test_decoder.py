@@ -1,5 +1,4 @@
-"""Tests for the Babel decoder module
-"""
+"""Tests for the Babel decoder module."""
 
 from thalos_prime.lob_decoder import (
     BabelDecoder,
@@ -11,7 +10,7 @@ from thalos_prime.lob_decoder import (
 
 
 def test_babel_decoder_initialization() -> None:
-    """Test decoder initialization with default weights"""
+    """Test decoder initialization with default weights."""
     decoder = BabelDecoder()
 
     # Weights should sum to 1.0
@@ -25,12 +24,12 @@ def test_babel_decoder_initialization() -> None:
 
 
 def test_babel_decoder_custom_weights() -> None:
-    """Test decoder with custom weights"""
+    """Test decoder with custom weights."""
     decoder = BabelDecoder(
         weight_language=0.4,
         weight_structure=0.3,
         weight_ngram=0.2,
-        weight_exact_match=0.1
+        weight_exact_match=0.1,
     )
 
     # Weights should still sum to 1.0 after normalization
@@ -44,7 +43,7 @@ def test_babel_decoder_custom_weights() -> None:
 
 
 def test_score_coherence_basic() -> None:
-    """Test basic coherence scoring"""
+    """Test basic coherence scoring."""
     decoder = BabelDecoder()
 
     text = "the quick brown fox jumps over the lazy dog"
@@ -57,7 +56,7 @@ def test_score_coherence_basic() -> None:
 
 
 def test_score_coherence_with_query() -> None:
-    """Test coherence scoring with query matching"""
+    """Test coherence scoring with query matching."""
     decoder = BabelDecoder()
 
     text = "the quick brown fox jumps over the lazy dog"
@@ -71,7 +70,7 @@ def test_score_coherence_with_query() -> None:
 
 
 def test_score_language_common_words() -> None:
-    """Test language scoring with common English words"""
+    """Test language scoring with common English words."""
     decoder = BabelDecoder()
 
     # Text with many common words
@@ -83,7 +82,7 @@ def test_score_language_common_words() -> None:
 
 
 def test_score_language_gibberish() -> None:
-    """Test language scoring with gibberish"""
+    """Test language scoring with gibberish."""
     decoder = BabelDecoder()
 
     # Gibberish text
@@ -95,7 +94,7 @@ def test_score_language_gibberish() -> None:
 
 
 def test_score_structure_with_punctuation() -> None:
-    """Test structure scoring with good punctuation"""
+    """Test structure scoring with good punctuation."""
     decoder = BabelDecoder()
 
     # Text with good structure
@@ -107,7 +106,7 @@ def test_score_structure_with_punctuation() -> None:
 
 
 def test_score_structure_no_punctuation() -> None:
-    """Test structure scoring with no punctuation"""
+    """Test structure scoring with no punctuation."""
     decoder = BabelDecoder()
 
     # No punctuation
@@ -119,7 +118,7 @@ def test_score_structure_no_punctuation() -> None:
 
 
 def test_score_ngrams() -> None:
-    """Test n-gram coherence scoring"""
+    """Test n-gram coherence scoring."""
     decoder = BabelDecoder()
 
     # Coherent text with common words
@@ -131,7 +130,7 @@ def test_score_ngrams() -> None:
 
 
 def test_score_exact_match_full() -> None:
-    """Test exact match with full query match"""
+    """Test exact match with full query match."""
     decoder = BabelDecoder()
 
     text = "the quick brown fox jumps"
@@ -143,7 +142,7 @@ def test_score_exact_match_full() -> None:
 
 
 def test_score_exact_match_partial() -> None:
-    """Test exact match with partial word match"""
+    """Test exact match with partial word match."""
     decoder = BabelDecoder()
 
     text = "the quick fox jumps"
@@ -155,7 +154,7 @@ def test_score_exact_match_partial() -> None:
 
 
 def test_score_exact_match_none() -> None:
-    """Test exact match with no match"""
+    """Test exact match with no match."""
     decoder = BabelDecoder()
 
     text = "the quick fox jumps"
@@ -167,7 +166,7 @@ def test_score_exact_match_none() -> None:
 
 
 def test_confidence_levels() -> None:
-    """Test that confidence levels are assigned correctly"""
+    """Test that confidence levels are assigned correctly."""
     decoder = BabelDecoder()
 
     # High coherence text
@@ -186,7 +185,7 @@ def test_confidence_levels() -> None:
 
 
 def test_decode_page_basic() -> None:
-    """Test basic page decoding"""
+    """Test basic page decoding."""
     decoder = BabelDecoder()
 
     address = "abc123"
@@ -203,7 +202,7 @@ def test_decode_page_basic() -> None:
 
 
 def test_decode_page_with_query() -> None:
-    """Test page decoding with query"""
+    """Test page decoding with query."""
     decoder = BabelDecoder()
 
     address = "test456"
@@ -217,7 +216,7 @@ def test_decode_page_with_query() -> None:
 
 
 def test_decode_page_remote_source() -> None:
-    """Test page decoding with remote source"""
+    """Test page decoding with remote source."""
     decoder = BabelDecoder()
 
     address = "remote123"
@@ -230,7 +229,7 @@ def test_decode_page_remote_source() -> None:
 
 
 def test_decode_page_provenance() -> None:
-    """Test that provenance is recorded correctly"""
+    """Test that provenance is recorded correctly."""
     decoder = BabelDecoder()
 
     address = "prov123"
@@ -248,7 +247,7 @@ def test_decode_page_provenance() -> None:
 
 
 def test_coherence_score_metrics() -> None:
-    """Test that detailed metrics are included"""
+    """Test that detailed metrics are included."""
     decoder = BabelDecoder()
 
     text = "the quick brown fox"
@@ -264,7 +263,7 @@ def test_coherence_score_metrics() -> None:
 
 
 def test_count_sentences() -> None:
-    """Test sentence counting"""
+    """Test sentence counting."""
     decoder = BabelDecoder()
 
     # Test with periods
@@ -284,7 +283,7 @@ def test_count_sentences() -> None:
 
 
 def test_convenience_function_score_coherence() -> None:
-    """Test module-level score_coherence function"""
+    """Test module-level score_coherence function."""
     text = "the quick brown fox"
     coherence = score_coherence(text)
 
@@ -293,7 +292,7 @@ def test_convenience_function_score_coherence() -> None:
 
 
 def test_convenience_function_decode_page() -> None:
-    """Test module-level decode_page function"""
+    """Test module-level decode_page function."""
     address = "conv123"
     text = "convenience test text"
 
@@ -304,7 +303,7 @@ def test_convenience_function_decode_page() -> None:
 
 
 def test_enable_llm() -> None:
-    """Test enabling LLM normalization"""
+    """Test enabling LLM normalization."""
     decoder = BabelDecoder()
 
     assert decoder.llm_enabled is False
@@ -316,7 +315,7 @@ def test_enable_llm() -> None:
 
 
 def test_normalize_with_llm_disabled() -> None:
-    """Test that normalization returns None when LLM is disabled"""
+    """Test that normalization returns None when LLM is disabled."""
     decoder = BabelDecoder()
 
     address = "norm123"
@@ -330,7 +329,7 @@ def test_normalize_with_llm_disabled() -> None:
 
 
 def test_different_queries_different_scores() -> None:
-    """Test that different queries produce different scores"""
+    """Test that different queries produce different scores."""
     decoder = BabelDecoder()
 
     text = "the quick brown fox jumps over the lazy dog"

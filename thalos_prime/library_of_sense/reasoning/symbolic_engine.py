@@ -53,7 +53,7 @@ class SymbolicReasoningEngine:
         return str(simplified), steps
 
     def differentiate(
-        self, expr_str: str, var_name: str = "x"
+        self, expr_str: str, var_name: str = "x",
     ) -> tuple[str, list[str]]:
         """Compute the derivative of an expression with respect to a variable.
 
@@ -105,7 +105,7 @@ class SymbolicReasoningEngine:
             )
         except ValueError as exc:
             logger.debug(
-                "SymbolicReasoningEngine: reasoning failed for %r: %s", premise, exc
+                "SymbolicReasoningEngine: reasoning failed for %r: %s", premise, exc,
             )
             return ReasoningResult(
                 conclusion="",

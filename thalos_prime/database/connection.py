@@ -1,4 +1,4 @@
-"""Database Connection Manager
+"""Database Connection Manager.
 
 Handles SQLAlchemy database connections, session management, and pooling.
 """
@@ -40,7 +40,7 @@ class DatabaseManager:
         self._initialized = False
 
     def init_engine(self) -> None:
-        """Initialize SQLAlchemy engine with connection pooling"""
+        """Initialize SQLAlchemy engine with connection pooling."""
         if self._initialized:
             logger.warning("Database already initialized")
             return
@@ -54,7 +54,7 @@ class DatabaseManager:
             pool_size=config.db_pool_size,
             max_overflow=config.db_max_overflow,
             pool_pre_ping=True,  # Verify connections before using
-            echo=False  # Set to True for SQL logging
+            echo=False,  # Set to True for SQL logging
         )
 
         # Add event listeners
@@ -74,14 +74,14 @@ class DatabaseManager:
         self.SessionLocal = sessionmaker(
             autocommit=False,
             autoflush=False,
-            bind=self.engine
+            bind=self.engine,
         )
 
         self._initialized = True
         logger.info("Database engine initialized successfully")
 
     def create_tables(self) -> None:
-        """Create all database tables"""
+        """Create all database tables."""
         if not self.engine:
             self.init_engine()
 
@@ -90,7 +90,7 @@ class DatabaseManager:
         logger.info("Database tables created successfully")
 
     def drop_tables(self) -> None:
-        """Drop all database tables (use with caution!)"""
+        """Drop all database tables (use with caution!)."""
         if not self.engine:
             self.init_engine()
 
@@ -115,15 +115,16 @@ class DatabaseManager:
             self.init_engine()
 
         if self.SessionLocal is None:
-            raise RuntimeError("SessionLocal is not initialized")
+            msg = "SessionLocal is not initialized"
+            raise RuntimeError(msg)
 
         session = self.SessionLocal()
         try:
             yield session
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
-            logger.exception("Session error")
+            logger.exception(f"Session error: {e}")
             raise
         finally:
             session.close()
@@ -178,7 +179,7 @@ class DatabaseManager:
         self.close()
 
     def close(self) -> None:
-        """Close database engine and connections"""
+        """Close database engine and connections."""
         if self.engine:
             logger.info("Closing database connections...")
             self.engine.dispose()
@@ -223,7 +224,8 @@ def get_db_manager() -> DatabaseManager:
     global _db_manager
 
     if _db_manager is None:
-        raise RuntimeError("Database not initialized. Call init_database() first.")
+        msg = "Database not initialized. Call init_database() first."
+        raise RuntimeError(msg)
 
     return _db_manager
 
@@ -246,7 +248,7 @@ def get_db_session() -> Iterator[Session]:
 
 
 def close_database() -> None:
-    """Close global database connections"""
+    """Close global database connections."""
     global _db_manager
 
     if _db_manager:

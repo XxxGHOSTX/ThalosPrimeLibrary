@@ -1,5 +1,5 @@
 """Deterministic page generator for Library of Babel
-Based on the Basile algorithm from libraryofbabel.info
+Based on the Basile algorithm from libraryofbabel.info.
 
 The Library of Babel uses a deterministic algorithm where:
 - Each page is exactly 3200 characters
@@ -30,7 +30,7 @@ class BabelGenerator:
     HEX_CHARS = "0123456789abcdef"
 
     def __init__(self) -> None:
-        """Initialize the Babel generator"""
+        """Initialize the Babel generator."""
         self._charset_map = {char: idx for idx, char in enumerate(self.CHARSET)}
         self._reverse_map = dict(enumerate(self.CHARSET))
 
@@ -211,4 +211,4 @@ def normalize_text(text: str) -> str:
         Normalized 3200-character string
 
     """
-    return _generator._normalize_text(text)  # noqa: SLF001
+    return _generator._normalize_text(text)

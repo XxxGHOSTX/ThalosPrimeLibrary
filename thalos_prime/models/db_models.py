@@ -30,7 +30,7 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
-class User(Base):  # type: ignore[misc]
+class User(Base):
     """User model for authentication."""
 
     __tablename__ = "users"
@@ -38,7 +38,7 @@ class User(Base):  # type: ignore[misc]
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(
         String(36), unique=True, default=generate_uuid,
-        nullable=False, index=True
+        nullable=False, index=True,
     )
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
@@ -48,15 +48,15 @@ class User(Base):  # type: ignore[misc]
     api_key = Column(String(64), unique=True, index=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(
-        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
 
     # Relationships
     sessions = relationship(
-        "Session", back_populates="user", cascade="all, delete-orphan"
+        "Session", back_populates="user", cascade="all, delete-orphan",
     )
     queries = relationship(
-        "Query", back_populates="user", cascade="all, delete-orphan"
+        "Query", back_populates="user", cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -64,7 +64,7 @@ class User(Base):  # type: ignore[misc]
         return f'<User(username="{self.username}", email="{self.email}")>'
 
 
-class Session(Base):  # type: ignore[misc]
+class Session(Base):
     """Session model for tracking user sessions."""
 
     __tablename__ = "sessions"
@@ -72,16 +72,16 @@ class Session(Base):  # type: ignore[misc]
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(
         String(36), unique=True, default=generate_uuid,
-        nullable=False, index=True
+        nullable=False, index=True,
     )
     user_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, index=True
+        Integer, ForeignKey("users.id"), nullable=True, index=True,
     )
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     last_activity = Column(
-        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
     is_active = Column(Boolean, default=True, nullable=False)
     metadata = Column(JSON, default=dict, nullable=True)
@@ -89,7 +89,7 @@ class Session(Base):  # type: ignore[misc]
     # Relationships
     user = relationship("User", back_populates="sessions")
     queries = relationship(
-        "Query", back_populates="session", cascade="all, delete-orphan"
+        "Query", back_populates="session", cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -104,7 +104,7 @@ class Session(Base):  # type: ignore[misc]
         )
 
 
-class Query(Base):  # type: ignore[misc]
+class Query(Base):
     """Query model for tracking search queries."""
 
     __tablename__ = "queries"
@@ -112,13 +112,13 @@ class Query(Base):  # type: ignore[misc]
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(
         String(36), unique=True, default=generate_uuid,
-        nullable=False, index=True
+        nullable=False, index=True,
     )
     session_id = Column(
-        Integer, ForeignKey("sessions.id"), nullable=False, index=True
+        Integer, ForeignKey("sessions.id"), nullable=False, index=True,
     )
     user_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, index=True
+        Integer, ForeignKey("users.id"), nullable=True, index=True,
     )
     query_text = Column(Text, nullable=False)
     search_mode = Column(String(20), nullable=False, default="hybrid")
@@ -128,7 +128,7 @@ class Query(Base):  # type: ignore[misc]
     execution_time_ms = Column(Float, nullable=True)
     cached = Column(Boolean, default=False, nullable=False)
     created_at = Column(
-        DateTime, default=func.now(), nullable=False, index=True
+        DateTime, default=func.now(), nullable=False, index=True,
     )
     metadata = Column(JSON, default=dict, nullable=True)
 
@@ -136,7 +136,7 @@ class Query(Base):  # type: ignore[misc]
     session = relationship("Session", back_populates="queries")
     user = relationship("User", back_populates="queries")
     results = relationship(
-        "CachedResult", back_populates="query", cascade="all, delete-orphan"
+        "CachedResult", back_populates="query", cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -152,14 +152,14 @@ class Query(Base):  # type: ignore[misc]
         )
 
 
-class CachedResult(Base):  # type: ignore[misc]
+class CachedResult(Base):
     """Cached search result model."""
 
     __tablename__ = "cached_results"
 
     id = Column(Integer, primary_key=True, index=True)
     query_id = Column(
-        Integer, ForeignKey("queries.id"), nullable=False, index=True
+        Integer, ForeignKey("queries.id"), nullable=False, index=True,
     )
     address_hex = Column(String(255), nullable=False, index=True)
     page_text = Column(Text, nullable=False)
@@ -191,14 +191,14 @@ class CachedResult(Base):  # type: ignore[misc]
         )
 
 
-class GeneratedPage(Base):  # type: ignore[misc]
+class GeneratedPage(Base):
     """Generated page model for storing locally generated pages."""
 
     __tablename__ = "generated_pages"
 
     id = Column(Integer, primary_key=True, index=True)
     address_hex = Column(
-        String(255), unique=True, nullable=False, index=True
+        String(255), unique=True, nullable=False, index=True,
     )
     page_text = Column(Text, nullable=False)
     validation_status = Column(Boolean, default=True, nullable=False)
@@ -206,7 +206,7 @@ class GeneratedPage(Base):  # type: ignore[misc]
     access_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     last_accessed = Column(
-        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
     metadata = Column(JSON, default=dict, nullable=True)
 
@@ -223,7 +223,7 @@ class GeneratedPage(Base):  # type: ignore[misc]
         )
 
 
-class APILog(Base):  # type: ignore[misc]
+class APILog(Base):
     """API request log model."""
 
     __tablename__ = "api_logs"
@@ -239,7 +239,7 @@ class APILog(Base):  # type: ignore[misc]
     user_agent = Column(String(255), nullable=True)
     error_message = Column(Text, nullable=True)
     created_at = Column(
-        DateTime, default=func.now(), nullable=False, index=True
+        DateTime, default=func.now(), nullable=False, index=True,
     )
     metadata = Column(JSON, default=dict, nullable=True)
 

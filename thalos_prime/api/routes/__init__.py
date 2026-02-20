@@ -1,4 +1,4 @@
-"""API Routes Module - Initialization
+"""API Routes Module - Initialization.
 
 This module exports all route routers.
 """

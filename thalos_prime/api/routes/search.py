@@ -1,4 +1,4 @@
-"""Search Routes - Direct search endpoints
+"""Search Routes - Direct search endpoints.
 
 Provides search functionality with detailed results and filtering.
 """
@@ -31,7 +31,7 @@ CACHE_TTL = 3600  # 1 hour
 
 
 def get_cached_search(cache_key: str) -> dict[str, Any] | None:
-    """Get cached search results if available and not expired"""
+    """Get cached search results if available and not expired."""
     if cache_key in SEARCH_CACHE:
         cached_data, timestamp = SEARCH_CACHE[cache_key]
         if time.time() - timestamp < CACHE_TTL:
@@ -42,11 +42,11 @@ def get_cached_search(cache_key: str) -> dict[str, Any] | None:
 
 
 def cache_search(cache_key: str, data: dict[str, Any]) -> None:
-    """Cache search results"""
+    """Cache search results."""
     SEARCH_CACHE[cache_key] = (data, time.time())
 
 
-@router.post("/", response_model=SearchResponse)
+@router.post("/")
 async def search(request: SearchRequest) -> SearchResponse:
     """Search for pages matching the query.
 
@@ -76,8 +76,8 @@ async def search(request: SearchRequest) -> SearchResponse:
             cached=True,
             metadata={
                 "query_time_ms": (time.time() - start_time) * 1000,
-                "cache_hit": True
-            }
+                "cache_hit": True,
+            },
         )
 
     try:
@@ -88,7 +88,7 @@ async def search(request: SearchRequest) -> SearchResponse:
             addresses = enumerate_addresses(
                 request.query,
                 max_results=request.max_results * 2,  # Get more to filter
-                depth=2
+                depth=2,
             )
 
             for addr_info in addresses:
@@ -100,7 +100,7 @@ async def search(request: SearchRequest) -> SearchResponse:
                     address=address,
                     text=page_text,
                     query=request.query,
-                    source="local"
+                    source="local",
                 )
 
                 # Filter by minimum score
@@ -112,7 +112,7 @@ async def search(request: SearchRequest) -> SearchResponse:
                             shelf=None,
                             volume=None,
                             page=None,
-                            url=None
+                            url=None,
                         ),
                         text=decoded.raw_text,
                         snippet=decoded.raw_text[:200] + "...",
@@ -124,7 +124,7 @@ async def search(request: SearchRequest) -> SearchResponse:
                             ngram_score=decoded.coherence.ngram_score,
                             exact_match_score=decoded.coherence.exact_match_score,
                             confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
-                            metrics=decoded.coherence.metrics
+                            metrics=decoded.coherence.metrics,
                         ),
                         provenance=ProvenanceInfo(
                             address=decoded.address,
@@ -132,8 +132,8 @@ async def search(request: SearchRequest) -> SearchResponse:
                             query=request.query,
                             timestamp=decoded.timestamp,
                             normalized=False,
-                            llm_provider=None
-                        )
+                            llm_provider=None,
+                        ),
                     )
                     results.append(page_result)
 
@@ -146,7 +146,7 @@ async def search(request: SearchRequest) -> SearchResponse:
         # Cache results
         cache_data = {
             "results": results,
-            "total_found": len(results)
+            "total_found": len(results),
         }
         cache_search(cache_key, cache_data)
 
@@ -162,8 +162,8 @@ async def search(request: SearchRequest) -> SearchResponse:
             metadata={
                 "query_time_ms": query_time_ms,
                 "cache_hit": False,
-                "addresses_enumerated": len(addresses) if "addresses" in locals() else 0
-            }
+                "addresses_enumerated": len(addresses) if "addresses" in locals() else 0,
+            },
         )
 
     except Exception as e:
@@ -188,12 +188,12 @@ async def get_search_suggestions(q: Annotated[str, QueryParam(min_length=1)]) ->
         f"{q} definition",
         f"{q} explained",
         f"{q} analysis",
-        f"{q} theory"
+        f"{q} theory",
     ]
 
     return {
         "query": q,
-        "suggestions": suggestions[:5]
+        "suggestions": suggestions[:5],
     }
 
 
@@ -210,7 +210,7 @@ async def clear_search_cache() -> dict[str, Any]:
 
     return {
         "message": "Search cache cleared successfully",
-        "entries_cleared": count
+        "entries_cleared": count,
     }
 
 
@@ -241,5 +241,5 @@ async def get_cache_stats() -> dict[str, Any]:
         "total_entries": total_entries,
         "avg_size_bytes": int(avg_size),
         "avg_age_seconds": int(avg_age),
-        "cache_ttl_seconds": CACHE_TTL
+        "cache_ttl_seconds": CACHE_TTL,
     }

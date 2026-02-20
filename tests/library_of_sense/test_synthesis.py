@@ -121,7 +121,7 @@ class TestResultVerifier:
         verifier = ResultVerifier()
         r = _make_result("src", "completely different content", 0.9)
         synthesis = SynthesisResult(
-            answer="totally unrelated answer xyz", confidence=0.9, sources=[r]
+            answer="totally unrelated answer xyz", confidence=0.9, sources=[r],
         )
         result = verifier.verify(synthesis)
         assert result.valid is False
@@ -155,7 +155,7 @@ class TestAnswerGenerator:
         gen = AnswerGenerator()
         r = _make_result("src", "test data", 0.9)
         synthesis = SynthesisResult(
-            answer="test data", confidence=0.9, sources=[r], verified=True
+            answer="test data", confidence=0.9, sources=[r], verified=True,
         )
         ctx = QueryContext()
         answer = gen.generate("test query", synthesis, ctx)

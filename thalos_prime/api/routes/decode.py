@@ -1,4 +1,4 @@
-"""Decode Routes - Page decoding and coherence scoring endpoints
+"""Decode Routes - Page decoding and coherence scoring endpoints.
 
 Provides coherence analysis and text normalization functionality.
 """
@@ -22,7 +22,7 @@ router = APIRouter()
 decoder = BabelDecoder()
 
 
-@router.post("/", response_model=DecodeResponse)
+@router.post("/")
 async def decode(request: DecodeRequest) -> DecodeResponse:
     """Decode and score a page.
 
@@ -45,7 +45,7 @@ async def decode(request: DecodeRequest) -> DecodeResponse:
             address=request.address,
             text=request.text,
             query=request.query,
-            source="user_provided"
+            source="user_provided",
         )
 
         # Apply normalization if requested
@@ -64,7 +64,7 @@ async def decode(request: DecodeRequest) -> DecodeResponse:
                 shelf=None,
                 volume=None,
                 page=None,
-                url=None
+                url=None,
             ),
             raw_text=decoded.raw_text,
             normalized_text=normalized_text,
@@ -75,7 +75,7 @@ async def decode(request: DecodeRequest) -> DecodeResponse:
                 ngram_score=decoded.coherence.ngram_score,
                 exact_match_score=decoded.coherence.exact_match_score,
                 confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
-                metrics=decoded.coherence.metrics
+                metrics=decoded.coherence.metrics,
             ),
             provenance=ProvenanceInfo(
                 address=decoded.address,
@@ -83,8 +83,8 @@ async def decode(request: DecodeRequest) -> DecodeResponse:
                 query=request.query,
                 timestamp=decoded.timestamp,
                 normalized=normalize,
-                llm_provider=None
-            )
+                llm_provider=None,
+            ),
         )
 
     except Exception as e:
@@ -113,7 +113,7 @@ async def score_text(text: str, query: str | None = None) -> dict[str, Any]:
             "ngram_score": coherence.ngram_score,
             "exact_match_score": coherence.exact_match_score,
             "confidence_level": coherence.confidence_level,
-            "metrics": coherence.metrics
+            "metrics": coherence.metrics,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scoring failed: {e!s}")
@@ -145,27 +145,27 @@ async def decode_batch(items: list[dict[str, Any]]) -> dict[str, Any]:
                 address=address,
                 text=text,
                 query=query,
-                source="batch"
+                source="batch",
             )
 
             results.append({
                 "address": address,
                 "coherence_score": decoded.coherence.overall_score,
                 "confidence_level": decoded.coherence.confidence_level,
-                "success": True
+                "success": True,
             })
         except (RuntimeError, ValueError, TypeError, KeyError, AttributeError) as e:
             results.append({
                 "address": item.get("address", "unknown"),
                 "error": str(e),
-                "success": False
+                "success": False,
             })
 
     return {
         "total": len(items),
         "successful": sum(1 for r in results if r.get("success")),
         "failed": sum(1 for r in results if not r.get("success")),
-        "results": results
+        "results": results,
     }
 
 
@@ -174,7 +174,7 @@ async def update_decoder_weights(
     language: float = 0.30,
     structure: float = 0.20,
     ngram: float = 0.20,
-    exact_match: float = 0.30
+    exact_match: float = 0.30,
 ) -> dict[str, Any]:
     """Update decoder scoring weights.
 
@@ -194,7 +194,7 @@ async def update_decoder_weights(
             weight_language=language,
             weight_structure=structure,
             weight_ngram=ngram,
-            weight_exact_match=exact_match
+            weight_exact_match=exact_match,
         )
 
         return {
@@ -202,9 +202,9 @@ async def update_decoder_weights(
                 "language": custom_decoder.weight_language,
                 "structure": custom_decoder.weight_structure,
                 "ngram": custom_decoder.weight_ngram,
-                "exact_match": custom_decoder.weight_exact_match
+                "exact_match": custom_decoder.weight_exact_match,
             },
-            "message": "Weights normalized and applied"
+            "message": "Weights normalized and applied",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Weight update failed: {e!s}")
@@ -223,9 +223,9 @@ async def get_decoder_metrics() -> dict[str, Any]:
             "language": decoder.weight_language,
             "structure": decoder.weight_structure,
             "ngram": decoder.weight_ngram,
-            "exact_match": decoder.weight_exact_match
+            "exact_match": decoder.weight_exact_match,
         },
         "llm_enabled": decoder.llm_enabled,
         "llm_provider": decoder.llm_provider,
-        "common_words_count": len(decoder.COMMON_WORDS)
+        "common_words_count": len(decoder.COMMON_WORDS),
     }

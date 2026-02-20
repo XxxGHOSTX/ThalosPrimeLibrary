@@ -1,4 +1,4 @@
-"""Chat Routes - Conversational interface
+"""Chat Routes - Conversational interface.
 
 Provides chat endpoint with session management and conversation history.
 """
@@ -29,7 +29,7 @@ SESSIONS: dict[str, dict[str, Any]] = {}
 
 
 def get_or_create_session(session_id: str | None = None) -> str:
-    """Get existing session or create new one"""
+    """Get existing session or create new one."""
     if session_id and session_id in SESSIONS:
         # Update last activity
         SESSIONS[session_id]["last_activity"] = time.time()
@@ -40,12 +40,12 @@ def get_or_create_session(session_id: str | None = None) -> str:
     SESSIONS[new_session_id] = {
         "created_at": time.time(),
         "last_activity": time.time(),
-        "history": []
+        "history": [],
     }
     return new_session_id
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("/")
 async def chat(request: ChatRequest) -> ChatResponse:
     """Chat endpoint for conversational interface.
 
@@ -68,7 +68,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     SESSIONS[session_id]["history"].append({
         "role": "user",
         "content": request.message,
-        "timestamp": time.time()
+        "timestamp": time.time(),
     })
 
     try:
@@ -89,7 +89,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     address=address,
                     text=page_text,
                     query=request.message,
-                    source="local"
+                    source="local",
                 )
 
                 # Convert to PageResult
@@ -100,7 +100,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                         shelf=None,
                         volume=None,
                         page=None,
-                        url=None
+                        url=None,
                     ),
                     text=decoded.raw_text,
                     snippet=decoded.raw_text[:200] + "...",
@@ -112,7 +112,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                         ngram_score=decoded.coherence.ngram_score,
                         exact_match_score=decoded.coherence.exact_match_score,
                         confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
-                        metrics=decoded.coherence.metrics
+                        metrics=decoded.coherence.metrics,
                     ),
                     provenance=ProvenanceInfo(
                         address=decoded.address,
@@ -120,8 +120,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
                         query=request.message,
                         timestamp=decoded.timestamp,
                         normalized=False,
-                        llm_provider=None
-                    )
+                        llm_provider=None,
+                    ),
                 )
 
                 results.append(page_result)
@@ -135,7 +135,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             reply = f"Found {len(results)} results for '{request.message}'. "
             reply += f"Best coherence score: {best_score:.1f}/100 ({results[0].coherence.confidence_level}). "
             # snippet is always set in our PageResult construction above
-            assert results[0].snippet is not None
+            assert results[0].snippet is not None  # nosec B101
             reply += f"Top result preview: {results[0].snippet[:100]}..."
         else:
             reply = f"No results found for '{request.message}'. Try a different query."
@@ -144,7 +144,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         SESSIONS[session_id]["history"].append({
             "role": "bot",
             "content": reply,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         })
 
         # Calculate query time
@@ -157,8 +157,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
             metadata={
                 "query_time_ms": query_time_ms,
                 "mode": request.mode,
-                "results_count": len(results)
-            }
+                "results_count": len(results),
+            },
         )
 
     except Exception as e:
@@ -167,7 +167,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         SESSIONS[session_id]["history"].append({
             "role": "bot",
             "content": error_message,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         })
 
         raise HTTPException(status_code=500, detail=error_message)
@@ -193,7 +193,7 @@ async def get_chat_history(session_id: str, limit: int = 20) -> dict[str, Any]:
     return {
         "session_id": session_id,
         "history": history,
-        "total_messages": len(SESSIONS[session_id]["history"])
+        "total_messages": len(SESSIONS[session_id]["history"]),
     }
 
 
