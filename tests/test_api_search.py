@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.api import _score_coherence
-
-
-
 
 
 class TestApiSearch(unittest.TestCase):
@@ -16,7 +11,7 @@ class TestApiSearch(unittest.TestCase):
 
         score = _score_coherence(text, "test phrase")
 
-        self.assertGreaterEqual(score, 70)
+        assert score >= 70
 
 
 
@@ -24,7 +19,7 @@ class TestApiSearch(unittest.TestCase):
 
         score = _score_coherence("", "test")
 
-        self.assertEqual(score, 0)
+        assert score == 0
 
 
 

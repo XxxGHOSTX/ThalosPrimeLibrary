@@ -1,11 +1,6 @@
 import unittest
 
-
-
-from src.lob_decoder import score_coherence, decode_pages
-
-
-
+from src.lob_decoder import decode_pages, score_coherence
 
 
 class TestDecoder(unittest.TestCase):
@@ -16,7 +11,7 @@ class TestDecoder(unittest.TestCase):
 
         score = score_coherence(text, "Thalos Prime")
 
-        self.assertGreaterEqual(score, 70)
+        assert score >= 70
 
 
 
@@ -26,9 +21,9 @@ class TestDecoder(unittest.TestCase):
 
         out = decode_pages(pages, "Hello", with_normalization=False)
 
-        self.assertEqual(len(out), 1)
+        assert len(out) == 1
 
-        self.assertIn("score", out[0])
+        assert "score" in out[0]
 
 
 

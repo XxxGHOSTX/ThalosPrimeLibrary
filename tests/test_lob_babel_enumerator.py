@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.lob_babel_enumerator import enumerate_addresses
-
-
-
 
 
 class TestBabelEnumerator(unittest.TestCase):
@@ -14,13 +9,13 @@ class TestBabelEnumerator(unittest.TestCase):
 
         results = enumerate_addresses("thalos prime created", max_per_size=2, ngram_sizes=(1, 2))
 
-        self.assertTrue(results)
+        assert results
 
         # Ensure dedup and type tagging
 
         types = {r["type"] for r in results}
 
-        self.assertIn("full", types)
+        assert "full" in types
 
 
 

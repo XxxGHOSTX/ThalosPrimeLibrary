@@ -1,31 +1,30 @@
-"""
-Main Routes - Root endpoints
+"""Main Routes - Root endpoints.
 
 Provides the main landing page and UI serving.
 """
 
-from fastapi import APIRouter, Response
-from fastapi.responses import HTMLResponse, FileResponse
-from typing import Any
 import os
+from typing import Any
+
+from fastapi import APIRouter
+from fastapi.responses import HTMLResponse
 
 router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
 async def root() -> HTMLResponse:
-    """
-    Serve the main UI page.
-    
+    """Serve the main UI page.
+
     Returns the Matrix-style interface for Thalos Prime.
     """
     # Check if index.html exists in root
     index_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "index.html")
-    
+
     if os.path.exists(index_path):
-        with open(index_path, 'r') as f:
+        with open(index_path) as f:
             return HTMLResponse(content=f.read())
-    
+
     # Return basic HTML if file doesn't exist
     return HTMLResponse(content="""
     <!DOCTYPE html>
@@ -58,9 +57,8 @@ async def root() -> HTMLResponse:
 
 @router.get("/api/v1/status")
 async def api_status() -> dict[str, Any]:
-    """
-    Get API status.
-    
+    """Get API status.
+
     Returns basic information about the API availability.
     """
     return {

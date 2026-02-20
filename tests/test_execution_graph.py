@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.core.execution_graph import execute_graph
-
-
-
 
 
 class TestExecutionGraph(unittest.TestCase):
@@ -14,9 +9,9 @@ class TestExecutionGraph(unittest.TestCase):
 
         results = execute_graph("sample query", max_results=2, mode="deterministic")
 
-        self.assertGreaterEqual(len(results), 1)
+        assert len(results) >= 1
 
-        self.assertTrue(results[0].text)
+        assert results[0].text
 
 
 
@@ -24,9 +19,9 @@ class TestExecutionGraph(unittest.TestCase):
 
         results = execute_graph("entropy", max_results=1, mode="deterministic")
 
-        self.assertIn("graph_id", results[0].provenance)
+        assert "graph_id" in results[0].provenance
 
-        self.assertEqual(results[0].provenance.get("mode"), "deterministic")
+        assert results[0].provenance.get("mode") == "deterministic"
 
 
 

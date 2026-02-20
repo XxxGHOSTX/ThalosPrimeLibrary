@@ -1,31 +1,34 @@
-"""
-Pydantic models for API request/response validation
+"""Pydantic models for API request/response validation.
 
 These models define the schema for all API endpoints.
 """
 
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, validator
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
+from typing import Any
+
+from pydantic import BaseModel, Field, validator
 
 
-class SearchMode(str, Enum):
-    """Search mode: local generation or remote fetch"""
+class SearchMode(StrEnum):
+    """Search mode: local generation or remote fetch."""
+
     LOCAL = "local"
     REMOTE = "remote"
     HYBRID = "hybrid"
 
 
-class NormalizationMode(str, Enum):
-    """Text normalization mode"""
+class NormalizationMode(StrEnum):
+    """Text normalization mode."""
+
     NONE = "none"
     HEURISTIC = "heuristic"
     LLM = "llm"
 
 
-class ConfidenceLevel(str, Enum):
-    """Coherence confidence level"""
+class ConfidenceLevel(StrEnum):
+    """Coherence confidence level."""
+
     HIGH = "high"
     MEDIUM = "medium"
     SPARSE = "sparse"
@@ -34,14 +37,15 @@ class ConfidenceLevel(str, Enum):
 
 # Address Information
 class AddressInfo(BaseModel):
-    """Library of Babel address information"""
+    """Library of Babel address information."""
+
     hex_address: str = Field(..., description="Hexadecimal address")
-    wall: Optional[int] = Field(None, description="Wall number")
-    shelf: Optional[int] = Field(None, description="Shelf number")
-    volume: Optional[int] = Field(None, description="Volume number")
-    page: Optional[int] = Field(None, description="Page number")
-    url: Optional[str] = Field(None, description="Full URL to page")
-    
+    wall: int | None = Field(None, description="Wall number")
+    shelf: int | None = Field(None, description="Shelf number")
+    volume: int | None = Field(None, description="Volume number")
+    page: int | None = Field(None, description="Page number")
+    url: str | None = Field(None, description="Full URL to page")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -57,15 +61,16 @@ class AddressInfo(BaseModel):
 
 # Coherence Information
 class CoherenceInfo(BaseModel):
-    """Coherence scoring information"""
+    """Coherence scoring information."""
+
     overall_score: float = Field(..., ge=0, le=100, description="Overall coherence score (0-100)")
     language_score: float = Field(..., ge=0, le=100, description="Language detection score")
     structure_score: float = Field(..., ge=0, le=100, description="Structure analysis score")
     ngram_score: float = Field(..., ge=0, le=100, description="N-gram coherence score")
     exact_match_score: float = Field(..., ge=0, le=100, description="Exact match score")
     confidence_level: ConfidenceLevel = Field(..., description="Confidence level")
-    metrics: Dict[str, Any] = Field(default_factory=dict, description="Additional metrics")
-    
+    metrics: dict[str, Any] = Field(default_factory=dict, description="Additional metrics")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -82,14 +87,15 @@ class CoherenceInfo(BaseModel):
 
 # Provenance Information
 class ProvenanceInfo(BaseModel):
-    """Provenance tracking information"""
+    """Provenance tracking information."""
+
     address: str = Field(..., description="Page address")
     source: str = Field(..., description="Source (local/remote)")
-    query: Optional[str] = Field(None, description="Original query")
+    query: str | None = Field(None, description="Original query")
     timestamp: float = Field(..., description="Generation timestamp")
     normalized: bool = Field(default=False, description="Whether normalization was applied")
-    llm_provider: Optional[str] = Field(None, description="LLM provider if used")
-    
+    llm_provider: str | None = Field(None, description="LLM provider if used")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -105,14 +111,15 @@ class ProvenanceInfo(BaseModel):
 
 # Page Result
 class PageResult(BaseModel):
-    """Single page result with scores"""
+    """Single page result with scores."""
+
     address: AddressInfo = Field(..., description="Page address information")
     text: str = Field(..., description="Page text content (3200 chars)")
-    snippet: Optional[str] = Field(None, description="Short snippet preview")
+    snippet: str | None = Field(None, description="Short snippet preview")
     coherence: CoherenceInfo = Field(..., description="Coherence scoring")
     provenance: ProvenanceInfo = Field(..., description="Provenance information")
-    normalized_text: Optional[str] = Field(None, description="Normalized text if available")
-    
+    normalized_text: str | None = Field(None, description="Normalized text if available")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -127,18 +134,20 @@ class PageResult(BaseModel):
 
 # Chat Endpoint Models
 class ChatRequest(BaseModel):
-    """Request model for chat endpoint"""
+    """Request model for chat endpoint."""
+
     message: str = Field(..., min_length=1, max_length=5000, description="User message")
-    session_id: Optional[str] = Field(None, description="Session ID for conversation continuity")
+    session_id: str | None = Field(None, description="Session ID for conversation continuity")
     max_results: int = Field(default=5, ge=1, le=20, description="Maximum results to return")
     mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode")
-    
-    @validator('message')
-    def message_not_empty(cls, v: str) -> str:
+
+    @validator("message")
+    def message_not_empty(self, v: str) -> str:
         if not v.strip():
-            raise ValueError('Message cannot be empty or whitespace only')
+            msg = "Message cannot be empty or whitespace only"
+            raise ValueError(msg)
         return v.strip()
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -151,12 +160,13 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """Response model for chat endpoint"""
+    """Response model for chat endpoint."""
+
     reply: str = Field(..., description="Bot reply message")
     session_id: str = Field(..., description="Session ID")
-    results: List[PageResult] = Field(default_factory=list, description="Search results")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    
+    results: list[PageResult] = Field(default_factory=list, description="Search results")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -170,18 +180,20 @@ class ChatResponse(BaseModel):
 
 # Search Endpoint Models
 class SearchRequest(BaseModel):
-    """Request model for search endpoint"""
+    """Request model for search endpoint."""
+
     query: str = Field(..., min_length=1, max_length=1000, description="Search query")
     max_results: int = Field(default=10, ge=1, le=50, description="Maximum results")
     mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode")
     min_score: float = Field(default=0.0, ge=0, le=100, description="Minimum coherence score")
-    
-    @validator('query')
-    def query_not_empty(cls, v: str) -> str:
+
+    @validator("query")
+    def query_not_empty(self, v: str) -> str:
         if not v.strip():
-            raise ValueError('Query cannot be empty or whitespace only')
+            msg = "Query cannot be empty or whitespace only"
+            raise ValueError(msg)
         return v.strip()
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -194,14 +206,15 @@ class SearchRequest(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """Response model for search endpoint"""
+    """Response model for search endpoint."""
+
     query: str = Field(..., description="Original query")
-    results: List[PageResult] = Field(..., description="Search results")
+    results: list[PageResult] = Field(..., description="Search results")
     total_found: int = Field(..., description="Total results found")
     mode: SearchMode = Field(..., description="Search mode used")
     cached: bool = Field(default=False, description="Whether results were cached")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -217,17 +230,19 @@ class SearchResponse(BaseModel):
 
 # Generate Endpoint Models
 class GenerateRequest(BaseModel):
-    """Request model for generate endpoint"""
-    address: Optional[str] = Field(None, description="Hex address to generate from")
-    query: Optional[str] = Field(None, description="Query to convert to address")
+    """Request model for generate endpoint."""
+
+    address: str | None = Field(None, description="Hex address to generate from")
+    query: str | None = Field(None, description="Query to convert to address")
     validate_page: bool = Field(default=True, description="Whether to validate generated page", alias="validate")
-    
-    @validator('address', 'query')
-    def at_least_one_field(cls, v: Optional[str], values: Dict[str, Any]) -> Optional[str]:
-        if not v and not values.get('address') and not values.get('query'):
-            raise ValueError('Either address or query must be provided')
+
+    @validator("address", "query")
+    def at_least_one_field(self, v: str | None, values: dict[str, Any]) -> str | None:
+        if not v and not values.get("address") and not values.get("query"):
+            msg = "Either address or query must be provided"
+            raise ValueError(msg)
         return v
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -238,12 +253,13 @@ class GenerateRequest(BaseModel):
 
 
 class GenerateResponse(BaseModel):
-    """Response model for generate endpoint"""
+    """Response model for generate endpoint."""
+
     address: AddressInfo = Field(..., description="Page address")
     text: str = Field(..., description="Generated page text")
     valid: bool = Field(..., description="Whether page passed validation")
     generation_time_ms: float = Field(..., description="Generation time in milliseconds")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -257,17 +273,19 @@ class GenerateResponse(BaseModel):
 
 # Enumerate Endpoint Models
 class EnumerateRequest(BaseModel):
-    """Request model for enumerate endpoint"""
+    """Request model for enumerate endpoint."""
+
     query: str = Field(..., min_length=1, max_length=1000, description="Query to enumerate")
     max_results: int = Field(default=10, ge=1, le=100, description="Maximum addresses")
     depth: int = Field(default=1, ge=1, le=10, description="Enumeration depth")
-    
-    @validator('query')
-    def query_not_empty(cls, v: str) -> str:
+
+    @validator("query")
+    def query_not_empty(self, v: str) -> str:
         if not v.strip():
-            raise ValueError('Query cannot be empty or whitespace only')
+            msg = "Query cannot be empty or whitespace only"
+            raise ValueError(msg)
         return v.strip()
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -279,12 +297,13 @@ class EnumerateRequest(BaseModel):
 
 
 class EnumerateResponse(BaseModel):
-    """Response model for enumerate endpoint"""
+    """Response model for enumerate endpoint."""
+
     query: str = Field(..., description="Original query")
-    addresses: List[Dict[str, Any]] = Field(..., description="Enumerated addresses")
+    addresses: list[dict[str, Any]] = Field(..., description="Enumerated addresses")
     total_found: int = Field(..., description="Total addresses found")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -300,12 +319,13 @@ class EnumerateResponse(BaseModel):
 
 # Decode Endpoint Models
 class DecodeRequest(BaseModel):
-    """Request model for decode endpoint"""
+    """Request model for decode endpoint."""
+
     address: str = Field(..., description="Page address")
     text: str = Field(..., min_length=1, description="Page text to decode")
-    query: Optional[str] = Field(None, description="Query for relevance scoring")
+    query: str | None = Field(None, description="Query for relevance scoring")
     normalization: NormalizationMode = Field(default=NormalizationMode.HEURISTIC, description="Normalization mode")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -318,13 +338,14 @@ class DecodeRequest(BaseModel):
 
 
 class DecodeResponse(BaseModel):
-    """Response model for decode endpoint"""
+    """Response model for decode endpoint."""
+
     address: AddressInfo = Field(..., description="Page address")
     raw_text: str = Field(..., description="Original text")
-    normalized_text: Optional[str] = Field(None, description="Normalized text if applied")
+    normalized_text: str | None = Field(None, description="Normalized text if applied")
     coherence: CoherenceInfo = Field(..., description="Coherence analysis")
     provenance: ProvenanceInfo = Field(..., description="Provenance information")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -339,12 +360,13 @@ class DecodeResponse(BaseModel):
 
 # Status and Error Models
 class StatusResponse(BaseModel):
-    """Response model for status endpoint"""
+    """Response model for status endpoint."""
+
     status: str = Field(..., description="Service status")
     version: str = Field(..., description="API version")
     uptime_seconds: float = Field(..., description="Service uptime in seconds")
-    features: Dict[str, bool] = Field(default_factory=dict, description="Available features")
-    
+    features: dict[str, bool] = Field(default_factory=dict, description="Available features")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -357,12 +379,13 @@ class StatusResponse(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Error response model"""
+    """Error response model."""
+
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
-    
+
     class Config:
         json_schema_extra = {
             "example": {

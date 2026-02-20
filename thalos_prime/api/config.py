@@ -1,23 +1,22 @@
-"""
-API Configuration Module
+"""API Configuration Module.
 
 Configuration settings for the Thalos Prime API.
 """
 
 import os
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 class APIConfig(BaseModel):
-    """API Configuration"""
-    
+    """API Configuration."""
+
     # Server settings
     host: str = Field(default="0.0.0.0", description="Server host")
     port: int = Field(default=8000, description="Server port")
     workers: int = Field(default=4, description="Number of worker processes")
     reload: bool = Field(default=False, description="Enable auto-reload")
-    
+
     # Database settings
     database_url: str = Field(
         default="sqlite:///./thalos_prime.db",
@@ -25,39 +24,39 @@ class APIConfig(BaseModel):
     )
     db_pool_size: int = Field(default=10, description="Database connection pool size")
     db_max_overflow: int = Field(default=20, description="Max database connections overflow")
-    
+
     # Redis settings
     redis_url: str = Field(
         default="redis://localhost:6379/0",
         description="Redis connection URL"
     )
-    redis_password: Optional[str] = Field(default=None, description="Redis password")
-    
+    redis_password: str | None = Field(default=None, description="Redis password")
+
     # Cache settings
     cache_ttl: int = Field(default=3600, description="Cache TTL in seconds")
     cache_max_size: int = Field(default=10000, description="Maximum cache size")
-    
+
     # Rate limiting
     rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
     rate_limit_per_minute: int = Field(default=60, description="Requests per minute")
     rate_limit_per_hour: int = Field(default=1000, description="Requests per hour")
-    
+
     # Search settings
     default_search_mode: str = Field(default="hybrid", description="Default search mode")
     max_results_limit: int = Field(default=50, description="Maximum results per query")
     min_coherence_score: float = Field(default=0.0, description="Minimum coherence score")
-    
+
     # Generation settings
     enable_local_generation: bool = Field(default=True, description="Enable local page generation")
     enable_remote_search: bool = Field(default=True, description="Enable remote Library search")
-    
+
     # LLM settings
     llm_enabled: bool = Field(default=False, description="Enable LLM normalization")
     llm_provider: str = Field(default="openai", description="LLM provider")
-    llm_api_key: Optional[str] = Field(default=None, description="LLM API key")
+    llm_api_key: str | None = Field(default=None, description="LLM API key")
     llm_model: str = Field(default="gpt-3.5-turbo", description="LLM model name")
     llm_max_tokens: int = Field(default=500, description="Max tokens for LLM")
-    
+
     # Security settings
     secret_key: str = Field(
         default="change-this-secret-key-in-production",
@@ -65,17 +64,17 @@ class APIConfig(BaseModel):
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(default=30, description="Access token expiration")
-    
+
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
-    log_file: Optional[str] = Field(default=None, description="Log file path")
-    
+    log_file: str | None = Field(default=None, description="Log file path")
+
     # CORS
     cors_origins: list[str] = Field(
         default_factory=lambda: ["*"],
         description="Allowed CORS origins"
     )
-    
+
     class Config:
         env_prefix = "THALOS_"
         case_sensitive = False
@@ -83,7 +82,7 @@ class APIConfig(BaseModel):
 
 # Load configuration from environment
 def load_config() -> APIConfig:
-    """Load configuration from environment variables"""
+    """Load configuration from environment variables."""
     return APIConfig(
         host=os.getenv("THALOS_HOST", "0.0.0.0"),
         port=int(os.getenv("THALOS_PORT", "8000")),

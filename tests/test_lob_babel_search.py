@@ -1,21 +1,11 @@
 import unittest
 
-
-
 from src.lob_babel_search import (
-
     _extract_address_info,
-
     _extract_book_links,
-
     _extract_page_text,
-
     search_fragments,
-
 )
-
-
-
 
 
 class TestLoBBabelSearch(unittest.TestCase):
@@ -26,11 +16,11 @@ class TestLoBBabelSearch(unittest.TestCase):
 
             "<html><body>"
 
-            "<a href=\"book.cgi?hex=ABC&wall=1&shelf=2&volume=3&page=4\">A</a>"
+            '<a href="book.cgi?hex=ABC&wall=1&shelf=2&volume=3&page=4">A</a>'
 
-            "<a href=\"/book.html?hex=DEF\">B</a>"
+            '<a href="/book.html?hex=DEF">B</a>'
 
-            "<a href=\"/other.html\">C</a>"
+            '<a href="/other.html">C</a>'
 
             "</body></html>"
 
@@ -38,9 +28,9 @@ class TestLoBBabelSearch(unittest.TestCase):
 
         links = _extract_book_links(html, "https://libraryofbabel.info/search.cgi")
 
-        self.assertEqual(len(links), 2)
+        assert len(links) == 2
 
-        self.assertTrue(links[0].startswith("https://"))
+        assert links[0].startswith("https://")
 
 
 
@@ -50,15 +40,15 @@ class TestLoBBabelSearch(unittest.TestCase):
 
         info = _extract_address_info(url)
 
-        self.assertEqual(info["hex"], "ABC")
+        assert info["hex"] == "ABC"
 
-        self.assertEqual(info["wall"], "1")
+        assert info["wall"] == "1"
 
-        self.assertEqual(info["shelf"], "2")
+        assert info["shelf"] == "2"
 
-        self.assertEqual(info["volume"], "3")
+        assert info["volume"] == "3"
 
-        self.assertEqual(info["page"], "4")
+        assert info["page"] == "4"
 
 
 
@@ -68,11 +58,11 @@ class TestLoBBabelSearch(unittest.TestCase):
 
         text = _extract_page_text(html)
 
-        self.assertIn("ABC", text)
+        assert "ABC" in text
 
-        self.assertIn("DEF", text)
+        assert "DEF" in text
 
-        self.assertNotIn("IGNORE", text)
+        assert "IGNORE" not in text
 
 
 
@@ -80,7 +70,7 @@ class TestLoBBabelSearch(unittest.TestCase):
 
         results = search_fragments("alpha beta")
 
-        self.assertIsInstance(results, list)
+        assert isinstance(results, list)
 
 
 

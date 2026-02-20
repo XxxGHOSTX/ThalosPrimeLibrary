@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.lob_babel_generator import address_to_page, query_to_hex
-
-
-
 
 
 class TestBabelGenerator(unittest.TestCase):
@@ -18,9 +13,9 @@ class TestBabelGenerator(unittest.TestCase):
 
         page2 = address_to_page(hex_addr)
 
-        self.assertEqual(page1, page2)
+        assert page1 == page2
 
-        self.assertEqual(len(page1), 3200)
+        assert len(page1) == 3200
 
 
 

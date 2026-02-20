@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.api import build_reply
-
-
-
 
 
 class TestApiChat(unittest.TestCase):
@@ -14,7 +9,7 @@ class TestApiChat(unittest.TestCase):
 
         reply = build_reply("help", [], allow_search=False)
 
-        self.assertIn("BABEL_CORE", reply)
+        assert "BABEL_CORE" in reply
 
 
 
@@ -22,7 +17,7 @@ class TestApiChat(unittest.TestCase):
 
         reply = build_reply("time", [], allow_search=False)
 
-        self.assertIn("BABEL_CORE", reply)
+        assert "BABEL_CORE" in reply
 
 
 
@@ -30,7 +25,7 @@ class TestApiChat(unittest.TestCase):
 
         reply = build_reply("mode: analyst", [], allow_search=False)
 
-        self.assertIn("BABEL_CORE", reply)
+        assert "BABEL_CORE" in reply
 
 
 

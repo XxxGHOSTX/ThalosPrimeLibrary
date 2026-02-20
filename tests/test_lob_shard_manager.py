@@ -1,11 +1,6 @@
 import unittest
 
-
-
 from src.lob_shard_manager.shard_manager import ShardManager
-
-
-
 
 
 class TestShardManager(unittest.TestCase):
@@ -22,17 +17,17 @@ class TestShardManager(unittest.TestCase):
 
 
 
-        self.assertTrue(shard_a)
+        assert shard_a
 
-        self.assertTrue(shard_b)
+        assert shard_b
 
-        self.assertTrue(shard_c)
+        assert shard_c
 
-        self.assertNotEqual(shard_a, shard_c)
+        assert shard_a != shard_c
 
-        self.assertEqual(manager.get_entry("b"), 2)
+        assert manager.get_entry("b") == 2
 
-        self.assertIsNone(manager.get_entry("missing"))
+        assert manager.get_entry("missing") is None
 
 
 
