@@ -559,7 +559,7 @@ class BabelClient:
     def __init__(
         self,
         base_url: str = BABEL_BASE_URL,
-        user_agent: str = "ThalosprimePipeline/1.0",
+        user_agent: str = "ThalosPrimePipeline/1.0",
     ) -> None:
         """Initialize client.
 
@@ -1378,9 +1378,10 @@ class ControlPlane:
         # Build documents: sliding windows of 20 tokens
         docs = _build_documents(corpus, window=20)
         if docs:
-            results = self._solver.operate(
-                query_tokens or ["the"], docs
-            )
+            # Ensure at least one token; prefer first raw query word over generic fallback
+            fallback = re.findall(r"[A-Za-z]{2,}", self._query)
+            effective_tokens = query_tokens or [t.lower() for t in fallback[:1]] or ["library"]
+            results = self._solver.operate(effective_tokens, docs)
         else:
             results = []
         self._solver.reconcile()
