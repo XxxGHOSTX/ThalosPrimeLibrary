@@ -348,7 +348,7 @@ class BabelDecoder:
         # For now, just return the original text
         return text
     
-    def enable_llm(self, provider: str, **kwargs: Any) -> None:
+    def enable_llm(self, provider: str, **kwargs: object) -> None:
         """
         Enable LLM normalization.
         

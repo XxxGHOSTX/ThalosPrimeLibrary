@@ -105,7 +105,7 @@ async def generate_batch(addresses: list[str], validate: bool = True) -> dict[st
                 'valid': valid,
                 'success': True
             })
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError, AttributeError) as e:
             results.append({
                 'address': address,
                 'error': str(e),

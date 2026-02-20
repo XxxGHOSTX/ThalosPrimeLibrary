@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         await cleanup_services()
         logger.info("All services cleaned up successfully")
-    except Exception as e:
+    except (RuntimeError, AttributeError, OSError) as e:
         logger.error(f"Error during cleanup: {e}")
 
 

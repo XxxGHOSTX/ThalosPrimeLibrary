@@ -203,7 +203,7 @@ async def detailed_health_check() -> dict[str, Any]:
             'status': 'healthy',
             'test_passed': len(test_page) == 3200
         }
-    except Exception as e:
+    except (ImportError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         health['components']['generator'] = {
             'status': 'unhealthy',
             'error': str(e)
@@ -218,7 +218,7 @@ async def detailed_health_check() -> dict[str, Any]:
             'status': 'healthy',
             'test_passed': len(test_addrs) > 0
         }
-    except Exception as e:
+    except (ImportError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         health['components']['enumerator'] = {
             'status': 'unhealthy',
             'error': str(e)
@@ -233,7 +233,7 @@ async def detailed_health_check() -> dict[str, Any]:
             'status': 'healthy',
             'test_passed': hasattr(test_score, 'overall_score')
         }
-    except Exception as e:
+    except (ImportError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         health['components']['decoder'] = {
             'status': 'unhealthy',
             'error': str(e)

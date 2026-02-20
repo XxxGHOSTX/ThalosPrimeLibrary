@@ -70,3 +70,4 @@ data/*
 
 # Lock files
 .thalos_prime.lock
+__pycache__
