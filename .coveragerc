@@ -1,0 +1,12 @@
+[run]
+source = thalos_prime
+omit =
+    thalos_prime/api/*
+    thalos_prime/database/*
+    thalos_prime/models/*
+
+[report]
+omit =
+    thalos_prime/api/*
+    thalos_prime/database/*
+    thalos_prime/models/*
