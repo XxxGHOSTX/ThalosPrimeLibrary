@@ -124,7 +124,7 @@ class QueryHandler:
         self._orchestrator.register_synthesizer(synthesizer)
 
     def register_reasoning_engine(
-        self, domain: QueryDomain, engine: ReasoningEngine
+        self, domain: QueryDomain, engine: ReasoningEngine,
     ) -> None:
         """Register a reasoning engine for a specific domain.
 

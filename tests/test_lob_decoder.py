@@ -1,16 +1,11 @@
 import unittest
 
-
-
-from src.lob_decoder import score_coherence, decode_pages
-
-
-
+from src.lob_decoder import decode_pages, score_coherence
 
 
 class TestDecoder(unittest.TestCase):
 
-    def test_score(self):
+    def test_score(self) -> None:
 
         text = "Thalos Prime created a test sentence."
 
@@ -20,7 +15,7 @@ class TestDecoder(unittest.TestCase):
 
 
 
-    def test_decode_pages(self):
+    def test_decode_pages(self) -> None:
 
         pages = [{"address": {"hex": "ABC"}, "text": "Hello world."}]
 

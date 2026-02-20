@@ -7,7 +7,7 @@ resource limits, timeout enforcement, and captured output.
 from __future__ import annotations
 
 import logging
-import subprocess
+import subprocess  # nosec B404
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -92,7 +92,7 @@ class CodeExecutor:
             tmp_path = Path(tmp.name)
 
         try:
-            proc = subprocess.run(  # noqa: S603
+            proc = subprocess.run(  # noqa: S603 # nosec B603
                 [sys.executable, str(tmp_path)],
                 capture_output=True,
                 text=True,

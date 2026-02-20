@@ -97,7 +97,7 @@ class KnowledgeGraphRetriever:
                     predicate=str(data.get("predicate", "related_to")),
                     obj=str(obj),
                     confidence=float(data.get("confidence", 1.0)),
-                )
+                ),
             )
         return triples
 
