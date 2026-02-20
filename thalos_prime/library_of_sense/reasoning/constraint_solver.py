@@ -7,6 +7,7 @@ arithmetic constraints over integer and real domains.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -17,6 +18,9 @@ from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 logger = logging.getLogger(__name__)
 
 SatisfiabilityStatus = Literal["sat", "unsat", "unknown"]
+
+# Allowed pattern: variable names, digits, arithmetic operators, comparisons, whitespace
+_CONSTRAINT_SAFE_PATTERN = re.compile(r"^[\w\s\+\-\*\/\(\)\<\>\=\!\.]+$")
 
 
 @dataclass
@@ -89,8 +93,12 @@ class ConstraintSolver:
             z3_vars[var_name] = z3.Real(var_name)
 
         for constraint_str in problem.constraints:
+            if not _CONSTRAINT_SAFE_PATTERN.match(constraint_str):
+                msg = f"Constraint contains unsafe characters: {constraint_str!r}"
+                logger.warning("ConstraintSolver: %s", msg)
+                return SolverResult(status="unknown", model={}, message=msg)
             try:
-                constraint_expr = eval(  # noqa: S307
+                constraint_expr = eval(  # noqa: S307 - sandboxed with empty builtins and validated pattern
                     constraint_str,
                     {"__builtins__": {}},
                     z3_vars,

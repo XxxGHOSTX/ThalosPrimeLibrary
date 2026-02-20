@@ -28,6 +28,7 @@ class FunctionSpec:
     return_type: str = "None"
     docstring: str = ""
     body: str = "pass"
+    is_method: bool = True
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.
@@ -42,6 +43,7 @@ class FunctionSpec:
             "return_type": self.return_type,
             "docstring": self.docstring,
             "body": self.body,
+            "is_method": self.is_method,
         }
 
 
@@ -66,7 +68,8 @@ class CodeGenerator:
 
         """
         params_str = ", ".join(spec.params) if spec.params else ""
-        params_str = f"self, {params_str}" if params_str else "self"
+        if spec.is_method:
+            params_str = f"self, {params_str}" if params_str else "self"
 
         lines: list[str] = [
             f"def {spec.name}({params_str}) -> {spec.return_type}:",
