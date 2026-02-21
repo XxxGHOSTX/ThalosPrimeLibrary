@@ -40,6 +40,12 @@ def get_babel_endpoints() -> dict[str, str]:
     }
 
 # Re-export synthesis helpers
+from thalos_prime.ingest import (
+    CanonicalArtifact,
+    canonicalize_text,
+    compute_meaning_hash,
+    ingest_fragment,
+)
 from thalos_prime.lob_babel_enumerator import (
     BabelEnumerator,
     enumerate_addresses,
@@ -60,50 +66,30 @@ from thalos_prime.lob_decoder import (
     decode_page,
     score_coherence,
 )
-from thalos_prime.ingest import (
-    CanonicalArtifact,
-    canonicalize_text,
-    compute_meaning_hash,
-    ingest_fragment,
-)
 
 from .synthesis import deep_synthesis
 
 __all__ = [
-    # Library of Babel endpoints
     "LIBRARY_OF_BABEL_BASE_URL",
     "LIBRARY_OF_BABEL_SEARCH_API",
     "LIBRARY_OF_BABEL_SEARCH_URL",
     "LOCAL_LIBRARY_PATH",
-    # Decoder
-    'BabelDecoder',
-    'CoherenceScore',
-    'DecodedPage',
-    'score_coherence',
-    'decode_page',
-
-    # Ingestion
-    'CanonicalArtifact',
-    'canonicalize_text',
-    'compute_meaning_hash',
-    'ingest_fragment',
-
     "BabelDecoder",
-    # Enumerator
     "BabelEnumerator",
-    # Generator
     "BabelGenerator",
+    "CanonicalArtifact",
     "CoherenceScore",
     "DecodedPage",
     "__author__",
-    # Version info
     "__version__",
     "address_to_page",
+    "canonicalize_text",
+    "compute_meaning_hash",
     "decode_page",
-    # Synthesis
     "deep_synthesis",
     "enumerate_addresses",
     "get_babel_endpoints",
+    "ingest_fragment",
     "normalize_text",
     "query_to_addresses",
     "score_coherence",
