@@ -88,29 +88,13 @@ module = [
 ]
 ignore_missing_imports = true
 
-# Suppress type errors in optional API/database modules that depend on untyped libraries
-[[tool.mypy.overrides]]
-module = [
-    "thalos_prime.api.*",
-    "thalos_prime.models.*",
-    "thalos_prime.database.*",
-    "thalos_prime.auth.*",
-]
-ignore_errors = true
-
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
-# Suppress errors caused by optional untyped dependencies
-reportUnknownVariableType = false
-reportUnknownParameterType = false
-reportUnknownArgumentType = false
-reportPrivateUsage = false
-reportUntypedBaseClass = false
-reportUntypedFunctionDecorator = false
 # Exclude optional modules that depend on fastapi/sqlalchemy/pydantic
+# and test files that legitimately access private implementation details
 ignore = [
     "thalos_prime/api",
     "thalos_prime/models",
@@ -120,11 +104,27 @@ ignore = [
     "thalos_prime/library_of_sense/retrieval/computational.py",
     "thalos_prime/library_of_sense/retrieval/knowledge_graph.py",
     "thalos_prime/library_of_sense/code_generation",
+    # dataclass field default_factory inference - known pyright strict limitation
+    "thalos_prime/library_of_sense/core/interfaces.py",
+    "thalos_prime/library_of_sense/core/state_manager.py",
     "tests/test_lob_babel_search.py",
     "tests/test_lob_shard_manager.py",
     "tests/test_api_search.py",
     "tests/test_api_chat.py",
     "tests/test_main.py",
+    # Unit tests that access private implementation methods intentionally
+    "tests/test_decoder.py",
+    "tests/test_enumerator.py",
+    "tests/test_generator.py",
+    "tests/test_config.py",
+    # Integration/pipeline tests with dict[str, Any] return value unpacking
+    "tests/test_integration.py",
+    # Tests importing from legacy untyped src/ modules
+    "tests/test_constraint_navigator.py",
+    "tests/test_lob_decoder.py",
+    "tests/test_peptide_space.py",
+    "tests/test_semantic_parser.py",
+    "tests/test_lob_babel_enumerator.py",
 ]
 
 [tool.ruff]
@@ -171,11 +171,6 @@ module = [
     "tests.test_api_search",
     "tests.test_api_chat",
 ]
-ignore_errors = true
-
-# Suppress type errors in src/ modules (legacy code, not part of thalos_prime package)
-[[tool.mypy.overrides]]
-module = ["src.*"]
 ignore_errors = true
 
 [[tool.mypy.overrides]]

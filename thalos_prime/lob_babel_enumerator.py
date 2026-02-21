@@ -6,7 +6,7 @@ to generate deterministic candidate addresses where matching text might be found
 """
 
 import hashlib
-from typing import Any
+from typing import Any, cast
 
 
 class BabelEnumerator:
@@ -58,8 +58,8 @@ class BabelEnumerator:
             ngrams = [query]
 
         # Generate candidate addresses from n-grams
-        candidates = []
-        seen_addresses = set()
+        candidates: list[dict[str, Any]] = []
+        seen_addresses: set[str] = set()
 
         for ngram in ngrams[:10]:  # Limit to top 10 ngrams
             for depth_level in range(depth):
@@ -76,7 +76,7 @@ class BabelEnumerator:
                     })
 
         # Sort by score (highest first) and limit results
-        candidates.sort(key=lambda x: float(x["score"]), reverse=True)  # type: ignore[arg-type]
+        candidates.sort(key=lambda x: cast("float", x["score"]), reverse=True)
         return candidates[:max_results]
 
     def _extract_ngrams(self, text: str) -> list[str]:
@@ -89,7 +89,7 @@ class BabelEnumerator:
             List of n-gram strings, sorted by relevance
 
         """
-        ngrams = set()
+        ngrams: set[str] = set()
         words = text.split()
 
         # Extract word-level n-grams
@@ -173,7 +173,7 @@ class BabelEnumerator:
             List of (substring, address) tuples
 
         """
-        results = []
+        results: list[tuple[str, str]] = []
         text = text.lower()
 
         # Extract all substrings of the specified length
@@ -203,8 +203,14 @@ class BabelEnumerator:
 
         """
         # Get addresses for both queries
-        addresses1 = {item["address"] for item in self.enumerate_addresses(query1, max_results=50)}
-        addresses2 = {item["address"] for item in self.enumerate_addresses(query2, max_results=50)}
+        addresses1: set[str] = {
+            cast("str", item["address"])
+            for item in self.enumerate_addresses(query1, max_results=50)
+        }
+        addresses2: set[str] = {
+            cast("str", item["address"])
+            for item in self.enumerate_addresses(query2, max_results=50)
+        }
 
         # Find intersection
         common = list(addresses1 & addresses2)

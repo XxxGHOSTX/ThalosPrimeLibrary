@@ -236,7 +236,7 @@ class BabelDecoder:
         score += bigram_ratio * 0.6
 
         # Check for repeated patterns (sign of structure)
-        unique_bigrams = set()
+        unique_bigrams: set[tuple[str, str]] = set()
         for i in range(len(words) - 1):
             bigram = (words[i], words[i + 1])
             unique_bigrams.add(bigram)

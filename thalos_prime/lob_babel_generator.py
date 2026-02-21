@@ -55,7 +55,7 @@ class BabelGenerator:
         seed = hex_address.encode("utf-8")
 
         # Generate the page character by character
-        page_chars = []
+        page_chars: list[str] = []
         for position in range(self.PAGE_LENGTH):
             # Create a unique hash for each position using the seed and position
             position_seed = seed + str(position).encode("utf-8")
@@ -116,7 +116,7 @@ class BabelGenerator:
         text = text.lower()
 
         # Replace unsupported characters with space
-        normalized_chars = []
+        normalized_chars: list[str] = []
         for char in text:
             if char in self._charset_map:
                 normalized_chars.append(char)
@@ -211,4 +211,4 @@ def normalize_text(text: str) -> str:
         Normalized 3200-character string
 
     """
-    return _generator._normalize_text(text)
+    return _generator._normalize_text(text)  # pyright: ignore[reportPrivateUsage]

@@ -44,8 +44,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         await initialize_services()
         logger.info("All services initialized successfully")
-    except Exception as e:
-        logger.exception(f"Failed to initialize services: {e}")
+    except Exception:
+        logger.exception("Failed to initialize services")
         raise
 
     yield
@@ -55,8 +55,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         await cleanup_services()
         logger.info("All services cleaned up successfully")
-    except (RuntimeError, AttributeError, OSError) as e:
-        logger.exception(f"Error during cleanup: {e}")
+    except (RuntimeError, AttributeError, OSError):
+        logger.exception("Error during cleanup")
 
 
 async def initialize_services() -> None:
