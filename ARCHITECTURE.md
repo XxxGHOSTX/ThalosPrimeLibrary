@@ -310,6 +310,7 @@ QUERY: [user query]
 - `test_api_search.py` - Coherence scoring accuracy
 - `test_lob_babel_search.py` - Library search client
 - `test_lob_shard_manager.py` - Data sharding
+- `test_schemas.py` - JSON Schema presence and structural constraints for HDR and Execution Graph artifacts
 
 ### Integration Tests
 - End-to-end chat flow
@@ -320,6 +321,30 @@ QUERY: [user query]
 - Concurrent user simulation
 - Cache behavior under load
 - Memory usage profiling
+
+## Strict Typing in Schema Handling
+
+All schema-loading helpers in the test suite and production code must satisfy
+`mypy --strict` and `ruff --select ALL`.  The key requirements are:
+
+1. **Parameterised return type** — bare `dict` is rejected by `mypy --strict`
+   (`type-arg` error).  All JSON-loading functions must return
+   `dict[str, Any]` (subscript syntax available since Python 3.9;
+   `Dict` from `typing` is deprecated and triggers UP035/UP006 under `ruff`).
+
+2. **Explicit cast** — `json.load()` returns `Any`.  Returning an `Any` value
+   from a function annotated `-> dict[str, Any]` raises
+   `no-any-return` in mypy.  The value must be wrapped with
+   `cast("dict[str, Any]", json.load(handle))`.  The TC006 linting rule
+   requires the type expression to be a *string literal* inside `cast()`.
+
+3. **Import discipline** — only `Any` and `cast` need to be imported from
+   `typing`; `dict` itself has always been a built-in type, and its generic
+   subscript form (`dict[str, Any]`) requires Python 3.9 or later.
+
+These constraints are enforced at every API boundary that deserialises external
+JSON (schema files, checkpoint files, event logs).  Violating them causes
+`mypy --strict` CI failures and blocks merge.
 
 ## Compliance & Legal
 

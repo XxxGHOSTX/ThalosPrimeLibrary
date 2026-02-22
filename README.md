@@ -223,6 +223,21 @@ python example_usage.py
 - **Hybrid Search**: Local generation and remote fetching capabilities
 - **REST API**: FastAPI-based server with full documentation
 - **Production Ready**: 80 passing tests, comprehensive error handling, and deterministic behavior
+- **Governance Schema Validation**: JSON Schema definitions for Human Direction Records (HDR) and Execution Graphs enforce required fields, provenance, and strict property boundaries at ingestion time
+
+## Schema Validation
+
+Thalos Prime ships two JSON Schema files under `schemas/` that govern the two
+primary governance artifacts:
+
+| Schema file | Artifact | Key constraints |
+|---|---|---|
+| `schemas/hdr.schema.json` | Human Direction Record | Requires `hdr_id`, `author`, `intent`, `created_at`, `norm_content_hash`; `additionalProperties: false` |
+| `schemas/execution_graph.schema.json` | Execution Graph | Requires `nodes[].node_id`, `nodes[].type`, and `metadata.provenance` object |
+
+Schemas are loaded and validated in `tests/test_schemas.py` using fully-typed
+helpers (`dict[str, Any]` return type with an explicit `cast`) so that
+`mypy --strict` and `ruff --select ALL` both pass without errors.
 
 ## API Server
 
