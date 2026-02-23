@@ -198,7 +198,7 @@ disable_error_code = ["no-untyped-call"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
     "S101", "PLR2004", "D100", "D101", "D102", "D103", "D104",
-    "ANN201", "ANN001", "ANN002", "ANN003",
+    "ANN201", "ANN001", "ANN002", "ANN003", "ANN401",
     # unittest-style assertions - legacy test style
     "PT009",
     # imports not at top-level (some test setup requires this)

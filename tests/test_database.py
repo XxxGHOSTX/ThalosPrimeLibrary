@@ -1,15 +1,51 @@
-"""Tests for the SQLite-backed ResultStore persistence module.
+"""Tests for the SQLite-backed ResultStore persistence module and DatabaseManager.
 
 Covers lifecycle methods (initialize, validate, operate, reconcile,
 checkpoint, terminate), search result CRUD, session management,
 and expired session cleanup.
+
+Also covers DatabaseManager.checkpoint() and to_dict() using mocked SQLAlchemy
+dependencies (sqlalchemy is an optional runtime dependency, not in dev extras).
 """
 
+import sys
 import time
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from thalos_prime.database.store import ResultStore
+
+# ---------------------------------------------------------------------------
+# Helpers - mock optional SQLAlchemy dependency for DatabaseManager tests
+# ---------------------------------------------------------------------------
+
+def _build_sa_mocks() -> dict[str, object]:
+    """Return sys.modules patches that stand in for SQLAlchemy and related deps."""
+    api_cfg = MagicMock()
+    api_cfg.config.database_url = "sqlite:///:memory:"
+    api_cfg.config.db_pool_size = 5
+    api_cfg.config.db_max_overflow = 10
+    return {
+        "sqlalchemy": MagicMock(),
+        "sqlalchemy.orm": MagicMock(),
+        "sqlalchemy.pool": MagicMock(),
+        "thalos_prime.api.config": api_cfg,
+        "thalos_prime.models.db_models": MagicMock(),
+    }
+
+
+def _make_db_manager(*, initialized: bool = True, engine_active: bool = True) -> Any:
+    """Create a DatabaseManager instance with mocked SQLAlchemy."""
+    sys.modules.pop("thalos_prime.database.connection", None)
+    with patch.dict(sys.modules, _build_sa_mocks()):
+        from thalos_prime.database.connection import DatabaseManager
+        dm = DatabaseManager.__new__(DatabaseManager)
+        dm._initialized = initialized
+        dm.database_url = "sqlite:///:memory:"
+        dm.engine = MagicMock() if engine_active else None
+        return dm
 
 
 def test_initialize_creates_tables() -> None:
@@ -193,3 +229,40 @@ def test_save_result_before_initialize_raises() -> None:
     store = ResultStore(db_path=":memory:")
     with pytest.raises(RuntimeError):
         store.save_result("q", "addr", 0, "snip", 0.0)
+
+
+# ---------------------------------------------------------------------------
+# DatabaseManager - checkpoint() and to_dict() (mocked SQLAlchemy)
+# ---------------------------------------------------------------------------
+
+
+def test_checkpoint_returns_dict() -> None:
+    """checkpoint() returns a dict[str, object], not None."""
+    dm = _make_db_manager(initialized=True, engine_active=True)
+    result = dm.checkpoint()
+    assert isinstance(result, dict)
+
+
+def test_checkpoint_keys() -> None:
+    """checkpoint() dict contains all required keys with correct types."""
+    dm = _make_db_manager(initialized=True, engine_active=False)
+    result = dm.checkpoint()
+    assert "component" in result
+    assert "initialized" in result
+    assert "database_url" in result
+    assert "engine_active" in result
+    assert result["component"] == "DatabaseManager"
+    assert result["initialized"] is True
+    assert result["engine_active"] is False
+
+
+def test_to_dict() -> None:
+    """to_dict() serializes DatabaseManager state correctly."""
+    dm = _make_db_manager(initialized=False, engine_active=False)
+    state = dm.to_dict()
+    assert state == {
+        "component": "DatabaseManager",
+        "initialized": False,
+        "database_url": "sqlite:///:memory:",
+        "engine_active": False,
+    }

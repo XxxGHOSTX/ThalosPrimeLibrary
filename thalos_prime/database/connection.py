@@ -166,13 +166,36 @@ class DatabaseManager:
         self.init_engine()
         logger.info("DatabaseManager reconciliation complete")
 
-    def checkpoint(self) -> None:
-        """Log the current state of the database manager as a checkpoint."""
+    def to_dict(self) -> dict[str, object]:
+        """Serialize the current state of the database manager.
+
+        Returns:
+            dict containing component name, initialization status, database URL,
+            and whether the engine is active.
+
+        """
+        return {
+            "component": "DatabaseManager",
+            "initialized": self._initialized,
+            "database_url": self.database_url,
+            "engine_active": self.engine is not None,
+        }
+
+    def checkpoint(self) -> dict[str, object]:
+        """Capture and return the current state of the database manager.
+
+        Returns:
+            dict containing component name, initialization status, database URL,
+            and whether the engine is active.
+
+        """
+        state = self.to_dict()
         logger.info(
             "DatabaseManager checkpoint: initialized=%s engine=%s",
             self._initialized,
             self.engine,
         )
+        return state
 
     def terminate(self) -> None:
         """Terminate the database manager and release all resources."""
