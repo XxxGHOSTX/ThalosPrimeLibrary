@@ -3,7 +3,9 @@
 Provides administrative and monitoring functionality.
 """
 
+import asyncio
 import os
+import signal
 import sys
 import time
 from typing import Any
@@ -256,9 +258,6 @@ async def shutdown_server() -> dict[str, str]:
         Shutdown confirmation message.
 
     """
-    import asyncio
-    import signal
-
     loop = asyncio.get_event_loop()
     loop.call_later(1.0, lambda: os.kill(os.getpid(), signal.SIGTERM))
     return {"message": "Shutdown initiated", "status": "terminating"}

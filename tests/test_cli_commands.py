@@ -6,6 +6,7 @@ subprocess overhead.
 """
 
 import json
+import pathlib
 
 import pytest
 
@@ -107,9 +108,9 @@ def test_run_cli_search_produces_sorted_results(capsys: pytest.CaptureFixture[st
     assert scores == sorted(scores, reverse=True)
 
 
-def test_run_cli_generate_with_output_file(tmp_path: pytest.TempPathFactory) -> None:
+def test_run_cli_generate_with_output_file(tmp_path: pathlib.Path) -> None:
     """run_cli generate writes page content to the specified output file."""
-    out_path = tmp_path / "page.txt"  # type: ignore[operator]
+    out_path = tmp_path / "page.txt"
     rc = run_cli(["generate", "--address", "abc123", "--output", str(out_path)])
 
     assert rc == 0
@@ -141,9 +142,9 @@ def test_run_cli_enumerate_respects_max_results(capsys: pytest.CaptureFixture[st
     assert len(data) <= 5
 
 
-def test_run_cli_search_with_output_file(tmp_path: pytest.TempPathFactory) -> None:
+def test_run_cli_search_with_output_file(tmp_path: pathlib.Path) -> None:
     """run_cli search --output writes JSON results to a file."""
-    out_path = tmp_path / "results.json"  # type: ignore[operator]
+    out_path = tmp_path / "results.json"
     rc = run_cli(
         ["search", "--query", "hello", "--max-results", "2", "--output", str(out_path)]
     )
