@@ -94,6 +94,22 @@ from thalos_prime.constraints.symbolic_engine import (
     VariableSort,
 )
 
+# Graph-RAG Add-on (standalone module)
+from thalos_prime.graph_rag.interfaces import (
+    GraphEdge,
+    GraphNode,
+    GraphQueryResult,
+)
+from thalos_prime.graph_rag.retriever import HybridResult, HybridRetriever
+from thalos_prime.graph_rag.simple_graph import SimpleKnowledgeGraph
+
+# Reasoning Add-on (standalone module)
+from thalos_prime.reasoning.engine import (
+    ReasoningControlPlane,
+    ReasoningRequest,
+    ReasoningResponse,
+)
+
 __all__ = [
     # Library of Babel endpoints
     "LIBRARY_OF_BABEL_BASE_URL",
@@ -162,4 +178,15 @@ __all__ = [
     "MCTSNode",
     "MCTSPlanner",
     "MCTSResult",
+    # Graph-RAG (standalone)
+    "GraphEdge",
+    "GraphNode",
+    "GraphQueryResult",
+    "HybridResult",
+    "HybridRetriever",
+    "SimpleKnowledgeGraph",
+    # Reasoning (standalone)
+    "ReasoningControlPlane",
+    "ReasoningRequest",
+    "ReasoningResponse",
 ]
