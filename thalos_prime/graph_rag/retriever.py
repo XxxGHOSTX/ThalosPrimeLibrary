@@ -21,6 +21,8 @@ from thalos_prime.lifecycle import BaseLifecycleComponent
 
 logger = logging.getLogger(__name__)
 
+_TEXT_PREVIEW_LENGTH = 200
+
 
 @dataclass
 class HybridResult:
@@ -229,7 +231,7 @@ class HybridRetriever(BaseLifecycleComponent):
                 text_matches.append(
                     RetrievalResult(
                         source="text_index",
-                        content=text[:200],
+                        content=text[:_TEXT_PREVIEW_LENGTH],
                         confidence=min(confidence, 1.0),
                         metadata={"overlap_tokens": str(overlap)},
                     ),
