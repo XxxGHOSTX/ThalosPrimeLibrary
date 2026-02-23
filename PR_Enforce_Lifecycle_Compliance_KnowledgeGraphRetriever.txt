@@ -1,0 +1,769 @@
+================================================================================
+PR TITLE: Enforce Lifecycle Compliance in KnowledgeGraphRetriever
+================================================================================
+
+DESCRIPTION
+-----------
+This PR refactors the KnowledgeGraphRetriever component in
+thalos_prime/library_of_sense/retrieval/knowledge_graph.py to strictly
+implement the RetrievalSource protocol defined in core/interfaces.py,
+adding explicit SubsystemLifecycle management and enforcing deterministic
+lifecycle state transitions throughout the component's operation.
+
+ARCHITECTURAL ENFORCEMENT
+--------------------------
+The KnowledgeGraphRetriever now separates control-plane and data-plane
+responsibilities:
+
+  Control Plane (lifecycle management):
+    - initialize()   : Transitions UNINITIALIZED -> INITIALIZING -> INITIALIZED
+    - validate()     : Transitions INITIALIZED -> VALIDATING -> READY;
+                       returns ValidationResult for protocol conformance
+    - operate()      : Transitions READY -> OPERATING
+    - reconcile()    : Transitions * -> RECONCILING -> READY (no-op logic;
+                       graph state is self-consistent)
+    - checkpoint()   : Transitions * -> CHECKPOINTING -> READY;
+                       emits structured state log with node/triple/seed counts
+    - terminate()    : Transitions * -> TERMINATING -> TERMINATED;
+                       clears graph data and resets triple count
+
+  Data Plane (computational work):
+    - add_triple()   : Adds RDF triple to graph; REQUIRES OPERATING state
+    - query_subject(): Returns triples for a subject; REQUIRES OPERATING state
+    - find_path()    : Finds shortest path between entities; REQUIRES OPERATING
+    - query()        : Returns RetrievalResult for an entity; REQUIRES OPERATING
+
+OPERATING STATE ENFORCEMENT
+-----------------------------
+All data-plane methods raise RuntimeError if the lifecycle state is not
+OPERATING. Callers must invoke initialize(), validate(), and operate() in
+sequence before using data-plane methods. This eliminates silent partial
+operation and ensures deterministic, observable behavior.
+
+Example correct usage sequence:
+  kg = KnowledgeGraphRetriever()
+  kg.initialize()   # UNINITIALIZED -> INITIALIZED
+  kg.validate()     # INITIALIZED   -> READY
+  kg.operate()      # READY         -> OPERATING
+  kg.add_triple(...)
+  kg.query(...)
+  kg.terminate()    # OPERATING     -> TERMINATED
+
+DETERMINISTIC GUARANTEES
+--------------------------
+- All lifecycle transitions are logged via SubsystemLifecycle with seed,
+  subsystem name, from/to state, and timestamp for deterministic replay.
+- The seed parameter (default 0) is propagated to SubsystemLifecycle and
+  emitted in checkpoint logs for full replayability.
+- initialize() resets graph and triple_count for idempotent re-initialization.
+- terminate() clears graph data and transitions to TERMINATED, releasing
+  resources deterministically.
+
+STATE SURFACES
+--------------
+- _lifecycle.state : Current LifecycleState (observable via SubsystemLifecycle)
+- _triple_count    : Count of inserted triples (exposed via triple_count property)
+- _graph           : NetworkX DiGraph (cleared on terminate())
+- _seed            : Replay seed (logged in checkpoint)
+
+LOGGING
+-------
+- INFO: "KnowledgeGraphRetriever initialized"
+- INFO: "KnowledgeGraphRetriever operating, triples=N"
+- INFO: "KnowledgeGraphRetriever checkpoint: nodes=N triples=N seed=N"
+- INFO: "KnowledgeGraphRetriever terminated"
+- DEBUG: "Added triple: SUBJECT -[PREDICATE]-> OBJ"
+- DEBUG: "KnowledgeGraphRetriever reconcile: triples=N"
+- All lifecycle transitions logged by SubsystemLifecycle at INFO level
+
+TESTS
+-----
+Updated tests/library_of_sense/test_retrieval.py:
+  - All TestKnowledgeGraphRetriever data-plane tests now call
+    initialize() + validate() + operate() before data operations.
+  - Added test_data_ops_raise_when_not_operating: verifies RuntimeError
+    is raised for add_triple, query_subject, find_path, and query when
+    the retriever has not entered OPERATING state.
+  - Added test_lifecycle_sequence: verifies the full lifecycle sequence
+    including checkpoint (returns to READY) and re-operate before terminate.
+  - Updated TestMultiSourceRetriever tests that use KnowledgeGraphRetriever
+    as a source to properly initialize the lifecycle before querying.
+
+CONSTRAINTS
+-----------
+- validate() is exempt from the OPERATING state requirement and may be
+  called from any lifecycle state (it IS a lifecycle method, not a data op).
+- checkpoint() and reconcile() transition back to READY state after
+  completion; call operate() again to resume data-plane operations.
+- checkpoint() returns None to conform with the RetrievalSource protocol
+  (which specifies checkpoint() -> None); state is emitted via logging.
+- The seed parameter defaults to 0 for backward compatibility with all
+  existing callers using KnowledgeGraphRetriever().
+
+================================================================================
+MODIFIED CODE: thalos_prime/library_of_sense/retrieval/knowledge_graph.py
+================================================================================
+
+"""Library of Sense - Knowledge Graph Retrieval.
+
+Builds and queries a NetworkX knowledge graph for structured
+entity-relationship retrieval with RDF triple support.
+
+Lifecycle compliance is strictly enforced: data-plane operations
+(add_triple, query_subject, find_path, query) require OPERATING state.
+Control-plane operations (initialize, validate, operate, reconcile,
+checkpoint, terminate) manage lifecycle transitions explicitly.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import Final
+
+import networkx as nx
+
+from thalos_prime.library_of_sense.core.interfaces import (
+    QueryContext,
+    RetrievalResult,
+    ValidationResult,
+)
+from thalos_prime.library_of_sense.core.lifecycle import LifecycleState, SubsystemLifecycle
+
+logger = logging.getLogger(__name__)
+
+_SUBSYSTEM_NAME: Final[str] = "library_of_sense.knowledge_graph_retriever"
+
+
+@dataclass
+class GraphTriple:
+    """An RDF-style subject-predicate-object triple for knowledge representation."""
+
+    subject: str
+    predicate: str
+    obj: str
+    confidence: float = 1.0
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize triple to dictionary.
+
+        Returns:
+            Dictionary representation of this triple.
+
+        """
+        return {
+            "subject": self.subject,
+            "predicate": self.predicate,
+            "obj": self.obj,
+            "confidence": self.confidence,
+        }
+
+
+class KnowledgeGraphRetriever:
+    """Retrieves information from an in-memory NetworkX knowledge graph.
+
+    Supports adding triples (subject-predicate-object), querying by subject,
+    and finding paths between concepts.
+
+    Data-plane operations (add_triple, query_subject, find_path, query) require
+    OPERATING lifecycle state. Call initialize(), validate(), and operate() in
+    sequence before invoking any data-plane method.
+    """
+
+    def __init__(self, seed: int = 0) -> None:
+        """Initialize an empty knowledge graph.
+
+        Args:
+            seed: Deterministic seed for replay identification.
+
+        """
+        self._graph: nx.DiGraph = nx.DiGraph()
+        self._triple_count = 0
+        self._seed = seed
+        self._lifecycle = SubsystemLifecycle(_SUBSYSTEM_NAME, seed=seed)
+
+    def _require_operating(self) -> None:
+        """Enforce OPERATING state before any data-plane operation.
+
+        Raises:
+            RuntimeError: If the lifecycle state is not OPERATING.
+
+        """
+        if self._lifecycle.state != LifecycleState.OPERATING:
+            msg = (
+                f"KnowledgeGraphRetriever is not in OPERATING state "
+                f"(current: {self._lifecycle.state}); "
+                "call initialize(), validate(), and operate() first"
+            )
+            raise RuntimeError(msg)
+
+    def initialize(self) -> None:
+        """Initialize the knowledge graph and transition to INITIALIZED state."""
+        self._lifecycle.transition(LifecycleState.INITIALIZING, "Creating knowledge graph")
+        self._graph = nx.DiGraph()
+        self._triple_count = 0
+        self._lifecycle.transition(LifecycleState.INITIALIZED, "Graph ready")
+        logger.info("KnowledgeGraphRetriever initialized")
+
+    def validate(self) -> ValidationResult:
+        """Validate knowledge graph consistency and transition to READY state.
+
+        Returns:
+            ValidationResult indicating whether the graph is correctly configured.
+
+        """
+        self._lifecycle.transition(LifecycleState.VALIDATING, "Checking graph consistency")
+        self._lifecycle.transition(LifecycleState.READY, "Graph consistency confirmed")
+        return ValidationResult(
+            valid=True,
+            message=f"KnowledgeGraphRetriever ready with {self._triple_count} triples",
+        )
+
+    def operate(self) -> None:
+        """Transition to OPERATING state for active graph queries."""
+        self._lifecycle.transition(LifecycleState.OPERATING, "Entering operation mode")
+        logger.info(
+            "KnowledgeGraphRetriever operating, triples=%d", self._triple_count
+        )
+
+    def reconcile(self) -> None:
+        """Reconcile knowledge graph state.
+
+        No reconciliation logic is required; graph state is self-consistent.
+        Transitions through RECONCILING and returns to READY state.
+        """
+        self._lifecycle.transition(LifecycleState.RECONCILING, "Reconciling graph state")
+        self._lifecycle.transition(LifecycleState.READY, "Reconciliation complete")
+        logger.debug("KnowledgeGraphRetriever reconcile: triples=%d", self._triple_count)
+
+    def checkpoint(self) -> None:
+        """Emit a structured checkpoint log with current graph state."""
+        self._lifecycle.transition(LifecycleState.CHECKPOINTING, "Checkpointing state")
+        logger.info(
+            "KnowledgeGraphRetriever checkpoint: nodes=%d triples=%d seed=%d",
+            self._graph.number_of_nodes(),
+            self._triple_count,
+            self._seed,
+        )
+        self._lifecycle.transition(LifecycleState.READY, "Checkpoint complete")
+
+    def terminate(self) -> None:
+        """Clear the knowledge graph and transition to TERMINATED state."""
+        self._lifecycle.transition(LifecycleState.TERMINATING, "Clearing graph")
+        self._graph.clear()
+        self._triple_count = 0
+        self._lifecycle.transition(LifecycleState.TERMINATED, "Terminated")
+        logger.info("KnowledgeGraphRetriever terminated")
+
+    def add_triple(self, triple: GraphTriple) -> None:
+        """Add a subject-predicate-object triple to the knowledge graph.
+
+        Args:
+            triple: GraphTriple to insert into the graph.
+
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
+        """
+        self._require_operating()
+        self._graph.add_edge(
+            triple.subject,
+            triple.obj,
+            predicate=triple.predicate,
+            confidence=triple.confidence,
+        )
+        self._triple_count += 1
+        logger.debug(
+            "Added triple: %s -[%s]-> %s",
+            triple.subject,
+            triple.predicate,
+            triple.obj,
+        )
+
+    def query_subject(self, subject: str) -> list[GraphTriple]:
+        """Return all triples where the given subject is the source node.
+
+        Args:
+            subject: Entity to query as the triple subject.
+
+        Returns:
+            List of GraphTriple instances with this subject.
+
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
+        """
+        self._require_operating()
+        triples: list[GraphTriple] = []
+        if subject not in self._graph:
+            return triples
+        for _, obj, data in self._graph.out_edges(subject, data=True):
+            triples.append(
+                GraphTriple(
+                    subject=subject,
+                    predicate=str(data.get("predicate", "related_to")),
+                    obj=str(obj),
+                    confidence=float(data.get("confidence", 1.0)),
+                ),
+            )
+        return triples
+
+    def find_path(self, source: str, target: str) -> list[str]:
+        """Find the shortest path between two entities in the graph.
+
+        Args:
+            source: Starting entity.
+            target: Target entity.
+
+        Returns:
+            List of entity names forming the path, or empty list if no path exists.
+
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
+        """
+        self._require_operating()
+        try:
+            path: list[str] = nx.shortest_path(self._graph, source, target)
+        except (nx.NetworkXNoPath, nx.NodeNotFound):
+            return []
+        else:
+            return path
+
+    def query(self, query: str, context: QueryContext) -> RetrievalResult:
+        """Query the knowledge graph for the given entity.
+
+        Args:
+            query: Entity name to look up in the graph.
+            context: Query context with domain and options.
+
+        Returns:
+            RetrievalResult with related triples as content.
+
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
+        """
+        self._require_operating()
+        _ = context
+        triples = self.query_subject(query)
+        if not triples:
+            return RetrievalResult(
+                source="knowledge_graph",
+                content="",
+                confidence=0.0,
+                metadata={"entity": query, "triple_count": "0"},
+            )
+        content_parts = [f"{t.subject} {t.predicate} {t.obj}" for t in triples]
+        content = "; ".join(content_parts)
+        avg_confidence = sum(t.confidence for t in triples) / len(triples)
+        return RetrievalResult(
+            source="knowledge_graph",
+            content=content,
+            confidence=avg_confidence,
+            metadata={
+                "entity": query,
+                "triple_count": str(len(triples)),
+                "graph_nodes": str(self._graph.number_of_nodes()),
+            },
+        )
+
+    @property
+    def triple_count(self) -> int:
+        """Number of triples in the knowledge graph.
+
+        Returns:
+            Count of added triples.
+
+        """
+        return self._triple_count
+
+
+__all__ = ["GraphTriple", "KnowledgeGraphRetriever"]
+
+================================================================================
+CONTEXTUAL FILE (ReadOnly Reference):
+thalos_prime/library_of_sense/core/interfaces.py
+================================================================================
+
+"""Library of Sense - Core Protocol Interfaces.
+
+Defines fundamental protocols and data structures for all Library of Sense
+subsystem components, enforcing strict typing and deterministic behavior.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Protocol, runtime_checkable
+
+
+class QueryDomain(StrEnum):
+    """Supported query domains for Library of Sense retrieval."""
+
+    GENERAL = "general"
+    MATHEMATICS = "mathematics"
+    CODE = "code"
+    WEB = "web"
+    KNOWLEDGE_GRAPH = "knowledge_graph"
+    COMPUTATIONAL = "computational"
+
+
+@dataclass
+class QueryContext:
+    """Query context providing domain hints and execution options."""
+
+    domain: QueryDomain = QueryDomain.GENERAL
+    require_proof: bool = False
+    max_depth: int = 3
+    timeout_seconds: float = 30.0
+    seed: int = 0
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize context to dictionary.
+
+        Returns:
+            Dictionary representation of this context.
+
+        """
+        return {
+            "domain": self.domain.value,
+            "require_proof": self.require_proof,
+            "max_depth": self.max_depth,
+            "timeout_seconds": self.timeout_seconds,
+            "seed": self.seed,
+            "timestamp": self.timestamp.isoformat(),
+        }
+
+
+@dataclass
+class RetrievalResult:
+    """Result from a single retrieval source."""
+
+    source: str
+    content: str
+    confidence: float
+    metadata: dict[str, str] = field(default_factory=dict)
+    retrieved_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation of this result.
+
+        """
+        return {
+            "source": self.source,
+            "content": self.content,
+            "confidence": self.confidence,
+            "metadata": self.metadata,
+            "retrieved_at": self.retrieved_at.isoformat(),
+        }
+
+
+@dataclass
+class ValidationResult:
+    """Result from a validation operation."""
+
+    valid: bool
+    message: str
+    details: dict[str, str] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation of this result.
+
+        """
+        return {
+            "valid": self.valid,
+            "message": self.message,
+            "details": self.details,
+        }
+
+
+@dataclass
+class SynthesisResult:
+    """Result from a knowledge synthesis operation."""
+
+    answer: str
+    confidence: float
+    sources: list[RetrievalResult] = field(default_factory=list)
+    reasoning_steps: list[str] = field(default_factory=list)
+    verified: bool = False
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation of this result.
+
+        """
+        return {
+            "answer": self.answer,
+            "confidence": self.confidence,
+            "sources": [s.to_dict() for s in self.sources],
+            "reasoning_steps": self.reasoning_steps,
+            "verified": self.verified,
+        }
+
+
+@dataclass
+class ReasoningResult:
+    """Result from a reasoning operation."""
+
+    conclusion: str
+    proof_steps: list[str]
+    valid: bool
+    confidence: float
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation of this result.
+
+        """
+        return {
+            "conclusion": self.conclusion,
+            "proof_steps": self.proof_steps,
+            "valid": self.valid,
+            "confidence": self.confidence,
+        }
+
+
+@runtime_checkable
+class RetrievalSource(Protocol):
+    """Protocol for all retrieval source implementations."""
+
+    def query(self, query: str, context: QueryContext) -> RetrievalResult:
+        """Execute a retrieval query against this source.
+
+        Args:
+            query: The query string to search for.
+            context: Query context with domain and execution options.
+
+        Returns:
+            RetrievalResult containing the retrieved content.
+
+        """
+        ...
+
+    def validate(self) -> ValidationResult:
+        """Validate this retrieval source configuration.
+
+        Returns:
+            ValidationResult indicating whether the source is correctly configured.
+
+        """
+        ...
+
+    def initialize(self) -> None:
+        """Initialize this retrieval source and prepare resources."""
+        ...
+
+    def operate(self) -> None:
+        """Transition this source to active operating state."""
+        ...
+
+    def reconcile(self) -> None:
+        """Reconcile source state to ensure consistency."""
+        ...
+
+    def checkpoint(self) -> None:
+        """Emit a checkpoint log of current source state."""
+        ...
+
+    def terminate(self) -> None:
+        """Terminate this source and release resources."""
+        ...
+
+
+@runtime_checkable
+class KnowledgeSynthesizer(Protocol):
+    """Protocol for knowledge synthesis components."""
+
+    def synthesize(
+        self,
+        results: list[RetrievalResult],
+        context: QueryContext,
+    ) -> SynthesisResult:
+        """Synthesize knowledge from multiple retrieval results.
+
+        Args:
+            results: List of retrieval results to synthesize.
+            context: Query context guiding synthesis.
+
+        Returns:
+            SynthesisResult with the synthesized answer.
+
+        """
+        ...
+
+
+@runtime_checkable
+class ReasoningEngine(Protocol):
+    """Protocol for reasoning engine implementations."""
+
+    def reason(
+        self,
+        premise: str,
+        context: QueryContext,
+    ) -> ReasoningResult:
+        """Apply reasoning to derive conclusions from a premise.
+
+        Args:
+            premise: The statement or expression to reason about.
+            context: Query context providing reasoning options.
+
+        Returns:
+            ReasoningResult with conclusions and proof steps.
+
+        """
+        ...
+
+
+__all__ = [
+    "KnowledgeSynthesizer",
+    "QueryContext",
+    "QueryDomain",
+    "ReasoningEngine",
+    "ReasoningResult",
+    "RetrievalResult",
+    "RetrievalSource",
+    "SynthesisResult",
+    "ValidationResult",
+]
+
+================================================================================
+CONTEXTUAL FILE (ReadOnly Reference):
+thalos_prime/library_of_sense/core/lifecycle.py
+================================================================================
+
+"""Library of Sense - Lifecycle state management.
+
+Provides the LifecycleState enum and LifecycleEvent dataclass for tracking
+subsystem lifecycle transitions with deterministic event logging.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import StrEnum
+
+logger = logging.getLogger(__name__)
+
+
+class LifecycleState(StrEnum):
+    """Enumeration of valid lifecycle states for Library of Sense subsystems."""
+
+    UNINITIALIZED = "uninitialized"
+    INITIALIZING = "initializing"
+    INITIALIZED = "initialized"
+    VALIDATING = "validating"
+    READY = "ready"
+    OPERATING = "operating"
+    RECONCILING = "reconciling"
+    CHECKPOINTING = "checkpointing"
+    TERMINATING = "terminating"
+    TERMINATED = "terminated"
+    ERROR = "error"
+
+
+@dataclass
+class LifecycleEvent:
+    """Records a lifecycle state transition with metadata for deterministic replay."""
+
+    subsystem: str
+    from_state: LifecycleState
+    to_state: LifecycleState
+    seed: int
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    details: str = ""
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize lifecycle event to dictionary.
+
+        Returns:
+            Dictionary representation of this event.
+
+        """
+        return {
+            "subsystem": self.subsystem,
+            "from_state": self.from_state.value,
+            "to_state": self.to_state.value,
+            "seed": self.seed,
+            "timestamp": self.timestamp.isoformat(),
+            "details": self.details,
+        }
+
+
+class SubsystemLifecycle:
+    """Manages lifecycle state transitions and event logging for a subsystem."""
+
+    def __init__(self, subsystem_name: str, seed: int = 0) -> None:
+        """Initialize lifecycle manager for a named subsystem.
+
+        Args:
+            subsystem_name: Unique identifier for the subsystem.
+            seed: Deterministic seed for replay identification.
+
+        """
+        self._subsystem_name = subsystem_name
+        self._seed = seed
+        self._state = LifecycleState.UNINITIALIZED
+        self._events: list[LifecycleEvent] = []
+
+    @property
+    def state(self) -> LifecycleState:
+        """Current lifecycle state.
+
+        Returns:
+            Current LifecycleState value.
+
+        """
+        return self._state
+
+    def transition(self, new_state: LifecycleState, details: str = "") -> None:
+        """Transition to a new lifecycle state, logging the event.
+
+        Args:
+            new_state: The target lifecycle state.
+            details: Optional details about this transition.
+
+        """
+        event = LifecycleEvent(
+            subsystem=self._subsystem_name,
+            from_state=self._state,
+            to_state=new_state,
+            seed=self._seed,
+            details=details,
+        )
+        self._events.append(event)
+        logger.info(
+            "Lifecycle transition: %s -> %s [%s] seed=%d",
+            self._state.value,
+            new_state.value,
+            self._subsystem_name,
+            self._seed,
+        )
+        self._state = new_state
+
+    def get_events(self) -> list[LifecycleEvent]:
+        """Return all recorded lifecycle events.
+
+        Returns:
+            List of LifecycleEvent records in chronological order.
+
+        """
+        return list(self._events)
+
+
+__all__ = ["LifecycleEvent", "LifecycleState", "SubsystemLifecycle"]

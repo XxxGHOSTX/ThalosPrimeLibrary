@@ -23,6 +23,9 @@ class TestQueryHandlerLifecycle:
         handler.operate()
 
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="Python", predicate="is", obj="language"))
         handler.register_source(kg)
 
@@ -90,6 +93,9 @@ class TestResponseBuilder:
         handler.validate()
 
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="test", predicate="is", obj="valid"))
         handler.register_source(kg)
 
@@ -117,6 +123,9 @@ class TestMultiSourceOrchestration:
         orchestrator = QueryOrchestrator(sm, seed=0)
 
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="AI", predicate="is", obj="technology"))
         comp = ComputationalRetriever()
 

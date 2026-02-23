@@ -35,6 +35,9 @@ class TestMultiSourceRetriever:
         retriever = MultiSourceRetriever()
         comp = ComputationalRetriever()
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         retriever.add_source(comp)
         retriever.add_source(kg)
         ctx = QueryContext(domain=QueryDomain.COMPUTATIONAL)
@@ -45,6 +48,9 @@ class TestMultiSourceRetriever:
     def test_min_confidence_filters_results(self) -> None:
         retriever = MultiSourceRetriever(min_confidence=0.5)
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         retriever.add_source(kg)
         ctx = QueryContext()
         results = retriever.query_all("unknown_entity", ctx)
@@ -132,11 +138,17 @@ class TestWebRetrievalHandler:
 class TestKnowledgeGraphRetriever:
     def test_add_triple_increments_count(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="A", predicate="is", obj="B"))
         assert kg.triple_count == 1
 
     def test_query_subject_returns_triples(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="Python", predicate="is", obj="language"))
         triples = kg.query_subject("Python")
         assert len(triples) == 1
@@ -144,10 +156,16 @@ class TestKnowledgeGraphRetriever:
 
     def test_query_subject_unknown_entity_returns_empty(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         assert kg.query_subject("nonexistent") == []
 
     def test_find_path_existing(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="A", predicate="leads_to", obj="B"))
         kg.add_triple(GraphTriple(subject="B", predicate="leads_to", obj="C"))
         path = kg.find_path("A", "C")
@@ -155,12 +173,18 @@ class TestKnowledgeGraphRetriever:
 
     def test_find_path_no_path_returns_empty(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="X", predicate="is", obj="Y"))
         path = kg.find_path("X", "Z")
         assert path == []
 
     def test_query_entity_found(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         kg.add_triple(GraphTriple(subject="math", predicate="includes", obj="algebra"))
         ctx = QueryContext()
         result = kg.query("math", ctx)
@@ -169,6 +193,9 @@ class TestKnowledgeGraphRetriever:
 
     def test_query_entity_not_found(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
         ctx = QueryContext()
         result = kg.query("unknown", ctx)
         assert result.confidence == 0.0
@@ -178,6 +205,32 @@ class TestKnowledgeGraphRetriever:
         kg = KnowledgeGraphRetriever()
         result = kg.validate()
         assert result.valid is True
+
+    def test_data_ops_raise_when_not_operating(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        ctx = QueryContext()
+        with pytest.raises(RuntimeError):
+            kg.add_triple(GraphTriple(subject="A", predicate="is", obj="B"))
+        with pytest.raises(RuntimeError):
+            kg.query_subject("A")
+        with pytest.raises(RuntimeError):
+            kg.find_path("A", "B")
+        with pytest.raises(RuntimeError):
+            kg.query("A", ctx)
+
+    def test_lifecycle_sequence(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.validate()
+        kg.operate()
+        kg.add_triple(GraphTriple(subject="X", predicate="rel", obj="Y"))
+        assert kg.triple_count == 1
+        kg.checkpoint()
+        # After checkpoint, state returns to READY; re-enter OPERATING
+        kg.operate()
+        assert kg.triple_count == 1
+        kg.terminate()
+        assert kg.triple_count == 0
 
 
 # ---------------------------------------------------------------------------

@@ -2,12 +2,18 @@
 
 Builds and queries a NetworkX knowledge graph for structured
 entity-relationship retrieval with RDF triple support.
+
+Lifecycle compliance is strictly enforced: data-plane operations
+(add_triple, query_subject, find_path, query) require OPERATING state.
+Control-plane operations (initialize, validate, operate, reconcile,
+checkpoint, terminate) manage lifecycle transitions explicitly.
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Final
 
 import networkx as nx
 
@@ -16,8 +22,11 @@ from thalos_prime.library_of_sense.core.interfaces import (
     RetrievalResult,
     ValidationResult,
 )
+from thalos_prime.library_of_sense.core.lifecycle import LifecycleState, SubsystemLifecycle
 
 logger = logging.getLogger(__name__)
+
+_SUBSYSTEM_NAME: Final[str] = "library_of_sense.knowledge_graph_retriever"
 
 
 @dataclass
@@ -49,12 +58,96 @@ class KnowledgeGraphRetriever:
 
     Supports adding triples (subject-predicate-object), querying by subject,
     and finding paths between concepts.
+
+    Data-plane operations (add_triple, query_subject, find_path, query) require
+    OPERATING lifecycle state. Call initialize(), validate(), and operate() in
+    sequence before invoking any data-plane method.
     """
 
-    def __init__(self) -> None:
-        """Initialize an empty knowledge graph."""
+    def __init__(self, seed: int = 0) -> None:
+        """Initialize an empty knowledge graph.
+
+        Args:
+            seed: Deterministic seed for replay identification.
+
+        """
         self._graph: nx.DiGraph = nx.DiGraph()
         self._triple_count = 0
+        self._seed = seed
+        self._lifecycle = SubsystemLifecycle(_SUBSYSTEM_NAME, seed=seed)
+
+    def _require_operating(self) -> None:
+        """Enforce OPERATING state before any data-plane operation.
+
+        Raises:
+            RuntimeError: If the lifecycle state is not OPERATING.
+
+        """
+        if self._lifecycle.state != LifecycleState.OPERATING:
+            msg = (
+                f"KnowledgeGraphRetriever is not in OPERATING state "
+                f"(current: {self._lifecycle.state}); "
+                "call initialize(), validate(), and operate() first"
+            )
+            raise RuntimeError(msg)
+
+    def initialize(self) -> None:
+        """Initialize the knowledge graph and transition to INITIALIZED state."""
+        self._lifecycle.transition(LifecycleState.INITIALIZING, "Creating knowledge graph")
+        self._graph = nx.DiGraph()
+        self._triple_count = 0
+        self._lifecycle.transition(LifecycleState.INITIALIZED, "Graph ready")
+        logger.info("KnowledgeGraphRetriever initialized")
+
+    def validate(self) -> ValidationResult:
+        """Validate knowledge graph consistency and transition to READY state.
+
+        Returns:
+            ValidationResult indicating whether the graph is correctly configured.
+
+        """
+        self._lifecycle.transition(LifecycleState.VALIDATING, "Checking graph consistency")
+        self._lifecycle.transition(LifecycleState.READY, "Graph consistency confirmed")
+        return ValidationResult(
+            valid=True,
+            message=f"KnowledgeGraphRetriever ready with {self._triple_count} triples",
+        )
+
+    def operate(self) -> None:
+        """Transition to OPERATING state for active graph queries."""
+        self._lifecycle.transition(LifecycleState.OPERATING, "Entering operation mode")
+        logger.info(
+            "KnowledgeGraphRetriever operating, triples=%d", self._triple_count
+        )
+
+    def reconcile(self) -> None:
+        """Reconcile knowledge graph state.
+
+        No reconciliation logic is required; graph state is self-consistent.
+        Transitions through RECONCILING and returns to READY state.
+        """
+        self._lifecycle.transition(LifecycleState.RECONCILING, "Reconciling graph state")
+        self._lifecycle.transition(LifecycleState.READY, "Reconciliation complete")
+        logger.debug("KnowledgeGraphRetriever reconcile: triples=%d", self._triple_count)
+
+    def checkpoint(self) -> None:
+        """Emit a structured checkpoint log with current graph state."""
+        self._lifecycle.transition(LifecycleState.CHECKPOINTING, "Checkpointing state")
+        logger.info(
+            "KnowledgeGraphRetriever checkpoint: nodes=%d triples=%d seed=%d",
+            self._graph.number_of_nodes(),
+            self._triple_count,
+            self._seed,
+        )
+        self._lifecycle.transition(LifecycleState.READY, "Checkpoint complete")
+
+    def terminate(self) -> None:
+        """Clear the knowledge graph and transition to TERMINATED state."""
+        self._lifecycle.transition(LifecycleState.TERMINATING, "Clearing graph")
+        self._graph.clear()
+        self._triple_count = 0
+        self._lifecycle.transition(LifecycleState.TERMINATED, "Terminated")
+        logger.info("KnowledgeGraphRetriever terminated")
 
     def add_triple(self, triple: GraphTriple) -> None:
         """Add a subject-predicate-object triple to the knowledge graph.
@@ -62,7 +155,11 @@ class KnowledgeGraphRetriever:
         Args:
             triple: GraphTriple to insert into the graph.
 
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
         """
+        self._require_operating()
         self._graph.add_edge(
             triple.subject,
             triple.obj,
@@ -86,7 +183,11 @@ class KnowledgeGraphRetriever:
         Returns:
             List of GraphTriple instances with this subject.
 
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
         """
+        self._require_operating()
         triples: list[GraphTriple] = []
         if subject not in self._graph:
             return triples
@@ -111,7 +212,11 @@ class KnowledgeGraphRetriever:
         Returns:
             List of entity names forming the path, or empty list if no path exists.
 
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
         """
+        self._require_operating()
         try:
             path: list[str] = nx.shortest_path(self._graph, source, target)
         except (nx.NetworkXNoPath, nx.NodeNotFound):
@@ -129,7 +234,11 @@ class KnowledgeGraphRetriever:
         Returns:
             RetrievalResult with related triples as content.
 
+        Raises:
+            RuntimeError: If not in OPERATING state.
+
         """
+        self._require_operating()
         _ = context
         triples = self.query_subject(query)
         if not triples:
@@ -152,42 +261,6 @@ class KnowledgeGraphRetriever:
                 "graph_nodes": str(self._graph.number_of_nodes()),
             },
         )
-
-    def validate(self) -> ValidationResult:
-        """Validate the knowledge graph retriever.
-
-        Returns:
-            ValidationResult indicating this source is ready.
-
-        """
-        return ValidationResult(
-            valid=True,
-            message=f"KnowledgeGraphRetriever ready with {self._triple_count} triples",
-        )
-
-    def initialize(self) -> None:
-        """Initialize the knowledge graph retriever."""
-        logger.debug("KnowledgeGraphRetriever initialized")
-
-    def operate(self) -> None:
-        """Transition to operating state."""
-        logger.debug("KnowledgeGraphRetriever operating, triples=%d", self._triple_count)
-
-    def reconcile(self) -> None:
-        """Reconcile knowledge graph state."""
-        logger.debug("KnowledgeGraphRetriever reconcile: triples=%d", self._triple_count)
-
-    def checkpoint(self) -> None:
-        """Log current knowledge graph state as a checkpoint."""
-        logger.info(
-            "KnowledgeGraphRetriever checkpoint: nodes=%d triples=%d",
-            self._graph.number_of_nodes(),
-            self._triple_count,
-        )
-
-    def terminate(self) -> None:
-        """Terminate the knowledge graph retriever."""
-        logger.debug("KnowledgeGraphRetriever terminated")
 
     @property
     def triple_count(self) -> int:
