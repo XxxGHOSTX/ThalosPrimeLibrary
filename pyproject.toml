@@ -214,7 +214,7 @@ disable_error_code = ["no-untyped-call"]
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
-    "PLC0415", "PLR2004", "BLE001", "B904", "G004", "E501",
+    "PLC0415", "PLR2004", "PLR0913", "BLE001", "B904", "G004", "E501",
     "ARG001", "ARG002", "TRY003", "EM101", "TRY401", "TRY300",
     "TRY301", "ASYNC240", "ASYNC230", "S104", "RUF012", "D102",
     "FBT001", "FBT002", "PTH118", "PTH120", "PTH110", "PTH123",
@@ -239,6 +239,9 @@ disable_error_code = ["no-untyped-call"]
 # PTH123 (open() used for simple text file writes without Path context)
 "thalos_prime/cli/commands.py" = ["PLC0415", "S104", "PTH123", "TRY400"]
 "thalos_prime/cli/__init__.py" = ["D104"]
+"thalos_prime/planning/mcts_planner.py" = ["PLR0913"]
+"thalos_prime/knowledge_graph/__init__.py" = ["D104"]
+"thalos_prime/constraints/__init__.py" = ["D104"]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]

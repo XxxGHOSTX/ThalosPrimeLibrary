@@ -77,7 +77,22 @@ from .synthesis import deep_synthesis
 from thalos_prime.lifecycle import BaseLifecycleComponent, LifecycleProtocol
 from thalos_prime.library_of_sense.retrieval.graph_rag import GraphRAGRetriever
 from thalos_prime.planning.tree_of_thoughts import ThoughtNode, TreeOfThoughtsPlanner
+from thalos_prime.planning.mcts_planner import MCTSNode, MCTSPlanner, MCTSResult
 from thalos_prime.simulation.world_model import WorldModel, WorldState
+from thalos_prime.knowledge_graph.neo4j_graph import (
+    CypherQuery,
+    Neo4jKnowledgeGraph,
+    NodeRecord,
+    RelationshipRecord,
+)
+from thalos_prime.constraints.symbolic_engine import (
+    ConstraintSet,
+    OptimizationObjective,
+    SymbolicConstraintEngine,
+    SymbolicSolution,
+    VariableDeclaration,
+    VariableSort,
+)
 
 __all__ = [
     # Library of Babel endpoints
@@ -131,4 +146,20 @@ __all__ = [
     # Simulation
     "WorldModel",
     "WorldState",
+    # Knowledge Graph (Neo4j)
+    "CypherQuery",
+    "Neo4jKnowledgeGraph",
+    "NodeRecord",
+    "RelationshipRecord",
+    # Symbolic Constraint Engine (Z3)
+    "ConstraintSet",
+    "OptimizationObjective",
+    "SymbolicConstraintEngine",
+    "SymbolicSolution",
+    "VariableDeclaration",
+    "VariableSort",
+    # MCTS Planner
+    "MCTSNode",
+    "MCTSPlanner",
+    "MCTSResult",
 ]
