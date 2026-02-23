@@ -10,6 +10,11 @@ This package provides:
 __version__ = "0.1.0"
 __author__ = "ThalosPrime"
 
+LIBRARY_MOTTO = (
+    "In the Library of Babel, every truth already exists"
+    " \u2014 Thalos Prime finds it."
+)
+
 # Library of Babel endpoints
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
 LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
@@ -69,12 +74,19 @@ from thalos_prime.ingest import (
 
 from .synthesis import deep_synthesis
 
+from thalos_prime.lifecycle import BaseLifecycleComponent, LifecycleProtocol
+from thalos_prime.library_of_sense.retrieval.graph_rag import GraphRAGRetriever
+from thalos_prime.planning.tree_of_thoughts import ThoughtNode, TreeOfThoughtsPlanner
+from thalos_prime.simulation.world_model import WorldModel, WorldState
+
 __all__ = [
     # Library of Babel endpoints
     "LIBRARY_OF_BABEL_BASE_URL",
     "LIBRARY_OF_BABEL_SEARCH_API",
     "LIBRARY_OF_BABEL_SEARCH_URL",
     "LOCAL_LIBRARY_PATH",
+    # Library motto
+    "LIBRARY_MOTTO",
     # Decoder
     'BabelDecoder',
     'CoherenceScore',
@@ -108,4 +120,15 @@ __all__ = [
     "query_to_addresses",
     "score_coherence",
     "text_to_address",
+    # Lifecycle
+    "BaseLifecycleComponent",
+    "LifecycleProtocol",
+    # GraphRAG
+    "GraphRAGRetriever",
+    # Planning
+    "ThoughtNode",
+    "TreeOfThoughtsPlanner",
+    # Simulation
+    "WorldModel",
+    "WorldState",
 ]

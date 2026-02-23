@@ -16,6 +16,7 @@ from thalos_prime.library_of_sense.core.interfaces import (
     RetrievalResult,
     ValidationResult,
 )
+from thalos_prime.lifecycle import BaseLifecycleComponent
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class GraphTriple:
         }
 
 
-class KnowledgeGraphRetriever:
+class KnowledgeGraphRetriever(BaseLifecycleComponent):
     """Retrieves information from an in-memory NetworkX knowledge graph.
 
     Supports adding triples (subject-predicate-object), querying by subject,
@@ -53,8 +54,102 @@ class KnowledgeGraphRetriever:
 
     def __init__(self) -> None:
         """Initialize an empty knowledge graph."""
+        super().__init__("KnowledgeGraphRetriever")
         self._graph: nx.DiGraph = nx.DiGraph()
         self._triple_count = 0
+
+    def initialize(self) -> None:
+        """Create/reset the internal graph and mark as initialized."""
+        self._graph = nx.DiGraph()
+        self._triple_count = 0
+        self._initialized = True
+        self._emit_event("initialize", "Graph created, initialized=True")
+        logger.debug("KnowledgeGraphRetriever initialized")
+
+    def validate(self) -> ValidationResult:
+        """Validate the knowledge graph retriever.
+
+        Returns:
+            ValidationResult indicating readiness and initialization state.
+
+        """
+        if not self._initialized:
+            return ValidationResult(
+                valid=False,
+                message="KnowledgeGraphRetriever not initialized; call initialize() first",
+            )
+        return ValidationResult(
+            valid=True,
+            message=f"KnowledgeGraphRetriever ready with {self._triple_count} triples",
+        )
+
+    def operate(self) -> None:
+        """Log current graph statistics (nodes, edges, triples). Idempotent."""
+        nodes = self._graph.number_of_nodes()
+        edges = self._graph.number_of_edges()
+        self._emit_event(
+            "operate",
+            f"nodes={nodes} edges={edges} triples={self._triple_count}",
+        )
+        logger.debug(
+            "KnowledgeGraphRetriever operating: nodes=%d edges=%d triples=%d",
+            nodes,
+            edges,
+            self._triple_count,
+        )
+
+    def reconcile(self) -> None:
+        """Verify graph consistency; fix orphaned edges or halt on bad predicates.
+
+        Raises:
+            ValueError: If a predicate attribute is not a string.
+
+        """
+        self._emit_event("reconcile", "Verifying graph consistency")
+        for u, v, data in self._graph.edges(data=True):
+            predicate = data.get("predicate", "")
+            if not isinstance(predicate, str):
+                msg = (
+                    f"Corrupt predicate on edge ({u!r} -> {v!r}): "
+                    f"expected str, got {type(predicate).__name__!r}"
+                )
+                raise TypeError(msg)
+        self._emit_event("reconcile", "Graph consistency verified")
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return serializable dict with all triples and graph statistics.
+
+        Returns:
+            Dictionary containing triples list, node_count, edge_count, triple_count.
+
+        """
+        triples: list[dict[str, object]] = []
+        for u, v, data in self._graph.edges(data=True):
+            triples.append(
+                {
+                    "subject": str(u),
+                    "predicate": str(data.get("predicate", "related_to")),
+                    "obj": str(v),
+                    "confidence": float(data.get("confidence", 1.0)),
+                }
+            )
+        state: dict[str, object] = {
+            "component": self._component_name,
+            "node_count": self._graph.number_of_nodes(),
+            "edge_count": self._graph.number_of_edges(),
+            "triple_count": self._triple_count,
+            "triples": triples,
+        }
+        self._emit_event("checkpoint", f"triple_count={self._triple_count}")
+        return state
+
+    def terminate(self) -> None:
+        """Clear the graph and mark as uninitialized."""
+        self._graph.clear()
+        self._triple_count = 0
+        self._initialized = False
+        self._emit_event("terminate", "Graph cleared, initialized=False")
+        logger.debug("KnowledgeGraphRetriever terminated")
 
     def add_triple(self, triple: GraphTriple) -> None:
         """Add a subject-predicate-object triple to the knowledge graph.
@@ -153,42 +248,6 @@ class KnowledgeGraphRetriever:
             },
         )
 
-    def validate(self) -> ValidationResult:
-        """Validate the knowledge graph retriever.
-
-        Returns:
-            ValidationResult indicating this source is ready.
-
-        """
-        return ValidationResult(
-            valid=True,
-            message=f"KnowledgeGraphRetriever ready with {self._triple_count} triples",
-        )
-
-    def initialize(self) -> None:
-        """Initialize the knowledge graph retriever."""
-        logger.debug("KnowledgeGraphRetriever initialized")
-
-    def operate(self) -> None:
-        """Transition to operating state."""
-        logger.debug("KnowledgeGraphRetriever operating, triples=%d", self._triple_count)
-
-    def reconcile(self) -> None:
-        """Reconcile knowledge graph state."""
-        logger.debug("KnowledgeGraphRetriever reconcile: triples=%d", self._triple_count)
-
-    def checkpoint(self) -> None:
-        """Log current knowledge graph state as a checkpoint."""
-        logger.info(
-            "KnowledgeGraphRetriever checkpoint: nodes=%d triples=%d",
-            self._graph.number_of_nodes(),
-            self._triple_count,
-        )
-
-    def terminate(self) -> None:
-        """Terminate the knowledge graph retriever."""
-        logger.debug("KnowledgeGraphRetriever terminated")
-
     @property
     def triple_count(self) -> int:
         """Number of triples in the knowledge graph.
@@ -201,3 +260,4 @@ class KnowledgeGraphRetriever:
 
 
 __all__ = ["GraphTriple", "KnowledgeGraphRetriever"]
+

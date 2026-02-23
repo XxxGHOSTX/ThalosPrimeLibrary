@@ -187,8 +187,13 @@ class RetrievalSource(Protocol):
         """Reconcile source state to ensure consistency."""
         ...
 
-    def checkpoint(self) -> None:
-        """Emit a checkpoint log of current source state."""
+    def checkpoint(self) -> object:
+        """Emit a checkpoint log of current source state.
+
+        Returns:
+            Optional serialized state dict, or None if not applicable.
+
+        """
         ...
 
     def terminate(self) -> None:
