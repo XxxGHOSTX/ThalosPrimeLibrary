@@ -69,6 +69,17 @@ from thalos_prime.ingest import (
 
 from .synthesis import deep_synthesis
 
+# --- GraphRAG Add-on (Phase 1) ---
+from thalos_prime.graph_rag import (
+    GraphEdge,
+    GraphNode,
+    HybridRetriever,
+    KnowledgeGraph,
+    RetrievalCandidate,
+    Retriever,
+    SimpleKnowledgeGraph,
+)
+
 __all__ = [
     # Library of Babel endpoints
     "LIBRARY_OF_BABEL_BASE_URL",
@@ -108,4 +119,12 @@ __all__ = [
     "query_to_addresses",
     "score_coherence",
     "text_to_address",
+    # GraphRAG Add-on
+    "GraphEdge",
+    "GraphNode",
+    "HybridRetriever",
+    "KnowledgeGraph",
+    "RetrievalCandidate",
+    "Retriever",
+    "SimpleKnowledgeGraph",
 ]
