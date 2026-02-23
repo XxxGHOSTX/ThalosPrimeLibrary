@@ -33,7 +33,9 @@ class TestRelationshipRecord:
         assert d["source_id"] == "a"
         assert d["target_id"] == "b"
         assert d["rel_type"] == "KNOWS"
-        assert d["properties"]["since"] == 2020
+        props = d["properties"]
+        assert isinstance(props, dict)
+        assert props["since"] == 2020
 
 
 class TestCypherQuery:
