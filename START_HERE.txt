@@ -1,0 +1,80 @@
+================================================================================
+THALOS PRIME LIBRARY — QUICK START
+================================================================================
+
+Thalos Prime is a deterministic Library of Babel toolkit implementing strict
+control-plane / data-plane separation.
+
+MOTTO:
+  "The library speaks in fragmentation of infinite possibilities, ask.
+   And the noise resolves into patterns.
+   Meaning is never absent. Only waiting to be read."
+
+================================================================================
+1. INSTALL
+================================================================================
+
+  pip install -e ".[dev]"
+
+================================================================================
+2. RUN THE PIPELINE (CLI)
+================================================================================
+
+  # Dry-run (no network required):
+  python thalos_prime.py \
+      --query "your query here" \
+      --seed 42 \
+      --output ./output.txt \
+      --workdir ./workdir \
+      --dry-run
+
+  # With network (fetches from libraryofbabel.info):
+  python thalos_prime.py \
+      --query "your query here" \
+      --seed 42 \
+      --output ./output.txt \
+      --workdir ./workdir
+
+  Exit codes: 0 = success, 1 = usage error, 2 = DeterministicHalt
+
+================================================================================
+3. USE AS A PYTHON LIBRARY
+================================================================================
+
+  from thalos_prime import (
+      address_to_page,      # Generate a page from a hex address
+      enumerate_addresses,  # Map a query to candidate addresses
+      score_coherence,      # Score text coherence (0-100)
+  )
+
+  page_text = address_to_page("0deadbeef" * 4)
+  addresses = enumerate_addresses("antimicrobial peptide", max_results=5)
+  score = score_coherence("The quick brown fox", query="fox")
+
+================================================================================
+4. RUN THE API SERVER
+================================================================================
+
+  python run_thalos.py
+  # Visit: http://localhost:8000/docs
+
+================================================================================
+5. RUN TESTS
+================================================================================
+
+  python -m pytest tests -v
+  python -m pytest tests --cov=thalos_prime --cov-fail-under=80
+
+================================================================================
+6. KEY FILES
+================================================================================
+
+  thalos_prime.py               Pipeline entrypoint (ControlPlane)
+  thalos_prime/                 Core library package
+  src/thalosprime/cli.py        CLI entrypoint (delegates to thalos_prime.main)
+  README.md                     Full documentation
+  ARCHITECTURE.md               System architecture and design
+  DEPLOYMENT.md                 Deployment guide
+  FILES_INDEX.md                Complete file index
+
+================================================================================

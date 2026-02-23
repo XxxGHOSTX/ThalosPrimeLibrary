@@ -88,7 +88,21 @@ def score_coherence(text: str, query: str) -> int:
 
 def normalize_text(text: str, provider: Optional[str] = None) -> str:
 
-    # Placeholder normalization; LLM hook can be added via provider
+    """Normalize text by collapsing all whitespace runs to single spaces.
+
+    Converts tabs, newlines, and multiple consecutive spaces into a single
+    space, then strips leading and trailing whitespace. The ``provider``
+    parameter is accepted for API compatibility but is not used; this
+    function performs deterministic rule-based normalization only.
+
+    Args:
+        text: Raw input string to normalize.
+        provider: Unused; reserved for future provider-specific dispatch.
+
+    Returns:
+        Whitespace-normalized string, or an empty string if *text* is falsy.
+
+    """
 
     return " ".join(text.split()) if text else ""
 

@@ -3,7 +3,9 @@
 Provides administrative and monitoring functionality.
 """
 
+import logging
 import os
+import signal
 import sys
 import time
 from typing import Any
@@ -14,6 +16,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from thalos_prime import __version__
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Simple API key authentication (replace with proper auth in production)
 ADMIN_API_KEY = os.getenv("THALOS_ADMIN_API_KEY", "admin-key-change-in-production")
@@ -249,15 +252,19 @@ async def shutdown_server() -> dict[str, str]:
 
     Requires admin API key.
 
-    WARNING: This will stop the server!
+    WARNING: This will stop the server process.
+
+    Sends SIGTERM to the current process. In asyncio, signal delivery is
+    deferred to the next event loop iteration, so this coroutine completes
+    and the response is returned to the caller before the shutdown handler
+    runs.
 
     Returns:
-        Shutdown confirmation
+        Shutdown confirmation message.
 
     """
-    # In production, this would trigger a graceful shutdown
-    # For now, just return a message
-    return {
-        "message": "Shutdown command received",
-        "warning": "Shutdown not implemented in this version",
-    }
+    logger.info("Shutdown requested via admin API — sending SIGTERM to self.")
+    os.kill(os.getpid(), signal.SIGTERM)
+    # SIGTERM is delivered asynchronously; this return is reachable and allows
+    # the HTTP response to be sent before the event loop processes the signal.
+    return {"message": "Shutdown initiated — SIGTERM sent to server process."}

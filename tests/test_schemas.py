@@ -4,14 +4,15 @@ Schema presence and sanity checks.
 
 import json
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).parent.parent
 
 
-def _load_schema(name: str) -> dict:
+def _load_schema(name: str) -> dict[str, Any]:
     path = ROOT / "schemas" / name
     with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+        return json.load(handle)  # type: ignore[no-any-return]
 
 
 def test_hdr_schema_required_fields() -> None:

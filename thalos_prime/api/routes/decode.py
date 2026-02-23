@@ -51,9 +51,17 @@ async def decode(request: DecodeRequest) -> DecodeResponse:
         # Apply normalization if requested
         normalized_text = None
         if normalize and request.normalization == NormalizationMode.LLM:
-            # LLM normalization (placeholder - requires actual LLM integration)
-            normalized_text = decoded.raw_text  # For now, just use raw text
-        elif normalize and request.normalization == NormalizationMode.HEURISTIC:
+            # LLM normalization requires an LLM provider to be configured.
+            # Raise an explicit error rather than silently using raw text.
+            raise HTTPException(
+                status_code=501,
+                detail=(
+                    "LLM normalization is not implemented. "
+                    "Use NormalizationMode.HEURISTIC for rule-based normalization "
+                    "or NormalizationMode.NONE to skip normalization."
+                ),
+            )
+        if normalize and request.normalization == NormalizationMode.HEURISTIC:
             # Heuristic normalization (basic cleaning)
             normalized_text = decoded.raw_text.strip()
 

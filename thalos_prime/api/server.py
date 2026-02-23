@@ -247,16 +247,12 @@ def register_routes(app: FastAPI) -> None:
 
         logger.info("All routes registered successfully")
     except ImportError as e:
-        logger.warning(f"Some routes could not be loaded: {e}")
-        # Create placeholder routes if imports fail
-        create_placeholder_routes(app)
-
-
-def create_placeholder_routes(app: FastAPI) -> None:
-    """Create placeholder routes when actual routes are not available."""
-    @app.get("/api/v1/status")
-    async def status() -> dict[str, str]:
-        return {"status": "ok", "message": "Thalos Prime API is running"}
+        logger.exception(f"Route import failed — server cannot start: {e}")
+        msg = (
+            f"Thalos Prime API route registration failed: {e}. "
+            "Ensure all route modules are present and their dependencies are installed."
+        )
+        raise RuntimeError(msg) from e
 
 
 # Create the application instance

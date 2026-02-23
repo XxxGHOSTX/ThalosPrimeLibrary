@@ -333,19 +333,33 @@ class BabelDecoder:
         )
 
     def _normalize_with_llm(self, text: str, query: str | None = None) -> str:
-        """Normalize text using LLM (placeholder for future implementation).
+        """Normalize text using an LLM provider.
+
+        This method requires an active LLM provider to be configured via
+        enable_llm(). It is only invoked when self.llm_enabled is True.
 
         Args:
-            text: Raw text to normalize
-            query: Optional query context
+            text: Raw text to normalize.
+            query: Optional query context for guided normalization.
 
         Returns:
-            Normalized text
+            Normalized text string.
+
+        Raises:
+            NotImplementedError: Always — LLM provider integration is not
+                implemented. Call enable_llm() only when a concrete provider
+                adapter is available. Using raw text without normalization is
+                the correct fallback; set normalize=False or
+                normalization=NormalizationMode.NONE to avoid this path.
 
         """
-        # Placeholder - would integrate with LLM provider
-        # For now, just return the original text
-        return text
+        msg = (
+            f"LLM normalization via provider {self.llm_provider!r} is not "
+            "implemented. Either use normalize=False, set "
+            "normalization=NormalizationMode.NONE, or supply a concrete "
+            "LLM provider adapter before calling decode_page(normalize=True)."
+        )
+        raise NotImplementedError(msg)
 
     def enable_llm(self, provider: str, **kwargs: object) -> None:
         """Enable LLM normalization.
