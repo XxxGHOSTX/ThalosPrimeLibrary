@@ -1,0 +1,1863 @@
+================================================================================
+PULL REQUEST DRAFT
+================================================================================
+
+Title: Feat: GraphRAG Add-on (Phase 1) - Hybrid Retrieval & Knowledge Graph Architecture
+
+Branch: feat/graphrag-addon-phase1  ->  main
+
+Author: ThalosPrime
+Date:   2026-02-23
+Status: DRAFT — For Review
+
+================================================================================
+DESCRIPTION
+================================================================================
+
+## The "Context Wall" — Problem & Breakthrough
+
+Thalos Prime's deterministic Library of Babel core resolves text to addresses
+and scores coherence with high fidelity.  The remaining unsolved problem is the
+*context wall*: a pure vector-similarity retrieval system saturates around the
+top-k nearest neighbours and cannot follow multi-hop semantic chains (e.g.
+"concept A is_part_of concept B which contradicts concept C").  Every document
+chunk exists in isolation; relationships between concepts are invisible.
+
+This add-on breaks through the context wall by overlaying a **Knowledge Graph**
+on top of the existing retrieval pipeline.  Graph edges encode typed
+relationships (is_a, part_of, causes, contradicts, …) so that a single query
+can walk multi-hop paths and surface evidence that pure vector search would
+never return.
+
+The result is **Hybrid Retrieval**: graph traversal + vector similarity working
+in concert — a pattern described in the RAG 2.0 and Neuro-Symbolic Integration
+literature as necessary for reasoning-grade retrieval.
+
+## Research Context
+
+* **RAG 2.0 (Lewis et al., 2020; Guu et al., 2020)** — augmented generation
+  requires structured world knowledge, not just nearest-neighbour documents.
+
+* **Neuro-Symbolic Integration (Garcez & Lamb, 2023)** — combining sub-symbolic
+  (vector) and symbolic (graph) representations yields better generalisation and
+  explainability than either alone.
+
+* **Knowledge Graph Completion / GraphRAG (Edge et al., 2024)** — community
+  summarisation of entity graphs dramatically outperforms naive RAG on complex
+  multi-hop questions.
+
+## Integration with Thalos Prime — Non-Destabilising Design
+
+The add-on lives entirely inside `thalos_prime/graph_rag/` and is imported
+lazily via an explicit opt-in in `thalos_prime/__init__.py`.  The existing
+control-plane/data-plane boundary is preserved:
+
+    Control Plane (unchanged)
+    ├── BabelGenerator      — deterministic page generation
+    ├── BabelEnumerator     — query-to-address mapping
+    └── BabelDecoder        — coherence scoring
+
+    Data Plane (new, additive)
+    └── graph_rag/
+        ├── interfaces.py   — typed Protocol definitions
+        ├── simple_graph.py — in-memory KnowledgeGraph (no external DB)
+        └── retriever.py    — HybridRetriever (graph + vector stubs)
+
+No existing module is modified.  The add-on depends only on the standard
+library + networkx (already a project dependency for library_of_sense).
+
+## Constraints
+
+* Python 3.12+ strict typing (mypy --strict, pyright).
+* All lifecycle methods implemented: initialize, validate, operate,
+  reconcile, checkpoint, terminate.
+* Vector-DB connection is NOT implemented yet; deterministic stubs are used
+  so that the graph logic can be reviewed and tested independently.
+* No external database required for the prototype.
+* All randomness (none present in Phase 1) would be seeded and logged.
+
+================================================================================
+IMPLEMENTATION SPEC — FILES
+================================================================================
+
+--- thalos_prime/graph_rag/__init__.py ---
+
+"""GraphRAG Add-on for Thalos Prime.
+
+Provides hybrid retrieval combining in-memory knowledge-graph traversal with
+(stubbed) vector-similarity search.  This module is the public entry point for
+the graph_rag sub-package.
+
+Control-plane boundary: graph_rag is a DATA-PLANE component.  It executes
+retrieval work only; lifecycle coordination is the caller's responsibility.
+
+Lifecycle:
+    1. initialize()  — allocate graph and retriever instances.
+    2. validate()    — verify graph invariants and configuration.
+    3. operate()     — accept queries via HybridRetriever.retrieve().
+    4. reconcile()   — converge graph to consistent state.
+    5. checkpoint()  — serialise graph state for restart.
+    6. terminate()   — release resources.
+
+State surfaces:
+    KnowledgeGraph.node_count  — observable node count.
+    KnowledgeGraph.edge_count  — observable edge count.
+    HybridRetriever.is_ready   — ready flag after initialize/validate.
+
+Event log schema (v1):
+    {
+        "schema_version": 1,
+        "event":   "<lifecycle | query | graph_op>",
+        "ts":      "<ISO-8601 UTC>",
+        "details": { ... }
+    }
+"""
+
+from thalos_prime.graph_rag.interfaces import (
+    GraphEdge,
+    GraphNode,
+    KnowledgeGraph,
+    RetrievalCandidate,
+    Retriever,
+)
+from thalos_prime.graph_rag.retriever import HybridRetriever
+from thalos_prime.graph_rag.simple_graph import SimpleKnowledgeGraph
+
+__all__: list[str] = [
+    "GraphEdge",
+    "GraphNode",
+    "HybridRetriever",
+    "KnowledgeGraph",
+    "RetrievalCandidate",
+    "Retriever",
+    "SimpleKnowledgeGraph",
+]
+
+
+--- thalos_prime/graph_rag/interfaces.py ---
+
+"""GraphRAG interfaces — typed Protocols for knowledge graph and retrieval.
+
+All public interfaces are defined here as strict typing Protocols so that
+concrete implementations (simple_graph, retriever) are interchangeable and
+testable in isolation.
+
+Design principles:
+    * No concrete logic in this file — pure interface definitions only.
+    * All methods carry full type annotations (Python 3.12+).
+    * Lifecycle methods are part of every major interface.
+    * No Any types without explicit cast and rationale comment.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Protocol, runtime_checkable
+
+
+# ---------------------------------------------------------------------------
+# Data-transfer objects
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class GraphNode:
+    """An immutable node in the knowledge graph.
+
+    Attributes:
+        node_id:    Unique identifier for this node (e.g., entity name).
+        label:      Human-readable label.
+        properties: Arbitrary string-keyed metadata for this node.
+
+    """
+
+    node_id: str
+    label: str
+    properties: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class GraphEdge:
+    """An immutable directed, typed edge in the knowledge graph.
+
+    Attributes:
+        source_id:  node_id of the source node.
+        target_id:  node_id of the target node.
+        relation:   Typed relation label (e.g., "is_a", "part_of", "causes").
+        weight:     Confidence / strength of this edge in [0.0, 1.0].
+        properties: Arbitrary string-keyed metadata for this edge.
+
+    """
+
+    source_id: str
+    target_id: str
+    relation: str
+    weight: float = 1.0
+    properties: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class RetrievalCandidate:
+    """A single retrieval result returned by a Retriever.
+
+    Attributes:
+        content:       The retrieved text fragment or structured content.
+        score:         Composite relevance score in [0.0, 1.0].
+        source:        Identifier of the retrieval source (e.g., "graph",
+                       "vector").
+        metadata:      String-keyed metadata about this candidate.
+
+    """
+
+    content: str
+    score: float
+    source: str
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Protocols
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class KnowledgeGraph(Protocol):
+    """Protocol for a deterministic, traversable knowledge graph.
+
+    Implementors must provide full lifecycle support and deterministic
+    behaviour: given identical sequences of add_node / add_edge calls,
+    query results must be identical.
+    """
+
+    # --- Lifecycle ---
+
+    def initialize(self) -> None:
+        """Allocate internal data structures.
+
+        Must succeed or raise a typed exception.
+        Must be idempotent: calling twice must not corrupt state.
+        """
+        ...
+
+    def validate(self) -> bool:
+        """Assert all graph invariants hold.
+
+        Returns:
+            True if the graph is consistent and ready for use.
+
+        Raises:
+            ValueError: If a required invariant is violated.
+
+        """
+        ...
+
+    def operate(self) -> None:
+        """Transition the graph to the operating state.
+
+        After this call, add_node / add_edge / query_neighbors are
+        valid operations.
+        """
+        ...
+
+    def reconcile(self) -> None:
+        """Converge graph to a consistent state.
+
+        Must be idempotent.  Must deterministically succeed or raise.
+        """
+        ...
+
+    def checkpoint(self) -> dict[str, object]:
+        """Serialise current graph state for atomic restart.
+
+        Returns:
+            A version-stamped, JSON-serialisable dict representing the
+            complete graph state.
+
+        """
+        ...
+
+    def terminate(self) -> None:
+        """Release all resources held by this graph instance."""
+        ...
+
+    # --- Mutation ---
+
+    def add_node(self, node: GraphNode) -> None:
+        """Insert a node into the graph.
+
+        Args:
+            node: GraphNode to insert.  If a node with the same node_id
+                  exists, the call is a no-op (idempotent).
+
+        """
+        ...
+
+    def add_edge(self, edge: GraphEdge) -> None:
+        """Insert a directed edge into the graph.
+
+        Args:
+            edge: GraphEdge to insert.  Source and target nodes must
+                  already exist; raises KeyError otherwise.
+
+        Raises:
+            KeyError: If source_id or target_id is not in the graph.
+
+        """
+        ...
+
+    # --- Query ---
+
+    def query_neighbors(
+        self,
+        node_id: str,
+        relation: str | None = None,
+        max_depth: int = 1,
+    ) -> list[GraphNode]:
+        """Return reachable neighbor nodes from node_id.
+
+        Args:
+            node_id:   Starting node identifier.
+            relation:  If provided, only follow edges with this relation
+                       label.
+            max_depth: Maximum number of hops to traverse.
+
+        Returns:
+            List of reachable GraphNode instances (excluding the start
+            node).  Deterministic: results are sorted by node_id.
+
+        Raises:
+            KeyError: If node_id is not in the graph.
+
+        """
+        ...
+
+    def find_path(
+        self,
+        source_id: str,
+        target_id: str,
+    ) -> list[str]:
+        """Return the shortest directed path between two nodes.
+
+        Args:
+            source_id: Starting node identifier.
+            target_id: Target node identifier.
+
+        Returns:
+            Ordered list of node_ids forming the shortest path, or an
+            empty list if no path exists.
+
+        """
+        ...
+
+    # --- Observable state ---
+
+    @property
+    def node_count(self) -> int:
+        """Number of nodes currently in the graph."""
+        ...
+
+    @property
+    def edge_count(self) -> int:
+        """Number of edges currently in the graph."""
+        ...
+
+
+@runtime_checkable
+class Retriever(Protocol):
+    """Protocol for a retrieval component.
+
+    Implementors combine one or more retrieval sources (graph, vector, …)
+    and return a ranked list of RetrievalCandidate objects.
+    """
+
+    # --- Lifecycle ---
+
+    def initialize(self) -> None:
+        """Initialise retrieval resources.
+
+        Must succeed or raise a typed exception.
+        """
+        ...
+
+    def validate(self) -> bool:
+        """Assert all retriever invariants hold.
+
+        Returns:
+            True if the retriever is ready to serve queries.
+
+        Raises:
+            ValueError: If a required invariant is violated.
+
+        """
+        ...
+
+    def operate(self) -> None:
+        """Transition retriever to the operating state."""
+        ...
+
+    def reconcile(self) -> None:
+        """Converge retriever to a consistent state."""
+        ...
+
+    def checkpoint(self) -> dict[str, object]:
+        """Serialise retriever state for restart.
+
+        Returns:
+            JSON-serialisable state dict.
+
+        """
+        ...
+
+    def terminate(self) -> None:
+        """Release all resources held by this retriever."""
+        ...
+
+    # --- Query ---
+
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+    ) -> list[RetrievalCandidate]:
+        """Retrieve the top-k most relevant candidates for query.
+
+        Args:
+            query: Natural-language or structured query string.
+            top_k: Maximum number of candidates to return.
+
+        Returns:
+            List of RetrievalCandidate objects sorted by score descending.
+            Length is at most top_k.
+
+        """
+        ...
+
+
+__all__: list[str] = [
+    "GraphEdge",
+    "GraphNode",
+    "KnowledgeGraph",
+    "RetrievalCandidate",
+    "Retriever",
+]
+
+
+--- thalos_prime/graph_rag/simple_graph.py ---
+
+"""SimpleKnowledgeGraph — deterministic, in-memory KnowledgeGraph implementation.
+
+This module provides a concrete KnowledgeGraph backed by plain Python
+dictionaries and networkx.DiGraph.  No external database is required.
+
+Determinism guarantee:
+    Given identical sequences of add_node() and add_edge() calls (and
+    identical node_ids), query_neighbors() and find_path() return
+    identical results on every execution.  Internal structures use sorted
+    iteration where ordering matters.
+
+Control-plane / data-plane boundary:
+    SimpleKnowledgeGraph is a DATA-PLANE component.  It stores and
+    traverses graph data.  Lifecycle coordination (when to call
+    initialize / validate / operate / …) belongs to the caller.
+
+State surfaces:
+    node_count  — int, observable via property.
+    edge_count  — int, observable via property.
+
+Checkpoint format (v1):
+    {
+        "schema_version": 1,
+        "node_count": <int>,
+        "edge_count": <int>,
+        "nodes": [{"node_id": …, "label": …, "properties": {…}}, …],
+        "edges": [{"source_id": …, "target_id": …, "relation": …,
+                   "weight": …, "properties": {…}}, …]
+    }
+"""
+
+from __future__ import annotations
+
+import logging
+from collections import deque
+from typing import Final
+
+import networkx as nx
+
+from thalos_prime.graph_rag.interfaces import GraphEdge, GraphNode, RetrievalCandidate
+
+logger = logging.getLogger(__name__)
+
+_CHECKPOINT_SCHEMA_VERSION: Final[int] = 1
+
+
+class SimpleKnowledgeGraph:
+    """In-memory, deterministic knowledge graph backed by networkx.DiGraph.
+
+    Attributes:
+        _graph:    The underlying directed graph.
+        _nodes:    Dict mapping node_id -> GraphNode for O(1) lookup.
+        _ready:    True after initialize() and validate() succeed.
+        _operating: True after operate() is called.
+
+    """
+
+    def __init__(self) -> None:
+        """Create an empty, uninitialised graph."""
+        self._graph: nx.DiGraph = nx.DiGraph()
+        self._nodes: dict[str, GraphNode] = {}
+        self._ready: bool = False
+        self._operating: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Allocate internal data structures.
+
+        Idempotent: calling a second time resets the graph to empty.
+        Emits a structured lifecycle log event.
+        """
+        self._graph = nx.DiGraph()
+        self._nodes = {}
+        self._ready = False
+        self._operating = False
+        logger.info(
+            '{"schema_version": 1, "event": "initialize", "component": '
+            '"SimpleKnowledgeGraph", "details": {"node_count": 0, "edge_count": 0}}'
+        )
+
+    def validate(self) -> bool:
+        """Assert graph invariants.
+
+        Invariants:
+            * Every edge source and target exists in _nodes.
+            * _graph node count equals _nodes count.
+            * Edge weights are in [0.0, 1.0].
+
+        Returns:
+            True if all invariants hold.
+
+        Raises:
+            ValueError: If any invariant is violated.
+
+        """
+        if self._graph.number_of_nodes() != len(self._nodes):
+            msg = (
+                f"Graph node count {self._graph.number_of_nodes()} does not "
+                f"match internal node registry size {len(self._nodes)}"
+            )
+            raise ValueError(msg)
+
+        for u, v, data in self._graph.edges(data=True):
+            if str(u) not in self._nodes:
+                msg = f"Edge source '{u}' missing from node registry"
+                raise ValueError(msg)
+            if str(v) not in self._nodes:
+                msg = f"Edge target '{v}' missing from node registry"
+                raise ValueError(msg)
+            weight: float = float(data.get("weight", 1.0))
+            if not (0.0 <= weight <= 1.0):
+                msg = (
+                    f"Edge ({u} -> {v}) has weight {weight} outside [0.0, 1.0]"
+                )
+                raise ValueError(msg)
+
+        self._ready = True
+        logger.info(
+            '{"schema_version": 1, "event": "validate", "component": '
+            '"SimpleKnowledgeGraph", "details": {"valid": true, '
+            f'"node_count": {len(self._nodes)}, "edge_count": {self._graph.number_of_edges()}}}}}'
+        )
+        return True
+
+    def operate(self) -> None:
+        """Transition to the operating state.
+
+        Raises:
+            RuntimeError: If validate() has not been called successfully.
+
+        """
+        if not self._ready:
+            msg = "SimpleKnowledgeGraph.operate() called before validate()"
+            raise RuntimeError(msg)
+        self._operating = True
+        logger.info(
+            '{"schema_version": 1, "event": "operate", "component": '
+            '"SimpleKnowledgeGraph", "details": {"node_count": '
+            f'{len(self._nodes)}, "edge_count": {self._graph.number_of_edges()}}}}}'
+        )
+
+    def reconcile(self) -> None:
+        """Converge graph to a consistent state.
+
+        Removes any networkx nodes that are not present in _nodes
+        (orphaned nodes), ensuring the two structures are in sync.
+        Idempotent.
+        """
+        orphaned = [
+            n for n in list(self._graph.nodes()) if str(n) not in self._nodes
+        ]
+        for node_id in orphaned:
+            self._graph.remove_node(node_id)
+            logger.warning(
+                '{"schema_version": 1, "event": "reconcile_remove_orphan", '
+                '"component": "SimpleKnowledgeGraph", '
+                f'"details": {{"node_id": "{node_id}"}}}}'
+            )
+        logger.info(
+            '{"schema_version": 1, "event": "reconcile", "component": '
+            '"SimpleKnowledgeGraph", "details": {"orphans_removed": '
+            f'{len(orphaned)}, "node_count": {len(self._nodes)}, '
+            f'"edge_count": {self._graph.number_of_edges()}}}}}'
+        )
+
+    def checkpoint(self) -> dict[str, object]:
+        """Serialise graph state for atomic restart.
+
+        Returns:
+            A JSON-serialisable dict with schema_version, node list,
+            and edge list.
+
+        """
+        nodes_snapshot = [
+            {
+                "node_id": n.node_id,
+                "label": n.label,
+                "properties": dict(n.properties),
+            }
+            for n in sorted(self._nodes.values(), key=lambda x: x.node_id)
+        ]
+        edges_snapshot = [
+            {
+                "source_id": str(u),
+                "target_id": str(v),
+                "relation": str(data.get("relation", "")),
+                "weight": float(data.get("weight", 1.0)),
+                "properties": {
+                    k: str(val)
+                    for k, val in data.items()
+                    if k not in ("relation", "weight")
+                },
+            }
+            for u, v, data in sorted(
+                self._graph.edges(data=True),
+                key=lambda e: (str(e[0]), str(e[1])),
+            )
+        ]
+        state: dict[str, object] = {
+            "schema_version": _CHECKPOINT_SCHEMA_VERSION,
+            "node_count": len(self._nodes),
+            "edge_count": self._graph.number_of_edges(),
+            "nodes": nodes_snapshot,
+            "edges": edges_snapshot,
+        }
+        logger.info(
+            '{"schema_version": 1, "event": "checkpoint", "component": '
+            '"SimpleKnowledgeGraph", "details": {"node_count": '
+            f'{len(self._nodes)}, "edge_count": {self._graph.number_of_edges()}}}}}'
+        )
+        return state
+
+    def terminate(self) -> None:
+        """Release all resources and reset to uninitialised state."""
+        self._graph.clear()
+        self._nodes.clear()
+        self._ready = False
+        self._operating = False
+        logger.info(
+            '{"schema_version": 1, "event": "terminate", "component": '
+            '"SimpleKnowledgeGraph", "details": {}}'
+        )
+
+    # ------------------------------------------------------------------
+    # Mutation
+    # ------------------------------------------------------------------
+
+    def add_node(self, node: GraphNode) -> None:
+        """Insert a node; idempotent if node_id already present.
+
+        Args:
+            node: GraphNode to insert.
+
+        """
+        if node.node_id in self._nodes:
+            return
+        self._nodes[node.node_id] = node
+        self._graph.add_node(node.node_id, label=node.label, **node.properties)
+        logger.debug(
+            '{"schema_version": 1, "event": "add_node", "component": '
+            '"SimpleKnowledgeGraph", "details": {"node_id": "%s"}}',
+            node.node_id,
+        )
+
+    def add_edge(self, edge: GraphEdge) -> None:
+        """Insert a directed edge.
+
+        Args:
+            edge: GraphEdge to insert.
+
+        Raises:
+            KeyError: If source_id or target_id is not in the graph.
+
+        """
+        if edge.source_id not in self._nodes:
+            msg = f"Source node '{edge.source_id}' does not exist in graph"
+            raise KeyError(msg)
+        if edge.target_id not in self._nodes:
+            msg = f"Target node '{edge.target_id}' does not exist in graph"
+            raise KeyError(msg)
+        self._graph.add_edge(
+            edge.source_id,
+            edge.target_id,
+            relation=edge.relation,
+            weight=edge.weight,
+            **edge.properties,
+        )
+        logger.debug(
+            '{"schema_version": 1, "event": "add_edge", "component": '
+            '"SimpleKnowledgeGraph", "details": {"source": "%s", '
+            '"target": "%s", "relation": "%s"}}',
+            edge.source_id,
+            edge.target_id,
+            edge.relation,
+        )
+
+    # ------------------------------------------------------------------
+    # Query
+    # ------------------------------------------------------------------
+
+    def query_neighbors(
+        self,
+        node_id: str,
+        relation: str | None = None,
+        max_depth: int = 1,
+    ) -> list[GraphNode]:
+        """Return reachable neighbor nodes via BFS up to max_depth hops.
+
+        Args:
+            node_id:   Starting node identifier.
+            relation:  If provided, only traverse edges with this label.
+            max_depth: Maximum BFS depth (>= 1).
+
+        Returns:
+            Sorted list of reachable GraphNode instances (start node
+            excluded).
+
+        Raises:
+            KeyError: If node_id is not in the graph.
+
+        """
+        if node_id not in self._nodes:
+            msg = f"Node '{node_id}' not found in graph"
+            raise KeyError(msg)
+
+        visited: set[str] = {node_id}
+        queue: deque[tuple[str, int]] = deque([(node_id, 0)])
+        result: list[GraphNode] = []
+
+        while queue:
+            current_id, depth = queue.popleft()
+            if depth >= max_depth:
+                continue
+            for _, neighbor_id, data in self._graph.out_edges(
+                current_id, data=True
+            ):
+                neighbor_str = str(neighbor_id)
+                if neighbor_str in visited:
+                    continue
+                edge_relation = str(data.get("relation", ""))
+                if relation is not None and edge_relation != relation:
+                    continue
+                visited.add(neighbor_str)
+                if neighbor_str in self._nodes:
+                    result.append(self._nodes[neighbor_str])
+                queue.append((neighbor_str, depth + 1))
+
+        return sorted(result, key=lambda n: n.node_id)
+
+    def find_path(
+        self,
+        source_id: str,
+        target_id: str,
+    ) -> list[str]:
+        """Return the shortest directed path between two nodes.
+
+        Args:
+            source_id: Starting node identifier.
+            target_id: Target node identifier.
+
+        Returns:
+            List of node_ids (including source and target), or empty
+            list if no path exists or nodes are missing.
+
+        """
+        if source_id not in self._nodes or target_id not in self._nodes:
+            return []
+        try:
+            path: list[str] = nx.shortest_path(
+                self._graph, source_id, target_id
+            )
+        except (nx.NetworkXNoPath, nx.NodeNotFound):
+            return []
+        return path
+
+    # ------------------------------------------------------------------
+    # Retrieval helper (used by HybridRetriever)
+    # ------------------------------------------------------------------
+
+    def retrieve_context(
+        self,
+        node_id: str,
+        max_depth: int = 2,
+    ) -> list[RetrievalCandidate]:
+        """Build RetrievalCandidate list from graph neighbourhood.
+
+        Walks max_depth hops from node_id and converts each reachable
+        node + its connecting edges into a RetrievalCandidate.
+
+        Args:
+            node_id:   Query entity node identifier.
+            max_depth: BFS traversal depth.
+
+        Returns:
+            List of RetrievalCandidate objects, score = edge weight,
+            sorted by score descending.  Empty list if node_id is
+            unknown.
+
+        """
+        if node_id not in self._nodes:
+            return []
+
+        candidates: list[RetrievalCandidate] = []
+        visited: set[str] = {node_id}
+        queue: deque[tuple[str, int, float]] = deque([(node_id, 0, 1.0)])
+
+        while queue:
+            current_id, depth, cumulative_weight = queue.popleft()
+            if depth >= max_depth:
+                continue
+            for _, neighbor_id, data in self._graph.out_edges(
+                current_id, data=True
+            ):
+                neighbor_str = str(neighbor_id)
+                if neighbor_str in visited:
+                    continue
+                visited.add(neighbor_str)
+                edge_relation = str(data.get("relation", "related_to"))
+                edge_weight = float(data.get("weight", 1.0))
+                hop_score = cumulative_weight * edge_weight
+                neighbor_label = (
+                    self._nodes[neighbor_str].label
+                    if neighbor_str in self._nodes
+                    else neighbor_str
+                )
+                content = (
+                    f"{current_id} --[{edge_relation}]--> {neighbor_str}"
+                    f" ({neighbor_label})"
+                )
+                candidates.append(
+                    RetrievalCandidate(
+                        content=content,
+                        score=round(hop_score, 6),
+                        source="graph",
+                        metadata={
+                            "source_node": current_id,
+                            "target_node": neighbor_str,
+                            "relation": edge_relation,
+                            "depth": str(depth + 1),
+                        },
+                    )
+                )
+                queue.append((neighbor_str, depth + 1, hop_score))
+
+        candidates.sort(key=lambda c: c.score, reverse=True)
+        return candidates
+
+    # ------------------------------------------------------------------
+    # Observable state
+    # ------------------------------------------------------------------
+
+    @property
+    def node_count(self) -> int:
+        """Number of nodes in the graph."""
+        return len(self._nodes)
+
+    @property
+    def edge_count(self) -> int:
+        """Number of directed edges in the graph."""
+        return self._graph.number_of_edges()
+
+    @property
+    def is_ready(self) -> bool:
+        """True if validate() has been called successfully."""
+        return self._ready
+
+
+__all__: list[str] = ["SimpleKnowledgeGraph"]
+
+
+--- thalos_prime/graph_rag/retriever.py ---
+
+"""HybridRetriever — graph traversal + vector-similarity hybrid retrieval.
+
+This module implements the Retriever Protocol by combining:
+    1. Graph retrieval  — walks the KnowledgeGraph neighbourhood of the
+                          query entity (deterministic, fully implemented).
+    2. Vector retrieval — nearest-neighbour similarity search over
+                          document embeddings (STUB — not yet connected
+                          to a vector DB; returns deterministic empty list).
+
+The stub guarantees that Phase 1 is fully testable and deterministic
+without any external service dependency.  Phase 2 will replace the stub
+with a real embedding + vector-index backend.
+
+Control-plane / data-plane boundary:
+    HybridRetriever is a DATA-PLANE component.  It executes retrieval
+    work only; lifecycle coordination belongs to the caller.
+
+Determinism guarantee:
+    For identical inputs (query, top_k) and identical graph state,
+    retrieve() returns identical results in identical order.
+
+State surfaces:
+    is_ready      — bool, True after initialize() + validate().
+    graph         — the KnowledgeGraph instance (observable externally).
+    query_count   — int, monotonically increasing call counter.
+
+Checkpoint format (v1):
+    {
+        "schema_version": 1,
+        "query_count": <int>,
+        "graph_checkpoint": { <SimpleKnowledgeGraph checkpoint> }
+    }
+
+Event log schema (v1):
+    {
+        "schema_version": 1,
+        "event":   "retrieve",
+        "ts":      "<ISO-8601 UTC>",
+        "details": {"query": "…", "top_k": <int>,
+                    "graph_hits": <int>, "vector_hits": <int>,
+                    "total_returned": <int>}
+    }
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import UTC, datetime
+from typing import Final
+
+from thalos_prime.graph_rag.interfaces import GraphNode, RetrievalCandidate
+from thalos_prime.graph_rag.simple_graph import SimpleKnowledgeGraph
+
+logger = logging.getLogger(__name__)
+
+_CHECKPOINT_SCHEMA_VERSION: Final[int] = 1
+
+
+class HybridRetriever:
+    """Combines graph traversal with (stubbed) vector-similarity retrieval.
+
+    Attributes:
+        _graph:       The backing KnowledgeGraph.
+        _ready:       True after initialize() + validate() complete.
+        _operating:   True after operate() is called.
+        _query_count: Monotonically increasing call counter.
+
+    """
+
+    def __init__(self, graph: SimpleKnowledgeGraph) -> None:
+        """Initialise with a pre-constructed KnowledgeGraph.
+
+        Args:
+            graph: The SimpleKnowledgeGraph to traverse during retrieval.
+                   Caller is responsible for initialising the graph.
+
+        """
+        self._graph: SimpleKnowledgeGraph = graph
+        self._ready: bool = False
+        self._operating: bool = False
+        self._query_count: int = 0
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Initialise the retriever.
+
+        Delegates graph initialisation to the graph instance.
+        Resets the query counter.
+        """
+        self._graph.initialize()
+        self._query_count = 0
+        self._ready = False
+        self._operating = False
+        logger.info(
+            '{"schema_version": 1, "event": "initialize", "component": '
+            '"HybridRetriever", "details": {"query_count": 0}}'
+        )
+
+    def validate(self) -> bool:
+        """Assert retriever invariants.
+
+        Delegates graph validation to the graph instance.
+
+        Returns:
+            True if the graph validates successfully.
+
+        Raises:
+            ValueError: If graph validation fails.
+
+        """
+        graph_valid = self._graph.validate()
+        if not graph_valid:
+            msg = "HybridRetriever: underlying graph failed validation"
+            raise ValueError(msg)
+        self._ready = True
+        logger.info(
+            '{"schema_version": 1, "event": "validate", "component": '
+            '"HybridRetriever", "details": {"valid": true}}'
+        )
+        return True
+
+    def operate(self) -> None:
+        """Transition to the operating state.
+
+        Raises:
+            RuntimeError: If validate() has not been called successfully.
+
+        """
+        if not self._ready:
+            msg = "HybridRetriever.operate() called before validate()"
+            raise RuntimeError(msg)
+        self._graph.operate()
+        self._operating = True
+        logger.info(
+            '{"schema_version": 1, "event": "operate", "component": '
+            '"HybridRetriever", "details": {"query_count": '
+            f'{self._query_count}}}}}'
+        )
+
+    def reconcile(self) -> None:
+        """Converge retriever to consistent state.
+
+        Delegates to graph reconcile.
+        """
+        self._graph.reconcile()
+        logger.info(
+            '{"schema_version": 1, "event": "reconcile", "component": '
+            '"HybridRetriever", "details": {"query_count": '
+            f'{self._query_count}}}}}'
+        )
+
+    def checkpoint(self) -> dict[str, object]:
+        """Serialise retriever state.
+
+        Returns:
+            JSON-serialisable dict including graph checkpoint and
+            query_count.
+
+        """
+        state: dict[str, object] = {
+            "schema_version": _CHECKPOINT_SCHEMA_VERSION,
+            "query_count": self._query_count,
+            "graph_checkpoint": self._graph.checkpoint(),
+        }
+        logger.info(
+            '{"schema_version": 1, "event": "checkpoint", "component": '
+            '"HybridRetriever", "details": {"query_count": '
+            f'{self._query_count}}}}}'
+        )
+        return state
+
+    def terminate(self) -> None:
+        """Release all resources."""
+        self._graph.terminate()
+        self._ready = False
+        self._operating = False
+        logger.info(
+            '{"schema_version": 1, "event": "terminate", "component": '
+            '"HybridRetriever", "details": {"total_queries": '
+            f'{self._query_count}}}}}'
+        )
+
+    # ------------------------------------------------------------------
+    # Retrieval
+    # ------------------------------------------------------------------
+
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+    ) -> list[RetrievalCandidate]:
+        """Retrieve top-k candidates by combining graph and vector search.
+
+        Phase 1 behaviour:
+            * Graph retrieval: walks the graph neighbourhood of the
+              query (treated as a node_id).  Returns real results.
+            * Vector retrieval: stub — returns empty list until a
+              vector backend is wired in Phase 2.
+
+        Candidates from both sources are merged, deduplicated by
+        content, and re-ranked by score descending before top_k is
+        applied.
+
+        Args:
+            query: Entity name / query string.  Used as node_id for
+                   graph lookup and as embedding seed for vector search.
+            top_k: Maximum number of candidates to return (>= 1).
+
+        Returns:
+            List of RetrievalCandidate objects, sorted by score
+            descending, length <= top_k.
+
+        """
+        if top_k < 1:
+            msg = f"top_k must be >= 1, got {top_k}"
+            raise ValueError(msg)
+
+        graph_candidates = self._graph_retrieve(query)
+        vector_candidates = self._vector_retrieve_stub(query)
+
+        # Merge and deduplicate by content
+        seen_content: set[str] = set()
+        merged: list[RetrievalCandidate] = []
+        for candidate in graph_candidates + vector_candidates:
+            if candidate.content not in seen_content:
+                seen_content.add(candidate.content)
+                merged.append(candidate)
+
+        merged.sort(key=lambda c: c.score, reverse=True)
+        result = merged[:top_k]
+
+        ts = datetime.now(UTC).isoformat()
+        self._query_count += 1
+        logger.info(
+            '{"schema_version": 1, "event": "retrieve", "component": '
+            '"HybridRetriever", "ts": "%s", "details": {"query": "%s", '
+            '"top_k": %d, "graph_hits": %d, "vector_hits": %d, '
+            '"total_returned": %d}}',
+            ts,
+            query,
+            top_k,
+            len(graph_candidates),
+            len(vector_candidates),
+            len(result),
+        )
+        return result
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _graph_retrieve(self, query: str) -> list[RetrievalCandidate]:
+        """Retrieve candidates from the knowledge graph.
+
+        Treats query as a node_id and walks the graph neighbourhood.
+        Returns empty list if the node does not exist (not an error in
+        Phase 1).
+
+        Args:
+            query: Node identifier to look up.
+
+        Returns:
+            List of RetrievalCandidate objects from graph traversal.
+
+        """
+        return self._graph.retrieve_context(node_id=query, max_depth=2)
+
+    def _vector_retrieve_stub(
+        self, query: str
+    ) -> list[RetrievalCandidate]:
+        """Deterministic stub for vector-similarity search.
+
+        Phase 2 will replace this with a real embedding + index lookup.
+        The stub is deterministic: it always returns an empty list so
+        that Phase 1 tests are fully reproducible without any external
+        service.
+
+        Args:
+            query: Ignored by the stub.
+
+        Returns:
+            Empty list.
+
+        """
+        # STUB — Phase 2: replace with embedding model + vector index.
+        # Deterministic: always returns [].
+        _ = query  # acknowledged unused in stub
+        return []
+
+    # ------------------------------------------------------------------
+    # Observable state
+    # ------------------------------------------------------------------
+
+    @property
+    def is_ready(self) -> bool:
+        """True after initialize() + validate() complete."""
+        return self._ready
+
+    @property
+    def graph(self) -> SimpleKnowledgeGraph:
+        """The backing KnowledgeGraph instance."""
+        return self._graph
+
+    @property
+    def query_count(self) -> int:
+        """Total number of retrieve() calls since last initialize()."""
+        return self._query_count
+
+    # ------------------------------------------------------------------
+    # Convenience: populate graph directly
+    # ------------------------------------------------------------------
+
+    def add_node(self, node: GraphNode) -> None:
+        """Delegate add_node to the backing graph.
+
+        Args:
+            node: GraphNode to insert.
+
+        """
+        self._graph.add_node(node)
+
+    def add_edge_to_graph(
+        self,
+        source_id: str,
+        target_id: str,
+        relation: str,
+        weight: float = 1.0,
+    ) -> None:
+        """Convenience wrapper to add an edge to the backing graph.
+
+        Args:
+            source_id: Source node identifier.
+            target_id: Target node identifier.
+            relation:  Typed relation label.
+            weight:    Edge confidence in [0.0, 1.0].
+
+        """
+        from thalos_prime.graph_rag.interfaces import GraphEdge
+
+        edge = GraphEdge(
+            source_id=source_id,
+            target_id=target_id,
+            relation=relation,
+            weight=weight,
+        )
+        self._graph.add_edge(edge)
+
+
+__all__: list[str] = ["HybridRetriever"]
+
+
+--- tests/test_graph_rag.py ---
+
+"""Tests for the GraphRAG add-on — deterministic graph and retrieval behaviour.
+
+All tests are deterministic: no random seed is needed because all graph
+operations are deterministic by construction.
+
+Test coverage targets:
+    * SimpleKnowledgeGraph full lifecycle.
+    * add_node idempotency.
+    * add_edge referential integrity (KeyError on missing node).
+    * query_neighbors: depth 1, depth 2, relation filter.
+    * find_path: existing and non-existing paths.
+    * retrieve_context: score propagation and ordering.
+    * HybridRetriever full lifecycle.
+    * HybridRetriever.retrieve: graph hits, unknown query, top_k cap.
+    * HybridRetriever checkpoint round-trip.
+    * Protocol compliance via isinstance checks.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from thalos_prime.graph_rag.interfaces import (
+    GraphEdge,
+    GraphNode,
+    KnowledgeGraph,
+    RetrievalCandidate,
+    Retriever,
+)
+from thalos_prime.graph_rag.retriever import HybridRetriever
+from thalos_prime.graph_rag.simple_graph import SimpleKnowledgeGraph
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def empty_graph() -> SimpleKnowledgeGraph:
+    """A freshly initialised, validated SimpleKnowledgeGraph."""
+    g = SimpleKnowledgeGraph()
+    g.initialize()
+    g.validate()
+    return g
+
+
+@pytest.fixture()
+def populated_graph() -> SimpleKnowledgeGraph:
+    """A graph with a small deterministic knowledge base.
+
+    Topology (directed):
+        python  --[is_a]-->     language  (weight=1.0)
+        python  --[used_for]--> ml        (weight=0.9)
+        ml      --[part_of]-->  ai        (weight=0.8)
+        ai      --[causes]-->   automation (weight=0.7)
+        language --[is_a]-->   tool      (weight=0.6)
+    """
+    g = SimpleKnowledgeGraph()
+    g.initialize()
+
+    nodes = [
+        GraphNode(node_id="python",     label="Python Programming Language"),
+        GraphNode(node_id="language",   label="Programming Language"),
+        GraphNode(node_id="ml",         label="Machine Learning"),
+        GraphNode(node_id="ai",         label="Artificial Intelligence"),
+        GraphNode(node_id="automation", label="Automation"),
+        GraphNode(node_id="tool",       label="Software Tool"),
+    ]
+    for node in nodes:
+        g.add_node(node)
+
+    edges = [
+        GraphEdge("python",   "language",   "is_a",     weight=1.0),
+        GraphEdge("python",   "ml",         "used_for", weight=0.9),
+        GraphEdge("ml",       "ai",         "part_of",  weight=0.8),
+        GraphEdge("ai",       "automation", "causes",   weight=0.7),
+        GraphEdge("language", "tool",       "is_a",     weight=0.6),
+    ]
+    for edge in edges:
+        g.add_edge(edge)
+
+    g.validate()
+    return g
+
+
+@pytest.fixture()
+def retriever(populated_graph: SimpleKnowledgeGraph) -> HybridRetriever:
+    """A HybridRetriever backed by the populated graph, fully lifecycle'd."""
+    r = HybridRetriever(populated_graph)
+    r.validate()
+    r.operate()
+    return r
+
+
+# ---------------------------------------------------------------------------
+# Protocol compliance
+# ---------------------------------------------------------------------------
+
+
+class TestProtocolCompliance:
+    def test_simple_graph_implements_knowledge_graph_protocol(
+        self, empty_graph: SimpleKnowledgeGraph
+    ) -> None:
+        assert isinstance(empty_graph, KnowledgeGraph)
+
+    def test_hybrid_retriever_implements_retriever_protocol(self) -> None:
+        g = SimpleKnowledgeGraph()
+        g.initialize()
+        g.validate()
+        r = HybridRetriever(g)
+        assert isinstance(r, Retriever)
+
+
+# ---------------------------------------------------------------------------
+# SimpleKnowledgeGraph — lifecycle
+# ---------------------------------------------------------------------------
+
+
+class TestSimpleKnowledgeGraphLifecycle:
+    def test_initialize_resets_state(self) -> None:
+        g = SimpleKnowledgeGraph()
+        g.initialize()
+        g.add_node(GraphNode("x", "X"))
+        assert g.node_count == 1
+        g.initialize()  # second call resets
+        assert g.node_count == 0
+
+    def test_validate_returns_true_on_empty_graph(self) -> None:
+        g = SimpleKnowledgeGraph()
+        g.initialize()
+        assert g.validate() is True
+
+    def test_operate_raises_before_validate(self) -> None:
+        g = SimpleKnowledgeGraph()
+        g.initialize()
+        with pytest.raises(RuntimeError, match="before validate"):
+            g.operate()
+
+    def test_operate_succeeds_after_validate(self, empty_graph: SimpleKnowledgeGraph) -> None:
+        empty_graph.operate()  # should not raise
+
+    def test_terminate_clears_state(self, populated_graph: SimpleKnowledgeGraph) -> None:
+        assert populated_graph.node_count > 0
+        populated_graph.terminate()
+        assert populated_graph.node_count == 0
+        assert populated_graph.edge_count == 0
+        assert populated_graph.is_ready is False
+
+    def test_reconcile_removes_orphan_nx_nodes(self) -> None:
+        g = SimpleKnowledgeGraph()
+        g.initialize()
+        g.add_node(GraphNode("a", "A"))
+        # Manually corrupt _nodes to simulate orphan in nx graph
+        del g._nodes["a"]
+        g.reconcile()
+        assert g._graph.number_of_nodes() == 0
+
+    def test_checkpoint_schema_version(self, populated_graph: SimpleKnowledgeGraph) -> None:
+        snap = populated_graph.checkpoint()
+        assert snap["schema_version"] == 1
+        assert snap["node_count"] == 6
+        assert snap["edge_count"] == 5
+
+    def test_checkpoint_nodes_sorted(self, populated_graph: SimpleKnowledgeGraph) -> None:
+        snap = populated_graph.checkpoint()
+        node_ids = [n["node_id"] for n in snap["nodes"]]  # type: ignore[index]
+        assert node_ids == sorted(node_ids)
+
+
+# ---------------------------------------------------------------------------
+# SimpleKnowledgeGraph — mutations
+# ---------------------------------------------------------------------------
+
+
+class TestSimpleKnowledgeGraphMutations:
+    def test_add_node_basic(self, empty_graph: SimpleKnowledgeGraph) -> None:
+        empty_graph.add_node(GraphNode("n1", "Node One"))
+        assert empty_graph.node_count == 1
+
+    def test_add_node_idempotent(self, empty_graph: SimpleKnowledgeGraph) -> None:
+        node = GraphNode("n1", "Node One")
+        empty_graph.add_node(node)
+        empty_graph.add_node(node)  # second add — should be no-op
+        assert empty_graph.node_count == 1
+
+    def test_add_edge_missing_source_raises(self, empty_graph: SimpleKnowledgeGraph) -> None:
+        empty_graph.add_node(GraphNode("target", "Target"))
+        with pytest.raises(KeyError, match="source"):
+            empty_graph.add_edge(GraphEdge("missing", "target", "rel"))
+
+    def test_add_edge_missing_target_raises(self, empty_graph: SimpleKnowledgeGraph) -> None:
+        empty_graph.add_node(GraphNode("source", "Source"))
+        with pytest.raises(KeyError, match="target"):
+            empty_graph.add_edge(GraphEdge("source", "missing", "rel"))
+
+    def test_add_edge_increments_count(self, empty_graph: SimpleKnowledgeGraph) -> None:
+        empty_graph.add_node(GraphNode("a", "A"))
+        empty_graph.add_node(GraphNode("b", "B"))
+        empty_graph.add_edge(GraphEdge("a", "b", "related"))
+        assert empty_graph.edge_count == 1
+
+    def test_validate_fails_on_bad_weight(self) -> None:
+        g = SimpleKnowledgeGraph()
+        g.initialize()
+        g.add_node(GraphNode("a", "A"))
+        g.add_node(GraphNode("b", "B"))
+        # Inject invalid weight directly into nx graph
+        g._graph.add_edge("a", "b", relation="x", weight=2.5)
+        with pytest.raises(ValueError, match="weight"):
+            g.validate()
+
+
+# ---------------------------------------------------------------------------
+# SimpleKnowledgeGraph — query_neighbors
+# ---------------------------------------------------------------------------
+
+
+class TestQueryNeighbors:
+    def test_depth_1_returns_direct_neighbors(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        neighbors = populated_graph.query_neighbors("python", max_depth=1)
+        neighbor_ids = {n.node_id for n in neighbors}
+        assert neighbor_ids == {"language", "ml"}
+
+    def test_depth_2_returns_transitive_neighbors(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        neighbors = populated_graph.query_neighbors("python", max_depth=2)
+        neighbor_ids = {n.node_id for n in neighbors}
+        # direct: language, ml
+        # via language: tool
+        # via ml: ai
+        assert "tool" in neighbor_ids
+        assert "ai" in neighbor_ids
+
+    def test_relation_filter_is_a(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        neighbors = populated_graph.query_neighbors(
+            "python", relation="is_a", max_depth=1
+        )
+        neighbor_ids = {n.node_id for n in neighbors}
+        assert neighbor_ids == {"language"}
+        assert "ml" not in neighbor_ids
+
+    def test_results_are_sorted_by_node_id(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        neighbors = populated_graph.query_neighbors("python", max_depth=1)
+        ids = [n.node_id for n in neighbors]
+        assert ids == sorted(ids)
+
+    def test_missing_node_raises(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        with pytest.raises(KeyError, match="not found"):
+            populated_graph.query_neighbors("nonexistent")
+
+    def test_isolated_node_returns_empty(
+        self, empty_graph: SimpleKnowledgeGraph
+    ) -> None:
+        empty_graph.add_node(GraphNode("lone", "Lone Node"))
+        lone_neighbors = empty_graph.query_neighbors("lone")
+        # Should return empty list (no outgoing edges)
+        assert lone_neighbors == []
+
+
+# ---------------------------------------------------------------------------
+# SimpleKnowledgeGraph — find_path
+# ---------------------------------------------------------------------------
+
+
+class TestFindPath:
+    def test_direct_path(self, populated_graph: SimpleKnowledgeGraph) -> None:
+        path = populated_graph.find_path("python", "language")
+        assert path == ["python", "language"]
+
+    def test_multi_hop_path(self, populated_graph: SimpleKnowledgeGraph) -> None:
+        path = populated_graph.find_path("python", "ai")
+        # python -> ml -> ai
+        assert path == ["python", "ml", "ai"]
+
+    def test_no_path_returns_empty(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        # automation has no outgoing edges in the fixture
+        path = populated_graph.find_path("automation", "python")
+        assert path == []
+
+    def test_missing_source_returns_empty(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        path = populated_graph.find_path("missing", "python")
+        assert path == []
+
+    def test_missing_target_returns_empty(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        path = populated_graph.find_path("python", "missing")
+        assert path == []
+
+
+# ---------------------------------------------------------------------------
+# SimpleKnowledgeGraph — retrieve_context
+# ---------------------------------------------------------------------------
+
+
+class TestRetrieveContext:
+    def test_returns_candidates_for_known_node(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        candidates = populated_graph.retrieve_context("python", max_depth=1)
+        assert len(candidates) > 0
+        for c in candidates:
+            assert isinstance(c, RetrievalCandidate)
+            assert c.source == "graph"
+
+    def test_unknown_node_returns_empty(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        candidates = populated_graph.retrieve_context("unknown_entity")
+        assert candidates == []
+
+    def test_scores_sorted_descending(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        candidates = populated_graph.retrieve_context("python", max_depth=2)
+        scores = [c.score for c in candidates]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_depth_1_candidates_have_depth_metadata(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        candidates = populated_graph.retrieve_context("python", max_depth=1)
+        for c in candidates:
+            assert c.metadata["depth"] == "1"
+
+    def test_depth_2_includes_deeper_candidates(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        d1 = populated_graph.retrieve_context("python", max_depth=1)
+        d2 = populated_graph.retrieve_context("python", max_depth=2)
+        assert len(d2) > len(d1)
+
+    def test_deterministic_repeated_calls(
+        self, populated_graph: SimpleKnowledgeGraph
+    ) -> None:
+        c1 = populated_graph.retrieve_context("python", max_depth=2)
+        c2 = populated_graph.retrieve_context("python", max_depth=2)
+        assert [c.content for c in c1] == [c.content for c in c2]
+        assert [c.score for c in c1] == [c.score for c in c2]
+
+
+# ---------------------------------------------------------------------------
+# HybridRetriever — lifecycle
+# ---------------------------------------------------------------------------
+
+
+class TestHybridRetrieverLifecycle:
+    def test_full_lifecycle(self) -> None:
+        g = SimpleKnowledgeGraph()
+        r = HybridRetriever(g)
+        r.initialize()
+        r.validate()
+        r.operate()
+        snap = r.checkpoint()
+        assert snap["schema_version"] == 1
+        assert snap["query_count"] == 0
+        r.terminate()
+        assert r.is_ready is False
+
+    def test_validate_raises_on_invalid_graph(self) -> None:
+        g = SimpleKnowledgeGraph()
+        r = HybridRetriever(g)
+        r.initialize()
+        # Corrupt nx graph manually to force validation failure
+        g._graph.add_node("orphan")
+        with pytest.raises(ValueError):
+            r.validate()
+
+    def test_operate_raises_before_validate(self) -> None:
+        g = SimpleKnowledgeGraph()
+        r = HybridRetriever(g)
+        r.initialize()
+        with pytest.raises(RuntimeError, match="before validate"):
+            r.operate()
+
+    def test_checkpoint_includes_query_count(
+        self, retriever: HybridRetriever
+    ) -> None:
+        retriever.retrieve("python", top_k=3)
+        snap = retriever.checkpoint()
+        assert snap["query_count"] == 1
+
+    def test_reconcile_delegates_to_graph(
+        self, retriever: HybridRetriever
+    ) -> None:
+        # Should not raise
+        retriever.reconcile()
+
+
+# ---------------------------------------------------------------------------
+# HybridRetriever — retrieve
+# ---------------------------------------------------------------------------
+
+
+class TestHybridRetrieverRetrieve:
+    def test_retrieve_known_entity_returns_candidates(
+        self, retriever: HybridRetriever
+    ) -> None:
+        results = retriever.retrieve("python", top_k=10)
+        assert len(results) > 0
+        assert all(isinstance(r, RetrievalCandidate) for r in results)
+
+    def test_retrieve_unknown_entity_returns_empty(
+        self, retriever: HybridRetriever
+    ) -> None:
+        results = retriever.retrieve("unknown_entity_xyz", top_k=5)
+        assert results == []
+
+    def test_top_k_cap_is_enforced(
+        self, retriever: HybridRetriever
+    ) -> None:
+        results = retriever.retrieve("python", top_k=1)
+        assert len(results) <= 1
+
+    def test_results_sorted_by_score_descending(
+        self, retriever: HybridRetriever
+    ) -> None:
+        results = retriever.retrieve("python", top_k=10)
+        scores = [r.score for r in results]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_invalid_top_k_raises(
+        self, retriever: HybridRetriever
+    ) -> None:
+        with pytest.raises(ValueError, match="top_k"):
+            retriever.retrieve("python", top_k=0)
+
+    def test_query_count_increments(
+        self, retriever: HybridRetriever
+    ) -> None:
+        initial = retriever.query_count
+        retriever.retrieve("python")
+        retriever.retrieve("ml")
+        assert retriever.query_count == initial + 2
+
+    def test_deterministic_results(
+        self, retriever: HybridRetriever
+    ) -> None:
+        r1 = retriever.retrieve("python", top_k=5)
+        r2 = retriever.retrieve("python", top_k=5)
+        assert [c.content for c in r1] == [c.content for c in r2]
+        assert [c.score  for c in r1] == [c.score  for c in r2]
+
+    def test_vector_stub_returns_empty(self) -> None:
+        g = SimpleKnowledgeGraph()
+        r = HybridRetriever(g)
+        stub_result = r._vector_retrieve_stub("anything")
+        assert stub_result == []
+
+
+================================================================================
+INTEGRATION PLAN
+================================================================================
+
+## How to Expose graph_rag via the Top-Level thalos_prime API
+
+### Step 1 — No changes to existing modules
+
+The existing modules (lob_babel_generator, lob_babel_enumerator, lob_decoder,
+ingest, synthesis) are NOT modified.  The add-on is purely additive.
+
+### Step 2 — Add optional import block to thalos_prime/__init__.py
+
+Append the following block after the existing imports in
+thalos_prime/__init__.py:
+
+    # --- GraphRAG Add-on (Phase 1) ---
+    # Optional: import only when graph_rag sub-package is available.
+    # This keeps the core library import fast when graph_rag is not needed.
+    try:
+        from thalos_prime.graph_rag import (
+            GraphEdge,
+            GraphNode,
+            HybridRetriever,
+            KnowledgeGraph,
+            RetrievalCandidate,
+            Retriever,
+            SimpleKnowledgeGraph,
+        )
+        _GRAPHRAG_AVAILABLE = True
+    except ImportError:
+        _GRAPHRAG_AVAILABLE = False
+
+And extend __all__ with (only when available):
+
+    if _GRAPHRAG_AVAILABLE:
+        __all__ += [
+            "GraphEdge",
+            "GraphNode",
+            "HybridRetriever",
+            "KnowledgeGraph",
+            "RetrievalCandidate",
+            "Retriever",
+            "SimpleKnowledgeGraph",
+        ]
+
+### Step 3 — Declare the new dependency
+
+networkx is already a project dependency (used by library_of_sense).
+No new dependencies are required for Phase 1.
+
+Verify in pyproject.toml:
+
+    [project.optional-dependencies]
+    dev = [
+        ...
+        "networkx",   # already present
+        ...
+    ]
+
+If networkx is not listed as a core dependency, add it to [project.dependencies]:
+
+    dependencies = [
+        ...
+        "networkx>=3.0",
+    ]
+
+### Step 4 — Directory structure to create
+
+    thalos_prime/
+    └── graph_rag/
+        ├── __init__.py        (module entry point + re-exports)
+        ├── interfaces.py      (Protocols: KnowledgeGraph, Retriever, DTOs)
+        ├── simple_graph.py    (SimpleKnowledgeGraph — in-memory impl)
+        └── retriever.py       (HybridRetriever — graph + vector stub)
+
+    tests/
+    └── test_graph_rag.py      (deterministic test suite)
+
+### Step 5 — CI configuration
+
+No changes to CI required.  The existing ruff / mypy / pyright / pytest
+pipeline will automatically pick up the new module and test file.
+
+Ensure the following pass without warnings or errors:
+
+    mypy thalos_prime/graph_rag --strict
+    pyright thalos_prime/graph_rag
+    ruff check thalos_prime/graph_rag tests/test_graph_rag.py --select ALL
+    python -m pytest tests/test_graph_rag.py -v
+
+### Step 6 — Usage example
+
+    from thalos_prime.graph_rag import (
+        GraphEdge,
+        GraphNode,
+        HybridRetriever,
+        SimpleKnowledgeGraph,
+    )
+
+    # Build graph
+    graph = SimpleKnowledgeGraph()
+    graph.initialize()
+
+    graph.add_node(GraphNode("python", "Python Language"))
+    graph.add_node(GraphNode("ml",     "Machine Learning"))
+    graph.add_edge(GraphEdge("python", "ml", "used_for", weight=0.9))
+
+    graph.validate()
+
+    # Retrieve
+    retriever = HybridRetriever(graph)
+    retriever.validate()
+    retriever.operate()
+
+    results = retriever.retrieve("python", top_k=5)
+    for r in results:
+        print(f"[{r.score:.3f}] {r.content}")
+    # Output (deterministic):
+    # [0.900] python --[used_for]--> ml (Machine Learning)
+
+================================================================================
+PR CHECKLIST
+================================================================================
+
+[ ] thalos_prime/graph_rag/__init__.py         — created
+[ ] thalos_prime/graph_rag/interfaces.py       — created
+[ ] thalos_prime/graph_rag/simple_graph.py     — created
+[ ] thalos_prime/graph_rag/retriever.py        — created
+[ ] tests/test_graph_rag.py                    — created
+[ ] thalos_prime/__init__.py                   — optional import block appended
+[ ] pyproject.toml networkx dependency         — verified / added
+[ ] mypy --strict passes on graph_rag/         — verified
+[ ] pyright passes on graph_rag/               — verified
+[ ] ruff --select ALL passes on graph_rag/     — verified
+[ ] pytest tests/test_graph_rag.py passes      — verified
+[ ] ARCHITECTURE.md updated with graph_rag     — updated
+[ ] IMPLEMENTATION_COMPLETE.md updated         — updated
+
+================================================================================
+END OF GRAPHRAG PR DRAFT
+================================================================================
