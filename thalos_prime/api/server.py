@@ -232,6 +232,7 @@ def register_routes(app: FastAPI) -> None:
     # Import routers (lazy import to avoid circular dependencies)
     try:
         from thalos_prime.api.routes.admin import router as admin_router
+        from thalos_prime.api.routes.agent import router as agent_router
         from thalos_prime.api.routes.chat import router as chat_router
         from thalos_prime.api.routes.decode import router as decode_router
         from thalos_prime.api.routes.enumerate import router as enumerate_router
@@ -247,6 +248,7 @@ def register_routes(app: FastAPI) -> None:
         app.include_router(enumerate_router, prefix="/api/v1/enumerate", tags=["Enumerate"])
         app.include_router(decode_router, prefix="/api/v1/decode", tags=["Decode"])
         app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
+        app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"])
 
         logger.info("All routes registered successfully")
     except ImportError as e:
