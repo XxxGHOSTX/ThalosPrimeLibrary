@@ -78,6 +78,9 @@ from thalos_prime.lifecycle import BaseLifecycleComponent, LifecycleProtocol
 from thalos_prime.library_of_sense.retrieval.graph_rag import GraphRAGRetriever
 from thalos_prime.planning.tree_of_thoughts import ThoughtNode, TreeOfThoughtsPlanner
 from thalos_prime.simulation.world_model import WorldModel, WorldState
+from thalos_prime.agency.belief_tracker import BeliefEntry, BeliefTracker
+from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
+from thalos_prime.agency.agent_loop import AgentLoop, AgentResult, AgentStepResult
 
 __all__ = [
     # Library of Babel endpoints
@@ -131,4 +134,12 @@ __all__ = [
     # Simulation
     "WorldModel",
     "WorldState",
+    # Agency
+    "BeliefEntry",
+    "BeliefTracker",
+    "ActionExecutor",
+    "ActionResult",
+    "AgentLoop",
+    "AgentResult",
+    "AgentStepResult",
 ]

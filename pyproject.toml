@@ -103,6 +103,7 @@ ignore = [
     "thalos_prime/auth",
     "thalos_prime/library_of_sense/reasoning",
     "thalos_prime/library_of_sense/retrieval",
+    "thalos_prime/agency",
 ]
 
 [tool.ruff]
@@ -239,6 +240,9 @@ disable_error_code = ["no-untyped-call"]
 # PTH123 (open() used for simple text file writes without Path context)
 "thalos_prime/cli/commands.py" = ["PLC0415", "S104", "PTH123", "TRY400"]
 "thalos_prime/cli/__init__.py" = ["D104"]
+# Agency module: TC001/TC003 (runtime imports needed for lifecycle composition),
+# BLE001 (broad exception catch in action executor handler dispatch)
+"thalos_prime/agency/**/*.py" = ["TC001", "TC003", "BLE001"]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
