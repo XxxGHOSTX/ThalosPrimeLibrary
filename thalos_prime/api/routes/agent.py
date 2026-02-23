@@ -227,14 +227,21 @@ _SORT_MAP: dict[str, VariableSort] = {
 }
 
 
-@router.post("/constraints/solve")
-async def solve_constraints(
-    name: str,
+def _parse_variable_declarations(
     variables: list[dict[str, Any]],
-    constraints: list[str],
-) -> dict[str, Any]:
-    """Solve a constraint satisfaction problem."""
-    engine = _get_engine()
+) -> list[VariableDeclaration]:
+    """Parse variable dicts into VariableDeclaration instances.
+
+    Args:
+        variables: List of variable specification dicts.
+
+    Returns:
+        List of validated VariableDeclaration instances.
+
+    Raises:
+        HTTPException: If a variable sort is invalid.
+
+    """
     var_decls: list[VariableDeclaration] = []
     for v in variables:
         sort_str = str(v.get("sort", "int"))
@@ -250,6 +257,18 @@ async def solve_constraints(
             lower_bound=v.get("lower_bound"),
             upper_bound=v.get("upper_bound"),
         ))
+    return var_decls
+
+
+@router.post("/constraints/solve")
+async def solve_constraints(
+    name: str,
+    variables: list[dict[str, Any]],
+    constraints: list[str],
+) -> dict[str, Any]:
+    """Solve a constraint satisfaction problem."""
+    engine = _get_engine()
+    var_decls = _parse_variable_declarations(variables)
     cs = ConstraintSet(name=name, variables=var_decls, constraints=constraints)
     result: SymbolicSolution = engine.solve(cs)
     return result.to_dict()
@@ -270,21 +289,7 @@ async def optimize_constraints(
             detail=f"Invalid direction: {objective_direction!r}. Must be 'minimize' or 'maximize'",
         )
     engine = _get_engine()
-    var_decls: list[VariableDeclaration] = []
-    for v in variables:
-        sort_str = str(v.get("sort", "int"))
-        sort = _SORT_MAP.get(sort_str)
-        if sort is None:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Invalid sort: {sort_str!r}. Must be one of {sorted(_SORT_MAP.keys())}",
-            )
-        var_decls.append(VariableDeclaration(
-            name=str(v["name"]),
-            sort=sort,
-            lower_bound=v.get("lower_bound"),
-            upper_bound=v.get("upper_bound"),
-        ))
+    var_decls = _parse_variable_declarations(variables)
     cs = ConstraintSet(name=name, variables=var_decls, constraints=constraints)
     obj = OptimizationObjective(
         expression=objective_expression,
@@ -302,21 +307,7 @@ async def check_constraints(
 ) -> dict[str, Any]:
     """Check if a constraint set is satisfiable."""
     engine = _get_engine()
-    var_decls: list[VariableDeclaration] = []
-    for v in variables:
-        sort_str = str(v.get("sort", "int"))
-        sort = _SORT_MAP.get(sort_str)
-        if sort is None:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Invalid sort: {sort_str!r}. Must be one of {sorted(_SORT_MAP.keys())}",
-            )
-        var_decls.append(VariableDeclaration(
-            name=str(v["name"]),
-            sort=sort,
-            lower_bound=v.get("lower_bound"),
-            upper_bound=v.get("upper_bound"),
-        ))
+    var_decls = _parse_variable_declarations(variables)
     cs = ConstraintSet(name=name, variables=var_decls, constraints=constraints)
     vr = engine.check_satisfiable(cs)
     return vr.to_dict()

@@ -334,9 +334,7 @@ class Neo4jKnowledgeGraph(BaseLifecycleComponent):
         """
         if node_id not in self._graph:
             return False
-        incident_edges = len(list(self._graph.in_edges(node_id))) + len(
-            list(self._graph.out_edges(node_id))
-        )
+        incident_edges = self._graph.in_degree(node_id) + self._graph.out_degree(node_id)
         self._graph.remove_node(node_id)
         self._node_count -= 1
         self._rel_count -= incident_edges
