@@ -243,6 +243,22 @@ disable_error_code = ["no-untyped-call"]
 "thalos_prime/planning/mcts_planner.py" = ["PLR0913"]
 "thalos_prime/knowledge_graph/__init__.py" = ["D104"]
 "thalos_prime/constraints/__init__.py" = ["D104"]
+"thalos_prime/reasoning/__init__.py" = ["D104"]
+"thalos_prime/reasoning/engine.py" = [
+    "TC001", "TC003",
+    "EM101", "EM102", "TRY003",
+    "PLR0913",
+]
+"thalos_prime/graph_rag/__init__.py" = ["D104"]
+"thalos_prime/graph_rag/simple_graph.py" = [
+    "TC001", "TC003",
+    "SLF001",
+]
+"thalos_prime/graph_rag/retriever.py" = [
+    "TC001", "TC003",
+    "PLR0913",
+    "PLR2004",
+]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
