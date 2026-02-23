@@ -3,7 +3,9 @@
 Provides administrative and monitoring functionality.
 """
 
+import asyncio
 import os
+import signal
 import sys
 import time
 from typing import Any
@@ -247,17 +249,15 @@ async def detailed_health_check() -> dict[str, Any]:
 async def shutdown_server() -> dict[str, str]:
     """Initiate graceful server shutdown.
 
+    Schedules a SIGTERM signal to be sent to the current process after the
+    response has been delivered, allowing the ASGI lifespan cleanup to run.
+
     Requires admin API key.
 
-    WARNING: This will stop the server!
-
     Returns:
-        Shutdown confirmation
+        Shutdown confirmation message.
 
     """
-    # In production, this would trigger a graceful shutdown
-    # For now, just return a message
-    return {
-        "message": "Shutdown command received",
-        "warning": "Shutdown not implemented in this version",
-    }
+    loop = asyncio.get_event_loop()
+    loop.call_later(1.0, lambda: os.kill(os.getpid(), signal.SIGTERM))
+    return {"message": "Shutdown initiated", "status": "terminating"}

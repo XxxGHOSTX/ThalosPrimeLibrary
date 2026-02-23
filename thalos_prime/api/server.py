@@ -225,6 +225,9 @@ def register_routes(app: FastAPI) -> None:
     Args:
         app: FastAPI application instance
 
+    Raises:
+        RuntimeError: If any required route module cannot be imported.
+
     """
     # Import routers (lazy import to avoid circular dependencies)
     try:
@@ -247,16 +250,8 @@ def register_routes(app: FastAPI) -> None:
 
         logger.info("All routes registered successfully")
     except ImportError as e:
-        logger.warning(f"Some routes could not be loaded: {e}")
-        # Create placeholder routes if imports fail
-        create_placeholder_routes(app)
-
-
-def create_placeholder_routes(app: FastAPI) -> None:
-    """Create placeholder routes when actual routes are not available."""
-    @app.get("/api/v1/status")
-    async def status() -> dict[str, str]:
-        return {"status": "ok", "message": "Thalos Prime API is running"}
+        msg = f"Failed to load required route modules: {e}"
+        raise RuntimeError(msg) from e
 
 
 # Create the application instance

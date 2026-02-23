@@ -87,9 +87,25 @@ def score_coherence(text: str, query: str) -> int:
 
 
 def normalize_text(text: str, provider: Optional[str] = None) -> str:
+    """Normalize text by collapsing whitespace.
 
-    # Placeholder normalization; LLM hook can be added via provider
+    Delegates to the canonical implementation in ``thalos_prime.lob_decoder``
+    when an LLM provider is specified. For the default (no provider) case,
+    applies simple whitespace normalization.
 
+    Args:
+        text: Raw text to normalize.
+        provider: Optional LLM provider name (reserved for future use).
+
+    Returns:
+        Normalized text with collapsed whitespace, or empty string if input is empty.
+
+    """
+    if provider is not None:
+        from thalos_prime.lob_decoder import BabelDecoder as _BabelDecoder
+        _dec = _BabelDecoder()
+        _dec.enable_llm(provider)
+        return _dec._normalize_with_llm(text)
     return " ".join(text.split()) if text else ""
 
 
