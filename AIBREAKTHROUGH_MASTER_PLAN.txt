@@ -1,0 +1,1049 @@
+================================================================================
+THALOS PRIME — AIBREAKTHROUGH RESEARCH MASTER SPECIFICATION
+Single Source of Truth for GraphRAG, Tree of Thoughts, and World Models
+================================================================================
+Document Version : 1.0
+Status           : AUTHORITATIVE — supersedes all prior roadmap notes
+Author           : Thalos Prime Architecture Team
+Date             : 2026-02-23
+Control Plane    : ControlPlane (thalos_prime.py)
+Data Plane       : BabelClient, TraversalPlanner, WordExtractor,
+                   ConstraintSolver, VolumeAssembler (thalos_prime.py)
+Determinism Guarantee: All randomness seeded; all state logged; all
+                        checkpoints replayable with identical seed + config.
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — EXECUTIVE SUMMARY
+"Breaking Past the Plateau" and the Four Walls
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.1  THE PLATEAU PROBLEM
+──────────────────────────
+Current large-scale language and search systems plateau at a reproducible
+capability ceiling.  Four structural "Walls" define that ceiling:
+
+  Wall 1 — CONTEXT WALL
+    Systems lose coherent context beyond a fixed token horizon.  Retrieval is
+    shallow: keyword similarity, not semantic structure.  Knowledge is flat,
+    not graph-connected.  Cross-document reasoning degrades exponentially with
+    document count.
+
+  Wall 2 — TRUTH WALL
+    Systems hallucinate with high confidence.  There is no internal
+    verification loop.  Retrieved facts are not cross-checked against source
+    provenance.  Multi-hop reasoning errors compound silently.
+
+  Wall 3 — REASONING WALL
+    Systems cannot explore branching thought trajectories.  They commit to a
+    single chain of inference and cannot backtrack.  Constraint satisfaction
+    and symbolic verification are absent.  Complex planning collapses on
+    problems requiring more than two inferential steps.
+
+  Wall 4 — AGENCY WALL
+    Systems are reactive, not anticipatory.  They hold no internal model of
+    the world that can be updated and queried.  They cannot plan across time
+    horizons, generate hypotheses, or execute active-inference loops.
+
+1.2  THE AIBREAKTHROUGH THESIS
+────────────────────────────────
+The AIBreakthrough roadmap dismantles each Wall with a targeted architectural
+module, all operating under Thalos Prime's strict determinism, lifecycle
+enforcement, and control/data-plane separation:
+
+  Wall 1 → Phase 1: GraphRAG          (thalos_prime.graph_rag)
+  Wall 2 → Phase 2: Chain-of-Verify   (thalos_prime.reasoning)
+  Wall 3 → Phase 2: Tree of Thoughts  (thalos_prime.reasoning)
+  Wall 4 → Phase 3: World Models /    (thalos_prime.agency)
+             Active Inference
+
+Collectively these three phases constitute the "AIBreakthrough" upgrade.
+
+1.3  INVARIANTS THAT MUST HOLD ACROSS ALL PHASES
+──────────────────────────────────────────────────
+  I-1  Determinism: identical seed + config → identical output, every time.
+  I-2  Lifecycle: every subsystem exposes initialize / validate / operate /
+       reconcile / checkpoint / terminate with explicit success/failure.
+  I-3  Plane separation: no coordination logic in the Data Plane;
+       no computational work in the Control Plane.
+  I-4  No partial states: validation gates every phase boundary.
+  I-5  Full observability: all state transitions emit structured JSONL events.
+  I-6  Type safety: all code passes mypy --strict and pyright.
+  I-7  Coverage: ≥80% line; 100% on lifecycle-critical paths.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — PHASE 1 ARCHITECTURE: GraphRAG
+Module: thalos_prime.graph_rag
+Targets: Wall 1 (Context) — deep, graph-structured retrieval
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1  PURPOSE
+─────────────
+GraphRAG replaces flat vector-similarity retrieval with a knowledge graph that
+encodes entities, relationships, and provenance.  Queries traverse graph
+neighborhoods instead of fetching top-k document vectors, providing multi-hop
+reasoning paths with full provenance.
+
+2.2  KNOWLEDGE GRAPH SCHEMA
+─────────────────────────────
+Node types:
+
+  EntityNode
+    id            : str        # stable SHA-256 of (entity_type, canonical_name)
+    entity_type   : str        # e.g. "concept", "person", "place", "claim"
+    canonical_name: str
+    aliases       : list[str]
+    provenance    : list[str]  # source artifact IDs
+    created_at    : float      # Unix timestamp (deterministic log)
+    version       : str        # schema version
+
+  FragmentNode
+    id            : str        # SHA-256 of (artifact_id, char_offset)
+    artifact_id   : str        # CanonicalArtifact.id from thalos_prime.ingest
+    char_offset   : int
+    text          : str
+    meaning_hash  : str        # from thalos_prime.ingest.compute_meaning_hash
+    coherence_score: float
+    version       : str
+
+Edge types:
+
+  RelationshipEdge
+    source_id     : str        # EntityNode.id
+    target_id     : str        # EntityNode.id
+    relation_type : str        # e.g. "mentions", "supports", "contradicts",
+                               #   "co_occurs", "derived_from"
+    weight        : float      # confidence in [0.0, 1.0]
+    provenance    : list[str]  # artifact IDs that establish this edge
+    version       : str
+
+  ContainsEdge
+    fragment_id   : str        # FragmentNode.id
+    entity_id     : str        # EntityNode.id
+    span_start    : int
+    span_end      : int
+    version       : str
+
+Graph storage: networkx.DiGraph (in-memory, serializable to JSONL snapshot).
+Persistence layer: JSONL append-only log per session; snapshot on checkpoint.
+
+2.3  KNOWLEDGE GRAPH INGESTION PIPELINE
+─────────────────────────────────────────
+Steps (Data Plane, directed by GraphRAGControlPlane):
+
+  Step 1 — Canonicalize
+    Input : raw text artifact
+    Action: call thalos_prime.ingest.canonicalize_text(text)
+            call thalos_prime.ingest.compute_meaning_hash(canonical)
+    Output: CanonicalArtifact
+
+  Step 2 — Entity Extraction
+    Input : CanonicalArtifact.canonical_text
+    Action: regex + vocabulary-guided NER producing (entity_type, span, text)
+            tuples; deterministic ordering by char offset.
+    Output: list[ExtractedEntity]
+
+  Step 3 — Node Upsert
+    Input : list[ExtractedEntity]
+    Action: for each entity, compute stable id = SHA-256(entity_type +
+            canonical_name); upsert into graph; log upsert event.
+    Output: list[EntityNode.id]
+
+  Step 4 — Fragment Node Creation
+    Input : CanonicalArtifact, list[ExtractedEntity]
+    Action: create FragmentNode; attach ContainsEdge for each entity span.
+    Output: FragmentNode.id
+
+  Step 5 — Relationship Extraction
+    Input : entity pairs within co-occurrence window (default: 256 chars)
+    Action: emit RelationshipEdge(co_occurs) for every pair; weight = inverse
+            distance normalized to [0,1]; log all edges with provenance.
+    Output: list[RelationshipEdge]
+
+  Step 6 — Graph Checkpoint
+    Action: serialize graph to JSONL snapshot in workdir/graph_snapshots/;
+            include seed, config_hash, version, node count, edge count.
+
+All steps are deterministic: entity extraction uses no stochastic models;
+co-occurrence windows are fixed; edge weights are computed from character
+distances only.
+
+2.4  RETRIEVAL ALGORITHM
+──────────────────────────
+Query processing (Data Plane — GraphRetriever):
+
+  Step 1 — Query Entity Extraction
+    Apply same NER pipeline used during ingestion to extract query entities.
+
+  Step 2 — Seed Node Selection
+    For each query entity, retrieve matching EntityNode(s) by exact or
+    alias match.  Fall back to meaning_hash proximity if no exact match.
+
+  Step 3 — Neighborhood Traversal
+    Perform BFS from seed nodes up to max_hops (default: 3).
+    At each hop, collect all reachable FragmentNode ids via ContainsEdge.
+    Prune by minimum edge weight threshold (default: 0.1).
+    Traversal order: deterministic BFS keyed by (edge_weight DESC, node_id ASC).
+
+  Step 4 — Fragment Scoring
+    For each collected FragmentNode:
+      graph_score  = sum of incoming edge weights from query seed nodes
+      text_score   = thalos_prime.lob_decoder.score_coherence(fragment.text,
+                     query)
+      final_score  = alpha * graph_score + (1 - alpha) * text_score
+    alpha (graph weight) default: 0.6.  Configurable per session.
+
+  Step 5 — Result Assembly
+    Sort results by final_score DESC, fragment_id ASC (stable tie-break).
+    Return top-k GraphRetrievalResult objects (default k=10).
+
+2.5  MODULE FILE LAYOUT
+─────────────────────────
+  thalos_prime/graph_rag/
+    __init__.py           # exports: KnowledgeGraph, GraphRetriever,
+                          #   GraphRAGControlPlane, GraphRetrievalResult
+    knowledge_graph.py    # EntityNode, FragmentNode, RelationshipEdge,
+                          #   ContainsEdge, KnowledgeGraph (networkx wrapper)
+    ingestion.py          # GraphIngestionPipeline (Data Plane)
+    retrieval.py          # GraphRetriever (Data Plane)
+    control_plane.py      # GraphRAGControlPlane (lifecycle orchestration)
+    schema.py             # dataclasses + schema version constants
+
+2.6  GRAPHRAG LIFECYCLE CONTRACTS
+────────────────────────────────────
+  initialize()  : Load persisted graph snapshot if present; else empty graph.
+                  Validate networkx availability.  Log graph node/edge counts.
+  validate()    : Assert graph schema version compatibility.
+                  Assert all required node/edge fields present.
+                  Block until satisfied or raise GraphSchemaError.
+  operate()     : Accept CanonicalArtifact batch; run ingestion pipeline;
+                  update graph in-place; emit ingestion_complete event.
+  reconcile()   : Detect and remove orphaned FragmentNodes (no ContainsEdge).
+                  Rebuild edge weight index.  Log before/after state.
+  checkpoint()  : Serialize graph to JSONL snapshot (atomic write via tmp file
+                  + rename).  Include seed, config_hash, version, timestamp.
+  terminate()   : Flush pending JSONL events.  Release networkx graph handle.
+
+2.7  CONFIGURATION PARAMETERS
+────────────────────────────────
+  graph_rag.max_hops              : int   = 3
+  graph_rag.min_edge_weight       : float = 0.1
+  graph_rag.alpha                 : float = 0.6
+  graph_rag.top_k                 : int   = 10
+  graph_rag.co_occurrence_window  : int   = 256
+  graph_rag.snapshot_dir          : str   = "{workdir}/graph_snapshots"
+  graph_rag.schema_version        : str   = "1.0"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — PHASE 2 ARCHITECTURE: Reasoning
+Module: thalos_prime.reasoning
+Targets: Wall 2 (Truth) + Wall 3 (Reasoning)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3.1  PURPOSE
+─────────────
+Phase 2 installs two cooperating reasoning engines:
+
+  (a) Tree of Thoughts (ToT): Explores multiple reasoning trajectories in
+      parallel, scores each branch, prunes low-value paths, and selects the
+      highest-value reasoning chain.  Dismantles the Reasoning Wall.
+
+  (b) Chain of Verification (CoV): After every candidate answer is
+      generated, CoV decomposes it into atomic verification questions,
+      independently checks each claim against the knowledge graph and
+      fragment corpus, and retracts any unverified claim.  Dismantles the
+      Truth Wall.
+
+3.2  TREE OF THOUGHTS (ToT)
+────────────────────────────
+3.2.1  Data Structures
+
+  ThoughtNode
+    id            : str        # SHA-256(parent_id + thought_text + step)
+    parent_id     : str | None
+    depth         : int        # 0 = root
+    thought_text  : str        # reasoning step content
+    score         : float      # value estimate in [0.0, 1.0]
+    status        : ThoughtStatus  # PENDING | ACTIVE | PRUNED | TERMINAL
+    seed          : int        # inherited from ControlPlane
+    version       : str
+
+  ThoughtTree
+    root          : ThoughtNode
+    nodes         : dict[str, ThoughtNode]
+    edges         : list[tuple[str, str]]   # (parent_id, child_id)
+    seed          : int
+    version       : str
+
+  ThoughtStatus  (StrEnum)
+    PENDING, ACTIVE, PRUNED, TERMINAL
+
+3.2.2  ToT Algorithm (Breadth-First with Beam Search)
+
+  Parameters (configurable per session):
+    max_depth     : int   = 5       # maximum reasoning depth
+    beam_width    : int   = 3       # branches to expand per depth level
+    score_threshold: float = 0.3    # prune branches below this score
+    seed          : int              # from ControlPlane
+
+  Algorithm:
+    1. ROOT: Create ThoughtNode(depth=0, thought_text=initial_prompt).
+    2. EXPAND: For each active leaf at current depth, generate beam_width
+       candidate next thoughts using deterministic text-template expansion
+       seeded by (node.seed XOR depth XOR branch_index).
+    3. SCORE: Score each candidate with ThoughtScorer.score(thought,
+       graph_context).  score = coherence_score * 0.5 + graph_relevance * 0.5.
+    4. SELECT: Keep top beam_width candidates by score DESC, node_id ASC.
+       Mark remainder as PRUNED.  Log all pruning decisions.
+    5. TERMINATE: Mark as TERMINAL any node satisfying the completion
+       predicate (configurable; default: depth == max_depth OR score >= 0.9).
+    6. BACKTRACK: If all active nodes are PRUNED before reaching max_depth,
+       re-activate the highest-scored PRUNED node at the previous depth
+       (one backtrack per tree).  Log backtrack event.
+    7. RESULT: Return the TERMINAL node with highest score.
+       Tie-break: lexicographically smallest node_id.
+
+3.2.3  Determinism Guarantee
+  All thought generation uses seeded string permutation; no LLM calls.
+  Seed per node = (ControlPlane.seed XOR depth * 1000003 XOR branch_index).
+  All node creation, scoring, and pruning events logged to JSONL.
+
+3.3  CHAIN OF VERIFICATION (CoV)
+──────────────────────────────────
+3.3.1  Data Structures
+
+  VerificationClaim
+    id            : str     # SHA-256(answer_id + claim_index)
+    answer_id     : str
+    claim_text    : str
+    verified      : bool | None   # None = not yet checked
+    evidence      : list[str]     # fragment IDs supporting/refuting
+    version       : str
+
+  VerificationResult
+    answer_id     : str
+    claims        : list[VerificationClaim]
+    verified_claims: int
+    retracted_claims: int
+    final_answer  : str     # answer text with unverified claims redacted
+    version       : str
+
+3.3.2  CoV Algorithm
+
+  Step 1 — Decompose
+    Split candidate answer into atomic sentences (sentence boundary = ". "
+    or "? " or "! ").  Create one VerificationClaim per sentence.
+
+  Step 2 — Verify Each Claim
+    For each claim:
+      a. Query GraphRetriever with claim_text as query (max_hops=2, top_k=5).
+      b. If any returned fragment contains all key entities from claim:
+           claim.verified = True; claim.evidence = [fragment_ids].
+      c. Else if graph is empty (bootstrap phase):
+           claim.verified = True (vacuously; log as UNVERIFIED_VACUOUS).
+      d. Else:
+           claim.verified = False; claim.evidence = [].
+
+  Step 3 — Retract
+    Remove all claims where verified == False from final_answer.
+    Log each retraction with before/after snapshot.
+
+  Step 4 — Reassemble
+    Concatenate remaining verified claims as final_answer.
+    Include retraction count and verification metadata in result.
+
+3.4  MODULE FILE LAYOUT
+─────────────────────────
+  thalos_prime/reasoning/
+    __init__.py              # exports: TreeOfThoughts, ChainOfVerification,
+                             #   ReasoningControlPlane, ThoughtNode,
+                             #   ThoughtTree, VerificationResult
+    thought_node.py          # ThoughtNode, ThoughtTree, ThoughtStatus
+    tree_of_thoughts.py      # TreeOfThoughts engine (Data Plane)
+    chain_of_verification.py # ChainOfVerification engine (Data Plane)
+    thought_scorer.py        # ThoughtScorer (Data Plane)
+    control_plane.py         # ReasoningControlPlane (lifecycle orchestration)
+    schema.py                # dataclasses + schema version constants
+
+NOTE: thalos_prime/library_of_sense/reasoning/ already contains symbolic_engine
+and constraint_solver.  These remain unchanged.  The new thalos_prime.reasoning
+module is a separate, higher-level reasoning orchestration layer that CALLS
+INTO library_of_sense.reasoning for constraint solving when required.
+
+3.5  REASONING LIFECYCLE CONTRACTS
+─────────────────────────────────────
+  initialize()  : Instantiate ThoughtTree with root node.
+                  Load CoV claim store (empty on fresh start).
+                  Validate seed propagation from ControlPlane.
+  validate()    : Assert max_depth >= 1, beam_width >= 1.
+                  Assert ThoughtScorer dependencies (GraphRetriever) available.
+  operate()     : Accept (query, initial_prompt, graph_context).
+                  Run ToT to produce best_thought.
+                  Run CoV on best_thought.thought_text.
+                  Return VerificationResult.
+  reconcile()   : Detect ACTIVE nodes with no children at depth < max_depth;
+                  mark as PRUNED with reason="reconciliation".
+                  Log reconciliation actions.
+  checkpoint()  : Serialize ThoughtTree + claim store to JSONL snapshot.
+                  Include seed, config_hash, version, node count.
+  terminate()   : Flush JSONL events.  Release thought tree.
+
+3.6  CONFIGURATION PARAMETERS
+────────────────────────────────
+  reasoning.tot.max_depth         : int   = 5
+  reasoning.tot.beam_width        : int   = 3
+  reasoning.tot.score_threshold   : float = 0.3
+  reasoning.cov.max_claims        : int   = 20
+  reasoning.cov.verify_max_hops   : int   = 2
+  reasoning.cov.verify_top_k      : int   = 5
+  reasoning.schema_version        : str   = "1.0"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — PHASE 3 ARCHITECTURE: Agency
+Module: thalos_prime.agency
+Targets: Wall 4 (Agency) — anticipatory planning and active inference
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4.1  PURPOSE
+─────────────
+Phase 3 gives Thalos Prime an internal model of the world (World Model) that
+can be updated with new observations, queried to generate predictions, and
+used to select actions via an Active Inference loop.  The system transitions
+from reactive retrieval to anticipatory planning.
+
+4.2  WORLD MODEL
+──────────────────
+4.2.1  Conceptual Design
+
+The World Model is a structured, versioned, deterministic snapshot of
+"what the system believes to be true" at a given seed-timestep.  It is NOT
+a neural model.  It is a typed, serializable data structure built on top of
+the Knowledge Graph (Phase 1).
+
+  WorldState
+    id            : str         # SHA-256(seed + timestep + config_hash)
+    seed          : int
+    timestep      : int         # monotonically increasing; no wall-clock time
+    config_hash   : str
+    belief_graph  : KnowledgeGraph   # from thalos_prime.graph_rag
+    active_goals  : list[Goal]
+    action_history: list[Action]
+    prediction_log: list[Prediction]
+    version       : str
+
+  Goal
+    id            : str         # SHA-256(goal_text + timestep)
+    goal_text     : str
+    priority      : float       # in [0.0, 1.0]
+    status        : GoalStatus  # ACTIVE | ACHIEVED | ABANDONED
+    created_at    : int         # timestep
+    version       : str
+
+  GoalStatus  (StrEnum)
+    ACTIVE, ACHIEVED, ABANDONED
+
+  Action
+    id            : str         # SHA-256(action_type + params + timestep)
+    action_type   : str         # "query", "ingest", "reason", "verify"
+    params        : dict[str, str]
+    expected_outcome: str
+    actual_outcome: str | None  # None until executed
+    timestep      : int
+    version       : str
+
+  Prediction
+    id            : str         # SHA-256(prediction_text + timestep)
+    prediction_text: str
+    basis_entity_ids: list[str]
+    confidence    : float       # in [0.0, 1.0]
+    validated     : bool | None
+    timestep      : int
+    version       : str
+
+4.2.2  World Model Update Protocol
+
+  When new evidence arrives (CanonicalArtifact or GraphRetrievalResult):
+    1. Ingest evidence into belief_graph via GraphRAGControlPlane.operate().
+    2. Increment timestep.
+    3. Re-evaluate all ACTIVE Goals: call GoalEvaluator.evaluate(goal,
+       belief_graph).  Mark ACHIEVED goals; log transitions.
+    4. Generate new Predictions from updated belief_graph via
+       PredictionEngine.generate(belief_graph, goals, seed, timestep).
+    5. Checkpoint WorldState.
+
+4.3  ACTIVE INFERENCE ENGINE
+──────────────────────────────
+Active Inference selects the next action that minimally contradicts the
+current belief_graph while maximally progressing toward ACTIVE goals.
+
+4.3.1  Free Energy Proxy (Deterministic Surrogate)
+
+True variational free energy requires a generative model.  Thalos Prime uses
+a deterministic surrogate:
+
+  free_energy_proxy(action, world_state) =
+      goal_cost(action, world_state.active_goals)
+    + surprise_cost(action, world_state.belief_graph)
+
+  goal_cost    = 1 - max(goal.priority * goal_relevance(action, goal)
+                         for goal in active_goals)
+                 (lower = action more relevant to highest-priority goal)
+
+  surprise_cost = 1 - mean(edge.weight for edge in
+                            belief_graph.edges reachable from action entities)
+                 (lower = action consistent with existing beliefs)
+
+  Action selection: argmin over candidate actions of free_energy_proxy.
+  Tie-break: lexicographically smallest action.id.
+
+4.3.2  Action Candidate Generation
+
+  CandidateActions are deterministically generated from:
+    - All ACTIVE goals (one "reason" action per goal)
+    - All low-confidence Predictions (one "verify" action per prediction
+      with confidence < 0.5)
+    - Highest-weight graph neighborhood gaps (one "ingest" action per
+      EntityNode with fewer than 2 incoming RelationshipEdges)
+
+  Ordering: sorted by free_energy_proxy ASC, action.id ASC.
+
+4.3.3  Action Execution
+
+  Each selected action is dispatched to the appropriate Data Plane component:
+    "query"   → BabelClient (thalos_prime.py Data Plane)
+    "ingest"  → GraphIngestionPipeline (thalos_prime.graph_rag)
+    "reason"  → TreeOfThoughts (thalos_prime.reasoning)
+    "verify"  → ChainOfVerification (thalos_prime.reasoning)
+
+  After execution:
+    action.actual_outcome = result summary string
+    Append to world_state.action_history
+    Increment timestep
+    Update world_state via World Model Update Protocol (§4.2.2)
+
+4.4  MODULE FILE LAYOUT
+─────────────────────────
+  thalos_prime/agency/
+    __init__.py           # exports: WorldModel, ActiveInferenceEngine,
+                          #   AgencyControlPlane, WorldState, Goal, Action,
+                          #   Prediction
+    world_state.py        # WorldState, Goal, Action, Prediction, GoalStatus
+    world_model.py        # WorldModel (belief_graph wrapper + update protocol)
+    goal_evaluator.py     # GoalEvaluator (Data Plane)
+    prediction_engine.py  # PredictionEngine (Data Plane)
+    active_inference.py   # ActiveInferenceEngine (Data Plane)
+    control_plane.py      # AgencyControlPlane (lifecycle orchestration)
+    schema.py             # dataclasses + schema version constants
+
+4.5  AGENCY LIFECYCLE CONTRACTS
+─────────────────────────────────
+  initialize()  : Create empty WorldState(seed, timestep=0, config_hash).
+                  Load WorldState from checkpoint if one exists.
+                  Initialize WorldModel with belief_graph from GraphRAGCP.
+  validate()    : Assert WorldState.version compatible.
+                  Assert at least one ACTIVE Goal present (warn if none;
+                  do not block — an empty goal set is valid for passive mode).
+  operate()     : Run one active-inference step:
+                    a. Generate candidate actions.
+                    b. Select best action via free_energy_proxy.
+                    c. Execute action.
+                    d. Update WorldState.
+                    e. Log all events.
+  reconcile()   : Mark Goals with no progress in last 10 timesteps as
+                  ABANDONED (log with rationale).
+                  Validate Prediction outcomes against belief_graph.
+  checkpoint()  : Serialize WorldState to JSONL snapshot (atomic).
+                  Include seed, config_hash, version, timestep, goal count.
+  terminate()   : Flush JSONL events.  Persist final WorldState snapshot.
+
+4.6  CONFIGURATION PARAMETERS
+────────────────────────────────
+  agency.max_candidate_actions    : int   = 10
+  agency.prediction_confidence_thresh: float = 0.5
+  agency.goal_stagnation_timesteps: int   = 10
+  agency.schema_version           : str   = "1.0"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — INTEGRATION STRATEGY
+Connecting GraphRAG, Reasoning, and Agency to the Existing
+ControlPlane and DataPlane in thalos_prime.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5.1  DESIGN PRINCIPLES FOR INTEGRATION
+────────────────────────────────────────
+  P-1  No modification to existing lifecycle contracts of ControlPlane.
+  P-2  New modules are injected as optional dependencies; absence must not
+       degrade existing behavior.
+  P-3  Each new Control Plane (GraphRAGControlPlane, ReasoningControlPlane,
+       AgencyControlPlane) receives the same seed and config_hash as the
+       root ControlPlane.
+  P-4  New Data Plane components receive no direct references to
+       Control Plane objects; all coordination flows through the
+       corresponding sub-Control-Plane.
+  P-5  All cross-module communication is via typed, versioned data
+       structures (CanonicalArtifact, GraphRetrievalResult, VerificationResult,
+       WorldState).
+
+5.2  LIFECYCLE WIRING DIAGRAM
+───────────────────────────────
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                      ROOT ControlPlane                              │
+  │  (thalos_prime.py)                                                  │
+  │                                                                     │
+  │  initialize()                                                       │
+  │    ├─► GraphRAGControlPlane.initialize()                            │
+  │    ├─► ReasoningControlPlane.initialize()  (Phase 2)               │
+  │    └─► AgencyControlPlane.initialize()     (Phase 3)               │
+  │                                                                     │
+  │  validate()                                                         │
+  │    ├─► GraphRAGControlPlane.validate()                              │
+  │    ├─► ReasoningControlPlane.validate()    (Phase 2)               │
+  │    └─► AgencyControlPlane.validate()       (Phase 3)               │
+  │                                                                     │
+  │  operate()                                                          │
+  │    ├─► BabelClient.fetch() → pages                                  │
+  │    ├─► [ingest pages] → CanonicalArtifact batch                     │
+  │    ├─► GraphRAGControlPlane.operate(artifacts)                      │
+  │    │     └─► GraphIngestionPipeline.ingest(artifacts)               │
+  │    ├─► ReasoningControlPlane.operate(query, graph_ctx)  (Phase 2)  │
+  │    │     ├─► TreeOfThoughts.run(query, graph_ctx)                   │
+  │    │     └─► ChainOfVerification.verify(best_thought)               │
+  │    ├─► AgencyControlPlane.operate(world_state)          (Phase 3)  │
+  │    │     └─► ActiveInferenceEngine.step(world_state)                │
+  │    └─► VolumeAssembler.assemble(verified_result)                    │
+  │                                                                     │
+  │  reconcile() / checkpoint() / terminate()                           │
+  │    ├─► GraphRAGControlPlane.[method]()                              │
+  │    ├─► ReasoningControlPlane.[method]()   (Phase 2)                │
+  │    └─► AgencyControlPlane.[method]()      (Phase 3)                │
+  └─────────────────────────────────────────────────────────────────────┘
+
+5.3  SEED PROPAGATION PROTOCOL
+────────────────────────────────
+  All sub-Control-Planes receive the same integer seed from root ControlPlane.
+  Each sub-module derives component-specific seeds by XOR with a fixed,
+  documented salt:
+
+    GraphRAG seed      = root_seed XOR 0x47524147  # "GRAG" in ASCII hex
+    Reasoning seed     = root_seed XOR 0x52454153  # "REAS"
+    Agency seed        = root_seed XOR 0x41474E43  # "AGNC"
+
+  Salts are documented constants in each module's schema.py.
+  All derived seeds are logged at initialize() time.
+
+5.4  CONFIGURATION INTEGRATION
+────────────────────────────────
+  Existing thalos_prime/config.py (Config class) is extended with:
+    - graph_rag_config  : GraphRAGConfig   (Phase 1)
+    - reasoning_config  : ReasoningConfig  (Phase 2)
+    - agency_config     : AgencyConfig     (Phase 3)
+
+  All new config fields are Optional; None disables the corresponding module.
+  Validation: Config.validate() checks field types and raises TypeError on
+  invalid values.  No implicit defaults that mask errors.
+
+5.5  EVENT LOG INTEGRATION
+────────────────────────────
+  All new modules emit JSONL events to the same StateLogger instance owned
+  by root ControlPlane.  Event schema:
+
+  {
+    "timestamp_ns" : <int>,          # nanosecond-precision monotonic counter
+    "version"      : "1.0",
+    "seed"         : <int>,
+    "config_hash"  : "<sha256>",
+    "module"       : "graph_rag" | "reasoning" | "agency",
+    "event_type"   : "<lifecycle_method>.<action>",
+    "payload"      : { ... }         # module-specific structured data
+  }
+
+  Schema is versioned (version field).  Breaking schema changes require a
+  migration path document before merge.
+
+5.6  CHECKPOINT INTEGRATION
+──────────────────────────────
+  Root ControlPlane.checkpoint() calls sub-Control-Plane.checkpoint() in
+  dependency order: GraphRAG → Reasoning → Agency.
+  Each checkpoint is written atomically (tmp file + rename).
+  Root checkpoint metadata includes checksums of all sub-checkpoints.
+  Restore validates all sub-checkpoint checksums before proceeding.
+
+5.7  BACKWARD COMPATIBILITY
+──────────────────────────────
+  Phase 1, 2, and 3 modules are all Optional in ControlPlane.__init__().
+  If not provided, ControlPlane runs in legacy mode (existing behavior, fully
+  preserved).  No existing tests may be broken.
+  The legacy pipeline (BabelClient → TraversalPlanner → WordExtractor →
+  ConstraintSolver → VolumeAssembler) remains the default code path.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — RESOURCE ALLOCATION
+35 / 30 / 20 / 15 Engineering Effort Split
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6.1  ALLOCATION TABLE
+──────────────────────
+
+  ┌──────────────────────────────────────────────────┬──────┬───────────────┐
+  │ Work Stream                                      │  %   │ Rationale     │
+  ├──────────────────────────────────────────────────┼──────┼───────────────┤
+  │ Phase 1 — GraphRAG                               │  35% │ Foundation;   │
+  │   Knowledge graph schema, ingestion pipeline,    │      │ all other     │
+  │   retrieval algorithm, lifecycle integration,    │      │ phases depend │
+  │   tests, docs                                    │      │ on this       │
+  ├──────────────────────────────────────────────────┼──────┼───────────────┤
+  │ Phase 2 — Reasoning (ToT + CoV)                  │  30% │ High          │
+  │   Tree of Thoughts engine, Chain of Verification,│      │ complexity;   │
+  │   ThoughtScorer, lifecycle integration,           │      │ requires      │
+  │   tests, docs                                    │      │ GraphRAG      │
+  ├──────────────────────────────────────────────────┼──────┼───────────────┤
+  │ Phase 3 — Agency (World Models + Active          │  20% │ Builds on     │
+  │   Inference)                                     │      │ Phase 1+2;    │
+  │   WorldModel, ActiveInferenceEngine, goal/        │      │ scoped to     │
+  │   prediction management, lifecycle integration,  │      │ deterministic │
+  │   tests, docs                                    │      │ surrogate     │
+  ├──────────────────────────────────────────────────┼──────┼───────────────┤
+  │ Integration, CI, Type Checks, Coverage           │  15% │ Cross-cutting │
+  │   ControlPlane wiring, config extension,         │      │ quality gate  │
+  │   mypy --strict, pyright, ruff, coverage ≥80%,   │      │               │
+  │   seed propagation tests, backward-compat tests  │      │               │
+  └──────────────────────────────────────────────────┴──────┴───────────────┘
+
+6.2  EFFORT JUSTIFICATION
+───────────────────────────
+  35% GraphRAG: The knowledge graph is the shared substrate.  If ingestion,
+    retrieval, or schema are defective, Phases 2 and 3 produce garbage.
+    Schema design, deterministic NER, and atomic checkpointing are
+    non-trivial; test coverage must be comprehensive.
+
+  30% Reasoning: ToT and CoV are algorithmically complex.  Beam search,
+    pruning, backtracking, and claim decomposition all have edge cases
+    that require exhaustive deterministic tests.
+
+  20% Agency: The World Model and Active Inference Engine are architecturally
+    novel but implementation-constrained (deterministic surrogate for free
+    energy; no neural components).  Fewer edge cases than Reasoning.
+
+  15% Integration: Config extension, seed wiring, JSONL schema versioning,
+    and CI are well-understood but must be airtight.  Backward-compatibility
+    tests are critical; any regression here blocks merge.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7 — IMPLEMENTATION STEPS
+Concrete Coding Tasks for the Immediate Sprint
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tasks are ordered by dependency.  Each task includes the target file(s),
+acceptance criteria, and the invariant it must not violate.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  1 — graph_rag package skeleton
+────────────────────────────────────────────────────────────────────────────────
+Files to create:
+  thalos_prime/graph_rag/__init__.py
+  thalos_prime/graph_rag/schema.py
+  thalos_prime/graph_rag/knowledge_graph.py
+  thalos_prime/graph_rag/ingestion.py
+  thalos_prime/graph_rag/retrieval.py
+  thalos_prime/graph_rag/control_plane.py
+
+Acceptance criteria:
+  - All dataclasses in schema.py are fully type-annotated (no Any).
+  - KnowledgeGraph wraps networkx.DiGraph with typed add_node / add_edge APIs.
+  - GraphRAGControlPlane implements all 6 lifecycle methods.
+  - `from thalos_prime.graph_rag import KnowledgeGraph` works without error.
+  - mypy --strict and pyright pass on all new files.
+  - ruff check passes (--select ALL, project ignores applied).
+
+Invariants: I-1, I-2, I-3, I-6.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  2 — GraphRAG ingestion pipeline
+────────────────────────────────────────────────────────────────────────────────
+Files to modify / create:
+  thalos_prime/graph_rag/ingestion.py  (implement body)
+  tests/test_graph_rag_ingestion.py    (new test file)
+
+Acceptance criteria:
+  - GraphIngestionPipeline.ingest(artifact) populates KnowledgeGraph with
+    EntityNode, FragmentNode, RelationshipEdge, ContainsEdge correctly.
+  - Identical artifact + seed → identical graph (determinism test).
+  - Orphaned-node detection produces zero orphans on a freshly ingested
+    single-artifact graph.
+  - ≥90% line coverage on ingestion.py.
+
+Invariants: I-1, I-4, I-5, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  3 — GraphRAG retrieval algorithm
+────────────────────────────────────────────────────────────────────────────────
+Files to modify / create:
+  thalos_prime/graph_rag/retrieval.py  (implement body)
+  tests/test_graph_rag_retrieval.py    (new test file)
+
+Acceptance criteria:
+  - GraphRetriever.retrieve(query, graph) returns GraphRetrievalResult list
+    sorted by final_score DESC, fragment_id ASC.
+  - Empty graph returns empty list (not error).
+  - max_hops=0 returns only seed-node fragments (boundary test).
+  - Determinism: same query + same graph + same seed → same results.
+  - ≥90% line coverage on retrieval.py.
+
+Invariants: I-1, I-4, I-6, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  4 — reasoning package skeleton
+────────────────────────────────────────────────────────────────────────────────
+Files to create:
+  thalos_prime/reasoning/__init__.py
+  thalos_prime/reasoning/schema.py
+  thalos_prime/reasoning/thought_node.py
+  thalos_prime/reasoning/tree_of_thoughts.py
+  thalos_prime/reasoning/chain_of_verification.py
+  thalos_prime/reasoning/thought_scorer.py
+  thalos_prime/reasoning/control_plane.py
+
+NOTE: This is thalos_prime.reasoning (new), not
+thalos_prime.library_of_sense.reasoning (existing, untouched).
+
+Acceptance criteria:
+  - All dataclasses fully typed; StrEnum used for ThoughtStatus, GoalStatus.
+  - ReasoningControlPlane implements all 6 lifecycle methods.
+  - mypy --strict and pyright pass.
+  - ruff check passes.
+
+Invariants: I-1, I-2, I-3, I-6.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  5 — Tree of Thoughts engine
+────────────────────────────────────────────────────────────────────────────────
+Files to modify / create:
+  thalos_prime/reasoning/tree_of_thoughts.py  (implement body)
+  thalos_prime/reasoning/thought_scorer.py    (implement body)
+  tests/test_reasoning_tot.py                 (new test file)
+
+Acceptance criteria:
+  - ToT.run(query, graph_ctx, seed) returns ThoughtNode (TERMINAL).
+  - Pruned nodes are logged with reason and score.
+  - Backtrack fires exactly once when all beams are pruned prematurely;
+    test with score_threshold=1.1 (impossible threshold → forced backtrack).
+  - Identical seed → identical thought tree (determinism test).
+  - ≥90% line coverage on tree_of_thoughts.py.
+
+Invariants: I-1, I-4, I-5, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  6 — Chain of Verification engine
+────────────────────────────────────────────────────────────────────────────────
+Files to modify / create:
+  thalos_prime/reasoning/chain_of_verification.py  (implement body)
+  tests/test_reasoning_cov.py                      (new test file)
+
+Acceptance criteria:
+  - CoV.verify(answer, graph) returns VerificationResult.
+  - All claims verified=True on vacuous (empty) graph (bootstrap path).
+  - Retraction: a claim whose key entities are absent from a non-empty
+    graph is retracted and excluded from final_answer.
+  - retracted_claims count accurate.
+  - ≥90% line coverage on chain_of_verification.py.
+
+Invariants: I-1, I-2, I-5, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  7 — agency package skeleton + WorldModel
+────────────────────────────────────────────────────────────────────────────────
+Files to create:
+  thalos_prime/agency/__init__.py
+  thalos_prime/agency/schema.py
+  thalos_prime/agency/world_state.py
+  thalos_prime/agency/world_model.py
+  thalos_prime/agency/goal_evaluator.py
+  thalos_prime/agency/prediction_engine.py
+  thalos_prime/agency/active_inference.py
+  thalos_prime/agency/control_plane.py
+  tests/test_agency_world_model.py
+
+Acceptance criteria:
+  - WorldModel.update(artifact) increments timestep deterministically.
+  - Goal status transitions (ACTIVE → ACHIEVED) logged with before/after.
+  - Prediction generation produces deterministic list for given seed + graph.
+  - ≥85% line coverage on world_model.py and world_state.py.
+  - mypy --strict and pyright pass.
+
+Invariants: I-1, I-2, I-3, I-5, I-6, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  8 — Active Inference Engine
+────────────────────────────────────────────────────────────────────────────────
+Files to modify / create:
+  thalos_prime/agency/active_inference.py  (implement body)
+  tests/test_agency_active_inference.py    (new test file)
+
+Acceptance criteria:
+  - ActiveInferenceEngine.step(world_state) returns selected Action.
+  - Free energy proxy values are deterministic for same seed + state.
+  - Tie-break: lexicographically smallest action.id selected (test with
+    two actions of equal proxy value).
+  - Action execution updates WorldState.action_history and increments
+    timestep.
+  - ≥85% line coverage on active_inference.py.
+
+Invariants: I-1, I-4, I-5, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK  9 — ControlPlane integration wiring
+────────────────────────────────────────────────────────────────────────────────
+Files to modify:
+  thalos_prime.py          (extend ControlPlane.__init__ with optional params)
+  thalos_prime/config.py   (extend Config with GraphRAGConfig, ReasoningConfig,
+                            AgencyConfig as Optional fields)
+
+Acceptance criteria:
+  - ControlPlane(query, seed, ...) runs unchanged in legacy mode (no new params
+    required; all new params default to None).
+  - With graph_rag_config provided, GraphRAGControlPlane is instantiated and
+    wired into lifecycle methods.
+  - All existing tests pass without modification.
+  - New integration test: ControlPlane with all three sub-CPs runs a full
+    lifecycle on a dry-run query; checkpoint files created for all modules.
+
+Invariants: I-1, I-2, I-3, I-4, I-7.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK 10 — Seed propagation + JSONL schema version tests
+────────────────────────────────────────────────────────────────────────────────
+Files to create:
+  tests/test_aibreakthrough_determinism.py
+
+Acceptance criteria:
+  - Two runs with seed=42 produce byte-identical JSONL logs (determinism).
+  - Two runs with seed=42 vs seed=43 produce different outputs.
+  - All JSONL events contain: timestamp_ns, version, seed, config_hash,
+    module, event_type, payload.
+  - Checkpoint restore: WorldState loaded from checkpoint matches original.
+  - Seed derivation: GraphRAG seed = root XOR 0x47524147 (verified).
+
+Invariants: I-1, I-5.
+
+────────────────────────────────────────────────────────────────────────────────
+SPRINT TASK 11 — CI and coverage gate
+────────────────────────────────────────────────────────────────────────────────
+Files to verify / update:
+  pyproject.toml   (add new modules to mypy overrides if needed; add
+                    networkx, z3-solver to dev dependencies if not present;
+                    confirm ruff per-file-ignores cover new modules if needed)
+  .coveragerc      (no new omissions; all new modules must be covered)
+  Makefile         (no changes expected; existing `make test` enforces ≥80%)
+
+Acceptance criteria:
+  - `make test` passes with coverage ≥ 80%.
+  - `mypy thalos_prime --strict` reports 0 errors on new modules.
+  - `pyright thalos_prime` reports 0 errors on new modules.
+  - `ruff check thalos_prime tests` reports 0 errors.
+  - No new CI workflow steps required; existing enforce-standards.yml covers
+    all checks.
+
+Invariants: I-6, I-7.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8 — DEPENDENCY AUDIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  networkx  ≥3.2   Required for KnowledgeGraph (thalos_prime.graph_rag).
+                   Already listed as dev dependency (see repository_memories).
+                   Add to [project.dependencies] for production use.
+
+  thalos_prime.ingest (canonicalize_text, compute_meaning_hash,
+                        ingest_fragment, CanonicalArtifact)
+                   Already implemented; no new dependency.
+
+  thalos_prime.lob_decoder (score_coherence)
+                   Already implemented; no new dependency.
+
+  thalos_prime.library_of_sense.reasoning (symbolic_engine,
+                   constraint_solver)
+                   Already implemented; Phase 2 may call into these for
+                   constraint-satisfaction subproblems.
+
+  No new external dependencies beyond networkx are required for Phases 1-3.
+  All randomness is Python stdlib random (seeded).
+  No LLM API calls; no network I/O outside existing BabelClient.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9 — RISK REGISTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  RISK-1  Name collision: thalos_prime.reasoning vs
+          thalos_prime.library_of_sense.reasoning
+  Severity: High | Probability: Certain if not mitigated
+  Mitigation: New module is thalos_prime/reasoning/ (top-level package).
+              Existing module is thalos_prime/library_of_sense/reasoning/.
+              Import paths are fully distinct.  Document in both __init__.py
+              files.
+
+  RISK-2  Non-deterministic networkx graph iteration order
+  Severity: High | Probability: Low
+  Context:  Python ≥ 3.7 guarantees dict insertion-order preservation, and
+            this repository targets Python ≥ 3.12.  However, networkx
+            neighbors() and edges() iteration order depends on node/edge
+            insertion sequence, which may vary across sessions if ingestion
+            order is not controlled.
+  Mitigation: All graph traversals sort by (weight DESC, id ASC) explicitly.
+              BFS uses collections.deque with stable insertion order.
+              Ingestion pipeline inserts nodes in deterministic char-offset
+              order (guaranteed by Step 3 of §2.3).
+
+  RISK-3  Mypy false positives from networkx untyped stubs
+  Severity: Medium | Probability: Medium
+  Mitigation: Add networkx to mypy's ignore_missing_imports stanza for the
+              graph_rag module in pyproject.toml.  Document in PR.
+
+  RISK-4  Checkpoint atomicity failure on Windows (tmp+rename not atomic)
+  Severity: Medium | Probability: Low (CI is Linux)
+  Mitigation: Use pathlib.Path.replace() which is atomic on POSIX.
+              Add explicit note in checkpoint docstring about Windows behavior.
+
+  RISK-5  Coverage regression from adding untested stubs
+  Severity: High | Probability: Certain if tasks shipped incomplete
+  Mitigation: No stubs, TODOs, or placeholders permitted.  Each task's
+              acceptance criteria includes minimum coverage.  CI gate blocks
+              merge if coverage drops below 80%.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10 — COMPLETION CRITERION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The AIBreakthrough upgrade is complete when ALL of the following are true:
+
+  [ ] All 11 sprint tasks completed with their acceptance criteria met.
+  [ ] `make test` passes: ≥80% coverage, zero test failures.
+  [ ] `mypy thalos_prime --strict` reports 0 errors on new modules.
+  [ ] `pyright thalos_prime` reports 0 errors on new modules.
+  [ ] `ruff check thalos_prime tests` reports 0 errors.
+  [ ] All existing tests pass unchanged.
+  [ ] Determinism test: two runs with seed=42 produce identical JSONL logs.
+  [ ] ControlPlane legacy mode (no new params) is functionally identical to
+      pre-AIBreakthrough baseline.
+  [ ] ARCHITECTURE.md updated to reflect new modules, lifecycle diagram,
+      and dependency graph.
+  [ ] This document (AIBREAKTHROUGH_MASTER_PLAN.txt) updated with
+      final implementation notes if any spec deviations were necessary,
+      with rationale documented.
+
+Only the above constitutes: FULLY IMPLEMENTED. FULLY INTEGRATED.
+FULLY OPERATIONAL.
+
+================================================================================
+END OF AIBREAKTHROUGH MASTER SPECIFICATION
+================================================================================
