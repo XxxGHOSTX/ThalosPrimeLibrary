@@ -103,6 +103,7 @@ ignore = [
     "thalos_prime/auth",
     "thalos_prime/library_of_sense/reasoning",
     "thalos_prime/library_of_sense/retrieval",
+    "thalos_prime/agency",
 ]
 
 [tool.ruff]
