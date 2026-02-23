@@ -1,6 +1,7 @@
+from thalos_prime.cli.commands import run_cli
+
 def main() -> int:
-    print('Thalos Prime CLI is initialized.')
-    return 0
+    return run_cli()
 
 if __name__ == '__main__':
     raise SystemExit(main())

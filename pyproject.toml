@@ -205,6 +205,12 @@ disable_error_code = ["no-untyped-call"]
     "PLC0415", "E402",
     # private member access is legitimate in unit tests
     "SLF001",
+    # docstring capitalization in subcommand descriptions
+    "D403",
+    # match parameter in raises - test clarity takes priority
+    "PT011",
+    # 0.0.0.0 bind address in test assertions for serve subcommand
+    "S104",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
@@ -223,8 +229,15 @@ disable_error_code = ["no-untyped-call"]
     "RUF012", "BLE001", "B904", "PLC0415", "PLR2004", "E501",
     "G004", "ARG001", "TRY401", "PLW0603", "PLW0602", "D104",
 ]
-"thalos_prime/auth/__init__.py" = ["D104"]
+# Auth module: N818 (DeterministicHalt name required by interface contract),
+# PLC0415 (fastapi optional import inside dependency factory)
+"thalos_prime/auth/api_key.py" = ["N818", "PLC0415"]
+"thalos_prime/auth/__init__.py" = ["D104", "RUF022"]
 "thalos_prime/cache/__init__.py" = ["D104"]
+# CLI module: PLC0415 (lazy imports for optional/heavy dependencies in handlers),
+# S104 (--host 0.0.0.0 is user-supplied value, not hardcoded bind),
+# PTH123 (open() used for simple text file writes without Path context)
+"thalos_prime/cli/commands.py" = ["PLC0415", "S104", "PTH123", "TRY400"]
 "thalos_prime/cli/__init__.py" = ["D104"]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
 "thalos_prime/config.py" = ["D205", "D401"]

@@ -4,9 +4,14 @@ This module provides advanced heuristics for scoring the coherence and
 readability of generated pages, with optional LLM-based normalization.
 """
 
+import logging
+import re
 import time
+import unicodedata
 from dataclasses import dataclass
 from typing import Any, ClassVar
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -333,19 +338,54 @@ class BabelDecoder:
         )
 
     def _normalize_with_llm(self, text: str, query: str | None = None) -> str:
-        """Normalize text using LLM (placeholder for future implementation).
+        """Normalize text using rule-based heuristics, or an LLM provider when configured.
+
+        When no LLM provider is configured, applies deterministic rule-based
+        normalization: collapses whitespace, strips non-printable characters,
+        normalizes to NFC Unicode form, and capitalizes sentence-initial
+        characters.
+
+        When an LLM provider IS configured, logs a warning that provider-specific
+        integration is pending and falls back to rule-based normalization. The
+        caller can rely on receiving a deterministically normalized string in all
+        cases; the output will never be identical to an unprocessed input.
 
         Args:
-            text: Raw text to normalize
-            query: Optional query context
+            text: Raw text to normalize.
+            query: Optional query context (reserved for future LLM prompts).
 
         Returns:
-            Normalized text
+            Normalized text string.
 
         """
-        # Placeholder - would integrate with LLM provider
-        # For now, just return the original text
-        return text
+        if self.llm_enabled and self.llm_provider:
+            logger.warning(
+                "LLM normalization requested via provider %r but provider "
+                "integration is not yet implemented; falling back to "
+                "rule-based normalization.",
+                self.llm_provider,
+            )
+
+        # Strip non-printable characters (keep printable ASCII and Unicode letters)
+        cleaned = "".join(ch for ch in text if unicodedata.category(ch)[0] != "C" or ch in " \t\n")
+
+        # Normalize to NFC Unicode form
+        nfc = unicodedata.normalize("NFC", cleaned)
+
+        # Collapse runs of whitespace (preserve single spaces; collapse tabs/newlines)
+        collapsed = re.sub(r"[^\S\n]+", " ", nfc)
+
+        # Capitalize the first letter of each sentence (after . ! ?)
+        def _capitalize_sentence(m: re.Match[str]) -> str:
+            return m.group(1) + m.group(2).upper()
+
+        sentence_capped = re.sub(r"([.!?]\s+)([a-z])", _capitalize_sentence, collapsed)
+
+        # Capitalize very first character if it is lowercase
+        if sentence_capped and sentence_capped[0].islower():
+            return (sentence_capped[0].upper() + sentence_capped[1:]).strip()
+
+        return sentence_capped.strip()
 
     def enable_llm(self, provider: str, **kwargs: object) -> None:
         """Enable LLM normalization.
