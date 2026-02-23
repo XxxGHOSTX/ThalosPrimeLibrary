@@ -53,6 +53,7 @@ class TestMultiSourceRetriever:
     def test_validate_sources_returns_validation_results(self) -> None:
         retriever = MultiSourceRetriever()
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
         retriever.add_source(kg)
         results = retriever.validate_sources()
         assert len(results) == 1
@@ -176,8 +177,74 @@ class TestKnowledgeGraphRetriever:
 
     def test_validate_returns_valid(self) -> None:
         kg = KnowledgeGraphRetriever()
+        kg.initialize()
         result = kg.validate()
         assert result.valid is True
+
+    def test_validate_returns_invalid_before_initialize(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        # Fresh KnowledgeGraphRetriever has _initialized=False
+        result = kg.validate()
+        assert result.valid is False
+        assert "not initialized" in result.message
+
+    def test_initialize_sets_initialized(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        assert kg._initialized is True
+
+    def test_validate_passes_after_initialize(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        result = kg.validate()
+        assert result.valid is True
+
+    def test_initialize_resets_graph(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.add_triple(GraphTriple(subject="X", predicate="y", obj="Z"))
+        kg.initialize()
+        assert kg.triple_count == 0
+
+    def test_operate_does_not_raise(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.operate()
+
+    def test_reconcile_passes_valid_graph(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.add_triple(GraphTriple(subject="A", predicate="b", obj="C"))
+        kg.reconcile()  # Should not raise
+
+    def test_checkpoint_returns_dict(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.add_triple(GraphTriple(subject="A", predicate="b", obj="C"))
+        state = kg.checkpoint()
+        assert isinstance(state, dict)
+        assert state["triple_count"] == 1
+        assert state["node_count"] == 2
+        assert isinstance(state["triples"], list)
+
+    def test_terminate_clears_graph(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.add_triple(GraphTriple(subject="A", predicate="b", obj="C"))
+        kg.terminate()
+        assert kg.triple_count == 0
+        assert kg._initialized is False
+
+    def test_lifecycle_events_recorded(self) -> None:
+        kg = KnowledgeGraphRetriever()
+        kg.initialize()
+        kg.operate()
+        kg.checkpoint()
+        kg.terminate()
+        events = kg.get_events()
+        methods = [e.method for e in events]
+        assert "initialize" in methods
+        assert "checkpoint" in methods
+        assert "terminate" in methods
 
 
 # ---------------------------------------------------------------------------
