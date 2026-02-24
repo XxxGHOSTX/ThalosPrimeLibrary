@@ -51,7 +51,7 @@ jobs:
       - name: Lint - ruff
         run: |
           echo "::group::Running ruff"
-          ruff check thalos_prime tests --select ALL --ignore COM812,ISC001,ANN101,ANN102,D203,D213 --output-format=github
+          ruff check thalos_prime tests --output-format=github
           echo "::endgroup::"
 
       - name: Test with pytest

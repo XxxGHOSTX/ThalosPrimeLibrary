@@ -300,7 +300,7 @@ def _handle_serve(args: argparse.Namespace) -> int:
 
     """
     try:
-        import uvicorn
+        import uvicorn  # pyright: ignore[reportMissingImports]
     except ImportError:
         logger.error("uvicorn is required to start the server: pip install uvicorn")
         sys.stderr.write(

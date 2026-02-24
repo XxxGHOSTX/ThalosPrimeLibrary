@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 from thalos_prime.planning.mcts_planner import MCTSNode, MCTSPlanner, MCTSResult
 
 
@@ -15,7 +20,7 @@ def _length_reward(state: str) -> float:
     return min(len(state) / 50.0, 1.0)
 
 
-def _constant_reward(value: float) -> object:
+def _constant_reward(value: float) -> Callable[[str], float]:
     """Return an evaluator that always returns the given value."""
     def evaluator(state: str) -> float:
         _ = state
@@ -172,6 +177,20 @@ class TestMCTSPlanner:
         )
         assert result.best_action == "start"
         assert result.best_path == ["start"]
+
+    def test_search_with_constant_reward(self) -> None:
+        planner = MCTSPlanner()
+        planner.initialize()
+        result = planner.search(
+            root_state="s",
+            action_generator=_fixed_actions,
+            reward_evaluator=_constant_reward(0.5),
+            iterations=10,
+            max_depth=2,
+            seed=0,
+        )
+        assert isinstance(result, MCTSResult)
+        assert result.iterations_run == 10
 
     def test_root_visits_match_iterations(self) -> None:
         planner = MCTSPlanner()

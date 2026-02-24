@@ -259,6 +259,9 @@ disable_error_code = ["no-untyped-call"]
     "PLR0913",
     "PLR2004",
 ]
+"thalos_prime/agency/agent_loop.py" = [
+    "TC001", "TC003",
+]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]

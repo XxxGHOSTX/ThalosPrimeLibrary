@@ -1,6 +1,4 @@
-"""
-Schema presence and sanity checks.
-"""
+"""Schema presence and sanity checks."""
 
 import json
 from pathlib import Path
