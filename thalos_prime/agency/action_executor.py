@@ -35,6 +35,7 @@ class ActionExecutionError(Exception):
     Attributes:
         action: Name of the action that failed.
         result: The ActionResult capturing the failure details.
+        cause: The original exception raised by the handler.
 
     """
 
@@ -50,6 +51,7 @@ class ActionExecutionError(Exception):
         super().__init__(f"Action {action!r} handler raised: {cause}")
         self.action = action
         self.result = result
+        self.cause = cause
 
 
 @dataclass
@@ -229,10 +231,11 @@ class ActionExecutor(BaseLifecycleComponent):
             params: Parameters to pass to the action handler.
 
         Returns:
-            ActionResult from the handler.
+            ActionResult from the handler, or a failed ActionResult if the
+            action is not registered (without raising).
 
         Raises:
-            ActionExecutionError: If the handler raises an exception.
+            ActionExecutionError: If the registered handler raises an exception.
 
         """
         handler = self._handlers.get(action)
