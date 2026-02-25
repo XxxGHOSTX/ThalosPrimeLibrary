@@ -75,7 +75,7 @@ def test_setup_imports_with_temp_directory(tmp_path: Path) -> None:
     test_path = str(tmp_path)
 
     # Get the initial sys.path length
-    len(sys.path)
+    initial_path_count = len(sys.path)
 
     # Set up imports with the temporary path
     result = setup_local_imports(custom_path=test_path)
@@ -83,6 +83,7 @@ def test_setup_imports_with_temp_directory(tmp_path: Path) -> None:
     # Should return True and add the path to sys.path
     assert result is True
     assert test_path in sys.path or str(Path(test_path).resolve()) in sys.path
+    assert len(sys.path) == initial_path_count + 1
 
 
 def test_library_config_added_to_path_flag() -> None:
