@@ -14,7 +14,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal, cast
+from typing import Literal
 
 import z3
 
@@ -291,21 +291,28 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
         for var in variables:
             if var.sort == VariableSort.INT:
                 z3_var = z3.Int(var.name)
-            elif var.sort == VariableSort.REAL:
-                z3_var = z3.Real(var.name)
-            elif var.sort == VariableSort.BOOL:
-                z3_var = z3.Bool(var.name)
-            else:
-                msg = f"Unknown variable sort: {var.sort!r}"
-                raise ValueError(msg)
-            z3_vars[var.name] = z3_var
-
-            if var.sort != VariableSort.BOOL:
-                arith_var = cast("z3.ArithRef", z3_var)
+                z3_vars[var.name] = z3_var
                 if var.lower_bound is not None:
-                    bounds.append(arith_var >= var.lower_bound)
+                    bounds.append(z3_var >= var.lower_bound)
                 if var.upper_bound is not None:
-                    bounds.append(arith_var <= var.upper_bound)
+                    bounds.append(z3_var <= var.upper_bound)
+                continue
+
+            if var.sort == VariableSort.REAL:
+                z3_var = z3.Real(var.name)
+                z3_vars[var.name] = z3_var
+                if var.lower_bound is not None:
+                    bounds.append(z3_var >= var.lower_bound)
+                if var.upper_bound is not None:
+                    bounds.append(z3_var <= var.upper_bound)
+                continue
+
+            if var.sort == VariableSort.BOOL:
+                z3_vars[var.name] = z3.Bool(var.name)
+                continue
+
+            msg = f"Unknown variable sort: {var.sort!r}"
+            raise ValueError(msg)
 
         return z3_vars, bounds
 
@@ -313,14 +320,14 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
         self,
         constraint_str: str,
         z3_vars: dict[str, z3.ExprRef],
-        expect_bool: bool = True,
+        result_kind: Literal["bool", "expr"] = "bool",
     ) -> z3.ExprRef | None:
         """Parse a constraint string into a Z3 expression.
 
         Args:
             constraint_str: The constraint expression string.
             z3_vars: Mapping of variable names to Z3 references.
-            expect_bool: Whether the result must be a BoolRef (constraints) or any ExprRef (objectives).
+            result_kind: Expected result type; "bool" for constraints, "expr" for objectives.
 
         Returns:
             Z3 expression, or None if parsing failed.
@@ -340,6 +347,7 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             logger.warning("Cannot parse constraint %r: %s", constraint_str, exc)
             return None
         else:
+            expect_bool = result_kind == "bool"
             if expect_bool and not isinstance(result, z3.BoolRef):
                 logger.warning(
                     "Constraint did not evaluate to BoolRef: %r (type: %s)",
@@ -347,13 +355,21 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
                     type(result),
                 )
                 return None
-            if not expect_bool and not isinstance(result, z3.ExprRef):
-                logger.warning(
-                    "Objective did not evaluate to ExprRef: %r (type: %s)",
-                    constraint_str,
-                    type(result),
-                )
-                return None
+            if not expect_bool:
+                if not isinstance(result, z3.ExprRef):
+                    logger.warning(
+                        "Objective did not evaluate to ExprRef: %r (type: %s)",
+                        constraint_str,
+                        type(result),
+                    )
+                    return None
+                if isinstance(result, z3.BoolRef):
+                    logger.warning(
+                        "Objective should not be BoolRef: %r (type: %s)",
+                        constraint_str,
+                        type(result),
+                    )
+                    return None
             return result
 
     def solve(self, constraint_set: ConstraintSet) -> SymbolicSolution:
@@ -436,7 +452,7 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
                 )
             optimizer.add(expr)
 
-        obj_expr = self._parse_constraint(objective.expression, z3_vars, expect_bool=False)
+        obj_expr = self._parse_constraint(objective.expression, z3_vars, result_kind="expr")
         if obj_expr is None:
             return SymbolicSolution(
                 satisfiable=False,
