@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Literal, TypedDict
+from typing import Literal, Required, TypedDict
 
 import networkx as nx
 
@@ -43,16 +43,16 @@ class RelationshipRecordDict(TypedDict):
     properties: dict[str, object]
 
 
-class CypherQueryDict(TypedDict):
+class CypherQueryDict(TypedDict, total=False):
     """Serialized representation of a Cypher query."""
 
-    operation: Literal["match_nodes", "match_relationships", "shortest_path", "neighbors"]
+    operation: Required[Literal["match_nodes", "match_relationships", "shortest_path", "neighbors"]]
+    limit: Required[int]
     node_label: str
     rel_type: str
     source_id: str
     target_id: str
     properties: dict[str, object]
-    limit: int
 
 
 @dataclass
