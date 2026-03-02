@@ -16,8 +16,8 @@
 /**
  * @author: Dmitry Batkovich
  */
-function navigate(an_id) {
-  const problem_div = document.getElementById("d" + an_id);
-  const preview_div = document.getElementById("preview");
-  preview_div.innerHTML = problem_div != null ? problem_div.innerHTML : "Select a problem element in tree";
+function navigate(anId) {
+  const problemDiv = document.getElementById("d" + anId);
+  const previewDiv = document.getElementById("preview");
+  previewDiv.innerHTML = problemDiv != null ? problemDiv.innerHTML : "Select a problem element in tree";
 }
