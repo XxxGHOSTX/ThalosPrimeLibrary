@@ -39,7 +39,7 @@ class VariableDeclarationDict(TypedDict, total=False):
     """Serialized representation of a variable declaration.
 
     Uses total=False with Required[...] to keep bounds optional while enforcing
-    that name and sort are always present. This relies on Python 3.11+ TypedDict
+    that name and sort are always present. This relies on Python 3.12+ TypedDict
     support for Required with partial dictionaries.
     """
 
@@ -62,7 +62,7 @@ class SymbolicSolutionDict(TypedDict, total=False):
 
     Uses total=False with Required[...] to capture required solution fields
     while allowing objective_value to be omitted when not applicable. This uses
-    Python 3.11+ support for Required in partial TypedDicts.
+    Python 3.12+ support for Required in partial TypedDicts.
     """
 
     satisfiable: Required[bool]
