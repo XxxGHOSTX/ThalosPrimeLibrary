@@ -51,6 +51,12 @@ class ReproManifest:
     """Reproducibility manifest written to ``repro_manifest.json``.
 
     All fields are required; every field is serialised verbatim.
+
+    Deterministic fields used for replay identity:
+        ``seed``, ``config_hash``, ``thalos_nexus_version``, ``genome_hash``.
+
+    Observability-only fields (NOT used in replay comparison):
+        ``created_at``, ``python_version``, ``platform`` — wall-clock/environment metadata.
     """
 
     schema_version: str
@@ -169,11 +175,14 @@ class DeterminismSpine:
         Each event carries:
 
         - ``seq``        — monotonically increasing sequence number
-        - ``timestamp``  — UTC ISO-8601
         - ``event_type`` — caller-supplied string
         - ``data``       — caller-supplied payload
-        - ``prev_hash``  — SHA-256 of the previous event's JSON line (or ``""`` for first)
-        - ``event_hash`` — SHA-256 of this event's JSON (excluding ``event_hash`` field)
+        - ``prev_hash``  — SHA-256 of the previous event's deterministic fields
+          (or ``""`` for first event)
+        - ``event_hash`` — SHA-256 of this event's deterministic fields
+          (seq, event_type, data, prev_hash)
+        - ``timestamp``  — UTC ISO-8601 (observability metadata; NOT included
+          in hash computation — timestamps never affect replay identity)
 
         Parameters
         ----------
@@ -185,14 +194,18 @@ class DeterminismSpine:
         """
         event: dict[str, Any] = {
             "seq": self._event_sequence,
-            "timestamp": _utc_now(),
             "event_type": event_type,
             "data": data,
             "prev_hash": self._prev_event_hash,
         }
+        # Hash only deterministic fields (seq, event_type, data, prev_hash).
+        # The timestamp is observability metadata and is intentionally excluded
+        # from the hash chain so replay produces the same hash chain regardless
+        # of wall-clock time.
         event_json = json.dumps(event, separators=(",", ":"), sort_keys=True)
         event_hash = _sha256_hex(event_json)
         event["event_hash"] = event_hash
+        event["timestamp"] = _utc_now()  # Added after hashing; not part of chain
         self._prev_event_hash = event_hash
         self._event_sequence += 1
 

@@ -9,6 +9,12 @@ command runs in its own subprocess, fully isolated from the parent process.
 
 Control Plane boundary: this module runs gates and records results; it does
 not decide which gates to run or how to interpret failures at the policy level.
+
+Determinism note:
+    Gate pass/fail decisions are based solely on subprocess exit codes, which
+    are deterministic given identical input code.  Duration measurements
+    (``duration_seconds``) use ``time.monotonic()`` and are observability
+    metadata only — they never affect gate pass/fail status or execution order.
 """
 
 from __future__ import annotations

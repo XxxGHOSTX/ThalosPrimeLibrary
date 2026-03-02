@@ -8,6 +8,13 @@ The governor does not enforce termination; it provides signals that the
 gate runner or orchestrator can use to make stop/continue decisions.
 
 Control Plane boundary: budget decisions only; no gate execution here.
+
+Determinism note:
+    ``time.monotonic()`` is used solely for wall-clock budget tracking
+    (observability/throttling).  Budget signals do not alter gate pass/fail
+    status, execution order, or artifact content — they only influence whether
+    the orchestrator chooses to continue scheduling additional gates.  Replay
+    verification is not affected by budget measurements.
 """
 
 from __future__ import annotations

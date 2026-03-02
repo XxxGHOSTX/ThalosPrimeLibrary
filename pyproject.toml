@@ -218,6 +218,16 @@ disable_error_code = ["no-untyped-call"]
     "PT011",
     # 0.0.0.0 bind address in test assertions for serve subcommand
     "S104",
+    # long lines in test data literals - clarity takes priority
+    "E501",
+    # /tmp paths in test assertions - test environment
+    "S108",
+    # unused fixture arguments are common in test parameterization
+    "ARG002",
+    # nested with statements in pytest.raises patterns
+    "SIM117",
+    # inline exception messages in tests for clarity
+    "TRY003", "EM101",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
