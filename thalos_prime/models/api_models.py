@@ -8,13 +8,7 @@ from enum import StrEnum
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator
-from typing import Any
 
-from pydantic import BaseModel, Field, validator
-
-
-class SearchMode(StrEnum):
-    """Search mode: local generation or remote fetch."""
 
 class SearchMode(StrEnum):
     """Search mode: local generation or remote fetch."""
@@ -64,7 +58,6 @@ class AddressInfo(BaseModel):
                 "page": 4,
                 "url": "https://libraryofbabel.info/book.cgi?hex=abc123def456",
             }
-            },
         }
 
 
@@ -93,7 +86,6 @@ class CoherenceInfo(BaseModel):
                 "confidence_level": "medium",
                 "metrics": {"word_count": 150, "sentence_count": 8},
             }
-            },
         }
 
 
@@ -120,7 +112,6 @@ class ProvenanceInfo(BaseModel):
                 "normalized": False,
                 "llm_provider": None,
             }
-            },
         }
 
 
@@ -149,7 +140,6 @@ class PageResult(BaseModel):
                 "coherence": {"overall_score": 75.5, "confidence_level": "medium"},
                 "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0},
             }
-            },
         }
 
 
@@ -169,11 +159,6 @@ class ChatRequest(BaseModel):
         empty_message_error = "Message cannot be empty or whitespace only"
         if not v.strip():
             raise ValueError(empty_message_error)
-    @validator("message")
-    def message_not_empty(self, v: str) -> str:
-        if not v.strip():
-            msg = "Message cannot be empty or whitespace only"
-            raise ValueError(msg)
         return v.strip()
 
     class Config:
@@ -186,7 +171,6 @@ class ChatRequest(BaseModel):
                 "max_results": 5,
                 "mode": "hybrid",
             }
-            },
         }
 
 
@@ -208,7 +192,6 @@ class ChatResponse(BaseModel):
                 "results": [],
                 "metadata": {"query_time_ms": 150},
             }
-            },
         }
 
 
@@ -228,11 +211,6 @@ class SearchRequest(BaseModel):
         empty_query_error = "Query cannot be empty or whitespace only"
         if not v.strip():
             raise ValueError(empty_query_error)
-    @validator("query")
-    def query_not_empty(self, v: str) -> str:
-        if not v.strip():
-            msg = "Query cannot be empty or whitespace only"
-            raise ValueError(msg)
         return v.strip()
 
     class Config:
@@ -245,7 +223,6 @@ class SearchRequest(BaseModel):
                 "mode": "hybrid",
                 "min_score": 40.0,
             }
-            },
         }
 
 
@@ -271,7 +248,6 @@ class SearchResponse(BaseModel):
                 "cached": False,
                 "metadata": {"search_time_ms": 250},
             }
-            },
         }
 
 
@@ -281,15 +257,7 @@ class GenerateRequest(BaseModel):
 
     address: str | None = Field(None, description="Hex address to generate from")
     query: str | None = Field(None, description="Query to convert to address")
-    validate: bool = Field(default=True, description="Whether to validate generated page")
-    validate_page: bool = Field(default=True, description="Whether to validate generated page", alias="validate")
-
-    @validator("address", "query")
-    def at_least_one_field(self, v: str | None, values: dict[str, Any]) -> str | None:
-        if not v and not values.get("address") and not values.get("query"):
-            msg = "Either address or query must be provided"
-            raise ValueError(msg)
-        return v
+    validate_page: bool = Field(default=True, description="Whether to validate generated page")
 
     class Config:
         """Pydantic configuration."""
@@ -297,9 +265,8 @@ class GenerateRequest(BaseModel):
         json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "address": "abc123def456",
-                "validate": True,
+                "validate_page": True,
             }
-            },
         }
 
 
@@ -324,7 +291,6 @@ class GenerateResponse(BaseModel):
                 "valid": True,
                 "generation_time_ms": 0.5,
             }
-            },
         }
 
 
@@ -343,11 +309,6 @@ class EnumerateRequest(BaseModel):
         empty_query_error = "Query cannot be empty or whitespace only"
         if not v.strip():
             raise ValueError(empty_query_error)
-    @validator("query")
-    def query_not_empty(self, v: str) -> str:
-        if not v.strip():
-            msg = "Query cannot be empty or whitespace only"
-            raise ValueError(msg)
         return v.strip()
 
     class Config:
@@ -359,7 +320,6 @@ class EnumerateRequest(BaseModel):
                 "max_results": 10,
                 "depth": 2,
             }
-            },
         }
 
 
@@ -383,7 +343,6 @@ class EnumerateResponse(BaseModel):
                 "total_found": 10,
                 "metadata": {"enumeration_time_ms": 5.0},
             }
-            },
         }
 
 
@@ -397,7 +356,6 @@ class DecodeRequest(BaseModel):
     normalization: NormalizationMode = Field(
         default=NormalizationMode.HEURISTIC, description="Normalization mode"
     )
-    normalization: NormalizationMode = Field(default=NormalizationMode.HEURISTIC, description="Normalization mode")
 
     class Config:
         """Pydantic configuration."""
@@ -409,7 +367,6 @@ class DecodeRequest(BaseModel):
                 "query": "test query",
                 "normalization": "heuristic",
             }
-            },
         }
 
 
@@ -437,8 +394,6 @@ class DecodeResponse(BaseModel):
                     "timestamp": 1707768000.0,
                 },
             }
-                "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0},
-            },
         }
 
 
@@ -465,8 +420,6 @@ class StatusResponse(BaseModel):
                     "llm_normalization": False,
                 },
             }
-                "features": {"local_generation": True, "remote_search": True, "llm_normalization": False},
-            },
         }
 
 
@@ -479,7 +432,6 @@ class ErrorResponse(BaseModel):
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Error timestamp"
     )
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
 
     class Config:
         """Pydantic configuration."""
@@ -491,6 +443,5 @@ class ErrorResponse(BaseModel):
                 "details": {"field": "query", "issue": "cannot be empty"},
                 "timestamp": "2026-02-12T20:00:00Z",
             }
-            },
         }
 

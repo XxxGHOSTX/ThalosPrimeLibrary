@@ -301,9 +301,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             z3_vars[var.name] = z3_var
 
             if var.lower_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var >= var.lower_bound)  # type: ignore[operator]
+                bounds.append(z3_var >= var.lower_bound)
             if var.upper_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var <= var.upper_bound)  # type: ignore[operator]
+                bounds.append(z3_var <= var.upper_bound)
 
         return z3_vars, bounds
 
@@ -336,7 +336,7 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             logger.warning("Cannot parse constraint %r: %s", constraint_str, exc)
             return None
         else:
-            return result  # type: ignore[return-value]
+            return result
 
     def solve(self, constraint_set: ConstraintSet) -> SymbolicSolution:
         """Solve a constraint satisfaction problem.

@@ -45,7 +45,9 @@ class TestConstraintSet:
         )
         d = cs.to_dict()
         assert d["name"] == "test"
-        assert len(d["variables"]) == 1
+        variables = d["variables"]
+        assert isinstance(variables, list)
+        assert len(variables) == 1
         assert d["constraints"] == ["x > 0"]
 
 
@@ -54,7 +56,9 @@ class TestSymbolicSolution:
         s = SymbolicSolution(satisfiable=True, model={"x": "5"}, message="Satisfiable")
         d = s.to_dict()
         assert d["satisfiable"] is True
-        assert d["model"]["x"] == "5"
+        model = d["model"]
+        assert isinstance(model, dict)
+        assert model["x"] == "5"
 
     def test_to_dict_with_objective(self) -> None:
         s = SymbolicSolution(
