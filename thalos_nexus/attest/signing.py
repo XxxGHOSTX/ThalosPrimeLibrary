@@ -64,7 +64,7 @@ class KeyPair:
         private_pem = (path / "private.pem").read_bytes()
         private_key = serialization.load_pem_private_key(private_pem, password=None)
         if not isinstance(private_key, Ed25519PrivateKey):
-            raise TypeError(f"Expected Ed25519PrivateKey, got {type(private_key)}")
+            raise TypeError(f"Expected Ed25519PrivateKey, got {type(private_key).__name__}")
         return cls(private_key)
 
     def save(self, path: Path) -> None:

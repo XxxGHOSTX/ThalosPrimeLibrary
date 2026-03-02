@@ -105,9 +105,11 @@ def run_no_placeholder_gate(ctx: GateContext) -> GateResult:
             except OSError:
                 continue
             for lineno, line in enumerate(text.splitlines(), start=1):
-                for kw in forbidden:
-                    if kw in line:
-                        matches.extend([f"{py_file}:{lineno}: {line.strip()}"])
+                matches.extend(
+                        f"{py_file}:{lineno}: {line.strip()}"
+                        for kw in forbidden
+                        if kw in line
+                    )
     except OSError as exc:
         return GateResult(
             name=name,

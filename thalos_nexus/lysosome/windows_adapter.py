@@ -245,7 +245,7 @@ class IsolationAdapter:
             JOB_OBJECT_LIMIT_JOB_MEMORY = 0x200  # noqa: N806
             JobObjectExtendedLimitInformation = 9  # noqa: N806
 
-            class _JobjBasicLimit(ctypes.Structure):  # type: ignore[misc]
+            class _JobBasicLimit(ctypes.Structure):  # type: ignore[misc]
                 _fields_: ClassVar[list[tuple[str, Any]]] = [
                     ("PerProcessUserTimeLimit", ctypes.c_int64),
                     ("PerJobUserTimeLimit", ctypes.c_int64),
@@ -268,9 +268,9 @@ class IsolationAdapter:
                     ("OtherTransferCount", ctypes.c_uint64),
                 ]
 
-            class _JobjExtLimit(ctypes.Structure):  # type: ignore[misc]
+            class _JobExtLimit(ctypes.Structure):  # type: ignore[misc]
                 _fields_: ClassVar[list[tuple[str, Any]]] = [
-                    ("BasicLimitInformation", _JobjBasicLimit),
+                    ("BasicLimitInformation", _JobBasicLimit),
                     ("IoInfo", _IoCounters),
                     ("ProcessMemoryLimit", ctypes.c_size_t),
                     ("JobMemoryLimit", ctypes.c_size_t),
@@ -279,7 +279,7 @@ class IsolationAdapter:
                 ]
 
             mem_bytes = self._config.max_memory_mb * 1024 * 1024
-            info = _JobjExtLimit()
+            info = _JobExtLimit()
             info.BasicLimitInformation.LimitFlags = (
                 JOB_OBJECT_LIMIT_PROCESS_MEMORY | JOB_OBJECT_LIMIT_JOB_MEMORY
             )
