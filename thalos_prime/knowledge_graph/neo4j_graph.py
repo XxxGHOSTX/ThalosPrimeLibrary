@@ -50,7 +50,9 @@ class CypherQueryDict(TypedDict, total=False):
     stay required while allowing other filters to remain optional. The project
     targets Python 3.12+, where Required with total=False is supported. With
     total=False, any field not marked Required is treated as optional by type
-    checkers, which is intentional for optional query filters.
+    checkers, which is intentional for optional query filters. Runtime creation
+    of these dictionaries does not perform validation of optional keys; consumers
+    must tolerate their absence and apply defaults as needed.
     """
 
     operation: Required[Literal["match_nodes", "match_relationships", "shortest_path", "neighbors"]]

@@ -326,8 +326,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
 
         for var in variables:
             if var.sort == VariableSort.INT:
-                # z3.Int returns an ArithRef subtype, but mypy cannot infer that
-                # relationship, so we cast to make subsequent bound checks type-safe.
+                # z3.Int returns an ArithRef subtype at runtime; mypy cannot infer that
+                # relationship, so we cast to make subsequent bound checks type-safe
+                # without affecting runtime behavior.
                 z3_var = cast(z3.ArithRef, z3.Int(var.name))
             elif var.sort == VariableSort.REAL:
                 z3_var = cast(z3.ArithRef, z3.Real(var.name))
@@ -361,7 +362,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
 
         Notes:
             Python boolean literals are converted to ``BoolVal`` to keep solver
-            interactions deterministic when expressions reduce to constants. The
+            interactions deterministic when expressions reduce to constants (so
+            solver state and checkpoints remain Z3-native rather than Python
+            primitives). The
             ``allow_arith`` flag should be set to True only when parsing
             objective expressions that legitimately produce arithmetic terms.
 

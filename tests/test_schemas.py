@@ -23,7 +23,7 @@ def _load_schema(name: str, root: Path | None = None) -> dict[str, Any]:
 
 
 def test_load_schema_rejects_non_object(tmp_path: Path) -> None:
-    """Non-object schemas are rejected."""
+    """Schemas must be JSON objects to keep downstream validation consistent."""
     schemas_dir = tmp_path / "schemas"
     schemas_dir.mkdir()
     invalid = schemas_dir / "invalid.schema.json"
