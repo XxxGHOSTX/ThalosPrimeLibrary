@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, TypedDict
 
 import networkx as nx
 
@@ -24,6 +24,35 @@ logger = logging.getLogger(__name__)
 
 # Safe label/type pattern: alphanumeric + underscores only
 _LABEL_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+class NodeRecordDict(TypedDict):
+    """Serialized representation of a node record."""
+
+    node_id: str
+    labels: list[str]
+    properties: dict[str, object]
+
+
+class RelationshipRecordDict(TypedDict):
+    """Serialized representation of a relationship record."""
+
+    source_id: str
+    target_id: str
+    rel_type: str
+    properties: dict[str, object]
+
+
+class CypherQueryDict(TypedDict):
+    """Serialized representation of a Cypher query."""
+
+    operation: Literal["match_nodes", "match_relationships", "shortest_path", "neighbors"]
+    node_label: str
+    rel_type: str
+    source_id: str
+    target_id: str
+    properties: dict[str, object]
+    limit: int
 
 
 @dataclass
@@ -41,7 +70,7 @@ class NodeRecord:
     labels: set[str] = field(default_factory=set)
     properties: dict[str, object] = field(default_factory=dict)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> NodeRecordDict:
         """Serialize node to dictionary.
 
         Returns:
@@ -72,7 +101,7 @@ class RelationshipRecord:
     rel_type: str
     properties: dict[str, object] = field(default_factory=dict)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> RelationshipRecordDict:
         """Serialize relationship to dictionary.
 
         Returns:
@@ -110,7 +139,7 @@ class CypherQuery:
     properties: dict[str, object] = field(default_factory=dict)
     limit: int = 100
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> CypherQueryDict:
         """Serialize query to dictionary.
 
         Returns:

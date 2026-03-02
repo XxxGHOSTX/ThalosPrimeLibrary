@@ -14,7 +14,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, TypedDict, cast
 
 import z3
 
@@ -35,6 +35,32 @@ class VariableSort(StrEnum):
     BOOL = "bool"
 
 
+class VariableDeclarationDict(TypedDict, total=False):
+    """Serialized representation of a variable declaration."""
+
+    name: str
+    sort: str
+    lower_bound: float
+    upper_bound: float
+
+
+class ConstraintSetDict(TypedDict):
+    """Serialized representation of a constraint set."""
+
+    name: str
+    variables: list[VariableDeclarationDict]
+    constraints: list[str]
+
+
+class SymbolicSolutionDict(TypedDict, total=False):
+    """Serialized representation of a symbolic solution."""
+
+    satisfiable: bool
+    model: dict[str, str]
+    message: str
+    objective_value: str
+
+
 @dataclass
 class VariableDeclaration:
     """Declaration for a symbolic variable with optional bounds.
@@ -52,14 +78,14 @@ class VariableDeclaration:
     lower_bound: float | None = None
     upper_bound: float | None = None
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> VariableDeclarationDict:
         """Serialize to dictionary.
 
         Returns:
             Dictionary representation of this declaration.
 
         """
-        result: dict[str, object] = {"name": self.name, "sort": self.sort.value}
+        result: VariableDeclarationDict = {"name": self.name, "sort": self.sort.value}
         if self.lower_bound is not None:
             result["lower_bound"] = self.lower_bound
         if self.upper_bound is not None:
@@ -82,7 +108,7 @@ class ConstraintSet:
     variables: list[VariableDeclaration] = field(default_factory=list)
     constraints: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> ConstraintSetDict:
         """Serialize to dictionary.
 
         Returns:
@@ -136,14 +162,14 @@ class SymbolicSolution:
     objective_value: str | None = None
     message: str = ""
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> SymbolicSolutionDict:
         """Serialize to dictionary.
 
         Returns:
             Dictionary representation of this solution.
 
         """
-        result: dict[str, object] = {
+        result: SymbolicSolutionDict = {
             "satisfiable": self.satisfiable,
             "model": dict(self.model),
             "message": self.message,
@@ -290,9 +316,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
 
         for var in variables:
             if var.sort == VariableSort.INT:
-                z3_var = z3.Int(var.name)
+                z3_var = cast("z3.ArithRef", z3.Int(var.name))
             elif var.sort == VariableSort.REAL:
-                z3_var = z3.Real(var.name)
+                z3_var = cast("z3.ArithRef", z3.Real(var.name))
             elif var.sort == VariableSort.BOOL:
                 z3_var = z3.Bool(var.name)
             else:
@@ -300,10 +326,11 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
                 raise ValueError(msg)
             z3_vars[var.name] = z3_var
 
-            if var.lower_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var >= var.lower_bound)  # type: ignore[operator]
-            if var.upper_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var <= var.upper_bound)  # type: ignore[operator]
+            if isinstance(z3_var, z3.ArithRef):
+                if var.lower_bound is not None:
+                    bounds.append(z3_var >= var.lower_bound)
+                if var.upper_bound is not None:
+                    bounds.append(z3_var <= var.upper_bound)
 
         return z3_vars, bounds
 
@@ -336,7 +363,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             logger.warning("Cannot parse constraint %r: %s", constraint_str, exc)
             return None
         else:
-            return result  # type: ignore[return-value]
+            if isinstance(result, bool):
+                return z3.BoolVal(result)
+            return cast(z3.BoolRef, result)
 
     def solve(self, constraint_set: ConstraintSet) -> SymbolicSolution:
         """Solve a constraint satisfaction problem.

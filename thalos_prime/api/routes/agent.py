@@ -16,6 +16,7 @@ from thalos_prime.constraints.symbolic_engine import (
     OptimizationObjective,
     SymbolicConstraintEngine,
     SymbolicSolution,
+    SymbolicSolutionDict,
     VariableDeclaration,
     VariableSort,
 )
@@ -23,7 +24,9 @@ from thalos_prime.knowledge_graph.neo4j_graph import (
     CypherQuery,
     Neo4jKnowledgeGraph,
     NodeRecord,
+    NodeRecordDict,
     RelationshipRecord,
+    RelationshipRecordDict,
 )
 from thalos_prime.planning.mcts_planner import MCTSPlanner
 
@@ -114,7 +117,7 @@ async def create_graph_node(
     node_id: str,
     labels: list[str] | None = None,
     properties: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> NodeRecordDict:
     """Create a labeled node in the knowledge graph."""
     graph = _get_graph()
     record = NodeRecord(
@@ -130,7 +133,7 @@ async def create_graph_node(
 
 
 @router.get("/graph/nodes/{node_id}")
-async def get_graph_node(node_id: str) -> dict[str, Any]:
+async def get_graph_node(node_id: str) -> NodeRecordDict:
     """Retrieve a node from the knowledge graph."""
     graph = _get_graph()
     record = graph.get_node(node_id)
@@ -155,7 +158,7 @@ async def create_graph_relationship(
     target_id: str,
     rel_type: str,
     properties: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> RelationshipRecordDict:
     """Create a typed relationship between two nodes."""
     graph = _get_graph()
     record = RelationshipRecord(
@@ -265,7 +268,7 @@ async def solve_constraints(
     name: str,
     variables: list[dict[str, Any]],
     constraints: list[str],
-) -> dict[str, Any]:
+) -> SymbolicSolutionDict:
     """Solve a constraint satisfaction problem."""
     engine = _get_engine()
     var_decls = _parse_variable_declarations(variables)
@@ -281,7 +284,7 @@ async def optimize_constraints(
     constraints: list[str],
     objective_expression: str,
     objective_direction: str = "minimize",
-) -> dict[str, Any]:
+) -> SymbolicSolutionDict:
     """Solve a constraint optimization problem."""
     if objective_direction not in {"minimize", "maximize"}:
         raise HTTPException(

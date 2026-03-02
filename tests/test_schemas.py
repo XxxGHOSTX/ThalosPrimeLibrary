@@ -4,14 +4,19 @@ Schema presence and sanity checks.
 
 import json
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).parent.parent
 
 
-def _load_schema(name: str) -> dict:
+def _load_schema(name: str) -> dict[str, Any]:
     path = ROOT / "schemas" / name
     with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        msg = f"Schema {name!r} must be a JSON object"
+        raise ValueError(msg)
+    return data
 
 
 def test_hdr_schema_required_fields() -> None:
@@ -36,4 +41,3 @@ def test_execution_graph_schema_minimum_shape() -> None:
     node_props = schema["properties"]["nodes"]["items"]["properties"]
     assert {"node_id", "type"}.issubset(node_props.keys())
     assert schema["properties"]["metadata"]["properties"]["provenance"]["type"] == "object"
-
