@@ -71,3 +71,4 @@ data/*
 # Lock files
 .thalos_prime.lock
 __pycache__
+nexus_runs/
