@@ -47,7 +47,8 @@ class CypherQueryDict(TypedDict, total=False):
     """Serialized representation of a Cypher query.
 
     Uses total=False with Required[...] so common fields (operation, limit)
-    stay required while allowing other filters to remain optional.
+    stay required while allowing other filters to remain optional. The project
+    targets Python 3.12+, where Required with total=False is supported.
     """
 
     operation: Required[Literal["match_nodes", "match_relationships", "shortest_path", "neighbors"]]

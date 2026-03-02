@@ -3,7 +3,6 @@ Schema presence and sanity checks.
 """
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,8 +11,9 @@ import pytest
 ROOT = Path(__file__).parent.parent
 
 
-def _load_schema(name: str) -> dict[str, Any]:
-    path = ROOT / "schemas" / name
+def _load_schema(name: str, root: Path | None = None) -> dict[str, Any]:
+    base = root if root is not None else ROOT
+    path = base / "schemas" / name
     with path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
     if not isinstance(data, dict):
@@ -22,15 +22,14 @@ def _load_schema(name: str) -> dict[str, Any]:
     return data
 
 
-def test_load_schema_rejects_non_object(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_schema_rejects_non_object(tmp_path: Path) -> None:
     """Non-object schemas are rejected."""
     schemas_dir = tmp_path / "schemas"
     schemas_dir.mkdir()
     invalid = schemas_dir / "invalid.schema.json"
     invalid.write_text("[]", encoding="utf-8")
-    monkeypatch.setattr(sys.modules[__name__], "ROOT", tmp_path)
     with pytest.raises(ValueError, match="must be a JSON object"):
-        _load_schema("invalid.schema.json")
+        _load_schema("invalid.schema.json", root=tmp_path)
 
 
 def test_hdr_schema_required_fields() -> None:

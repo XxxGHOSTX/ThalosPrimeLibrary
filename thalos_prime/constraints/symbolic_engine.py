@@ -324,6 +324,7 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
 
         for var in variables:
             if var.sort == VariableSort.INT:
+                # Explicit cast keeps mypy satisfied when attaching numeric bounds.
                 z3_var = cast(z3.ArithRef, z3.Int(var.name))
             elif var.sort == VariableSort.REAL:
                 z3_var = cast(z3.ArithRef, z3.Real(var.name))
@@ -354,6 +355,10 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             constraint_str: The constraint expression string.
             z3_vars: Mapping of variable names to Z3 references.
             allow_arith: Whether arithmetic expressions are permitted (for objectives).
+
+        Notes:
+            Python boolean literals are converted to ``BoolVal`` to keep solver
+            interactions deterministic when expressions reduce to constants.
 
         Returns:
             Z3 boolean expression, or None if parsing failed.
@@ -406,6 +411,12 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
 
         for constraint_str in constraint_set.constraints:
             expr = self._parse_constraint(constraint_str, z3_vars)
+            if expr is None:
+                return SymbolicSolution(
+                    satisfiable=False,
+                    model={},
+                    message=f"Failed to parse constraint: {constraint_str!r}",
+                )
             if not isinstance(expr, z3.BoolRef):
                 return SymbolicSolution(
                     satisfiable=False,
@@ -468,6 +479,12 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             optimizer.add(expr)
 
         obj_expr = self._parse_constraint(objective.expression, z3_vars, allow_arith=True)
+        if obj_expr is None:
+            return SymbolicSolution(
+                satisfiable=False,
+                model={},
+                message=f"Failed to parse objective: {objective.expression!r}",
+            )
         if not isinstance(obj_expr, z3.ArithRef):
             return SymbolicSolution(
                 satisfiable=False,
