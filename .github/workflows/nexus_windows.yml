@@ -22,8 +22,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install package with nexus extras
-        run: pip install -e ".[nexus]"
+      - name: Install package with nexus and dev extras
+        run: pip install -e ".[dev,nexus]"
 
       - name: Verify CLI help
         run: python -m thalos_nexus.cli --help
