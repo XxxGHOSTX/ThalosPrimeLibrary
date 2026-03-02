@@ -10,12 +10,10 @@ import hashlib
 import json
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # nucleus.determinism
@@ -237,7 +235,11 @@ class TestReplayVerifier:
     def _build_valid_run(self, run_dir: Path) -> Path:
         """Build a minimal valid run directory and return the manifest path."""
         from thalos_nexus.nucleus.artifacts import ArtifactStore
-        from thalos_nexus.nucleus.determinism import EventLogWriter, compute_config_hash, compute_run_id
+        from thalos_nexus.nucleus.determinism import (
+            EventLogWriter,
+            compute_config_hash,
+            compute_run_id,
+        )
 
         store = ArtifactStore(run_dir)
 

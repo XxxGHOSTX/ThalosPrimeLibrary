@@ -223,6 +223,12 @@ ignore_missing_imports = true
     "PT011",
     # 0.0.0.0 bind address in test assertions for serve subcommand
     "S104",
+    # stdlib Path/Any used as pytest fixture type annotations - not TYPE_CHECKING-only
+    "TC003",
+    # subprocess calls in CLI smoke tests are controlled (sys.executable + known args)
+    "S603",
+    # unpacked variable intentionally unused in write_* return value tests
+    "RUF059",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
