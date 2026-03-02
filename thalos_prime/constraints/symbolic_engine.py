@@ -316,9 +316,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
 
         for var in variables:
             if var.sort == VariableSort.INT:
-                z3_var = cast("z3.ArithRef", z3.Int(var.name))
+                z3_var = cast(z3.ArithRef, z3.Int(var.name))
             elif var.sort == VariableSort.REAL:
-                z3_var = cast("z3.ArithRef", z3.Real(var.name))
+                z3_var = cast(z3.ArithRef, z3.Real(var.name))
             elif var.sort == VariableSort.BOOL:
                 z3_var = z3.Bool(var.name)
             else:
