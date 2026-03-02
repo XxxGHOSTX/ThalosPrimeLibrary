@@ -18,13 +18,17 @@ during isolated `evolve` runs.
 ### 1. Install the package
 
 ```powershell
-pip install -e ".[nexus]"
+pip install -e ".[dev,nexus]"
 ```
 
-The `nexus` extra installs:
+The `dev,nexus` extras install:
 
 - `jsonschema>=4.21.0` — manifest schema validation
 - `cryptography>=42.0.0` — ed25519 key generation and signing
+- `ruff`, `mypy` — required by the static-analysis gate
+- `pytest`, `hypothesis` — required by the acceptance and property-tests gates
+- `pip-audit` — required by the security gate
+- `mutmut` — required by the mutation-tests gate
 
 ### 2. Verify the installation
 
@@ -94,7 +98,8 @@ python -m thalos_nexus.cli evolve `
 
 On Windows, the `IsolationAdapter` is activated automatically, running gate
 subprocesses inside ephemeral workspaces with Job Object limits and firewall
-network-egress blocking.
+network-egress blocking.  On non-Windows platforms the `evolve` command
+exits immediately with a non-zero exit code.
 
 ### replay
 
@@ -176,7 +181,7 @@ the chain and is reported as an error.
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `WindowsRequiredError` | Running `evolve` on Linux/macOS | Use Windows 10+ or set `--target-dir` and skip isolation manually |
+| `WindowsRequiredError` | Running `evolve` on Linux/macOS | Run `evolve` on Windows 10+ (or in a Windows VM); the `evolve` command requires Windows for isolation and is not supported on other platforms |
 | `CreateJobObjectW returned NULL` | Insufficient privilege | Run as Administrator |
 | `cyclonedx-py unavailable` | Tool not installed | `pip install cyclonedx-bom`; otherwise the minimal fallback SBOM is used |
 | `Signature verification failed` | Wrong `--key` value | Retrieve the correct public key hex from the key directory |

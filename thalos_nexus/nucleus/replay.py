@@ -9,6 +9,7 @@ Control Plane boundary: read-only verification — no write side-effects.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -22,6 +23,11 @@ _SCHEMA_PATH = Path(__file__).parent.parent / "schemas" / "repro_manifest.schema
 def _load_schema() -> dict[str, Any]:
     """Load the repro_manifest JSON Schema from the schemas directory."""
     return json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def _digest_file(path: Path) -> str:
+    """Return the SHA-256 hex digest of the file at *path*."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 class ReplayVerifier:
@@ -38,7 +44,8 @@ class ReplayVerifier:
 
         1. Load and JSON-Schema-validate ``repro_manifest.json``.
         2. For every artifact reference in ``manifest["artifacts"]``, confirm
-           the file exists under *artifacts_dir* and its SHA-256 matches.
+           the relative path is safe (does not escape *artifacts_dir*), the
+           file exists, and its SHA-256 matches.
         3. Verify the event-log hash chain via :class:`~.determinism.EventLogVerifier`.
 
         Args:
@@ -50,7 +57,6 @@ class ReplayVerifier:
             A list of error strings.  An empty list means all checks passed.
 
         """
-        from thalos_nexus.nucleus.artifacts import ArtifactStore
         from thalos_nexus.nucleus.determinism import EventLogVerifier
 
         errors: list[str] = []
@@ -67,26 +73,44 @@ class ReplayVerifier:
         errors.extend(schema_errors)
 
         artifacts: dict[str, Any] = manifest.get("artifacts", {})
-        store = ArtifactStore(artifacts_dir)
+        artifacts_root = artifacts_dir.resolve()
 
         for artifact_name, ref in artifacts.items():
             if not isinstance(ref, dict):
                 errors.append(f"Artifact '{artifact_name}': invalid reference (not an object)")
                 continue
-            rel_path: str = ref.get("path", "")
-            expected_sha: str = ref.get("sha256", "")
-            artifact_file = artifacts_dir / rel_path
-            if not artifact_file.exists():
-                errors.append(f"Artifact '{artifact_name}': file not found: {artifact_file}")
+
+            rel_path_value: Any = ref.get("path")
+            if not isinstance(rel_path_value, str) or not rel_path_value:
+                errors.append(
+                    f"Artifact '{artifact_name}': invalid or missing 'path' field"
+                )
                 continue
-            actual_sha = store.digest_file(artifact_file)
+
+            expected_sha: str = ref.get("sha256", "")
+
+            # Resolve path safely — reject traversal outside artifacts_root.
+            candidate = (artifacts_root / rel_path_value).resolve()
+            if not str(candidate).startswith(str(artifacts_root)):
+                errors.append(
+                    f"Artifact '{artifact_name}': unsafe path outside artifact root: "
+                    f"{rel_path_value!r}"
+                )
+                continue
+
+            if not candidate.exists():
+                errors.append(f"Artifact '{artifact_name}': file not found: {candidate}")
+                continue
+
+            actual_sha = _digest_file(candidate)
             if actual_sha != expected_sha:
                 errors.append(
                     f"Artifact '{artifact_name}': SHA-256 mismatch — "
                     f"expected={expected_sha!r} actual={actual_sha!r}"
                 )
+
             if artifact_name == "event_log":
-                chain_errors = EventLogVerifier().verify(artifact_file)
+                chain_errors = EventLogVerifier().verify(candidate)
                 errors.extend(f"Event log chain error: {ce}" for ce in chain_errors)
 
         return errors
@@ -103,6 +127,7 @@ class ReplayVerifier:
 
         """
         from thalos_nexus.attest.signing import KeyPair
+        from thalos_nexus.nucleus.determinism import canonical_json
 
         errors: list[str] = []
 
@@ -120,9 +145,6 @@ class ReplayVerifier:
 
         sig_hex: str = sig_block.get("signature_hex", "")
         manifest_without_sig = {k: v for k, v in manifest.items() if k != "signature"}
-
-        from thalos_nexus.nucleus.determinism import canonical_json
-
         payload = canonical_json(manifest_without_sig)
 
         ok = KeyPair.verify(payload, sig_hex, public_key_hex)

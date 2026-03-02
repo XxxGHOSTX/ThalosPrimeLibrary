@@ -54,6 +54,8 @@ dev = [
     "networkx>=3.0",
     "hypothesis>=6.100.0",
     "mutmut>=2.4.0",
+    "jsonschema>=4.21.0",
+    "cryptography>=42.0.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -291,14 +293,12 @@ ignore_missing_imports = true
     "PLR2004",
 ]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
-"thalos_nexus/cli.py" = ["T201"]
-"thalos_nexus/gates.py" = ["S603", "S607"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
 "thalos_prime/lob_babel_generator.py" = ["PLC0415", "SLF001", "D205", "D401"]
 "thalos_prime/lob_babel_enumerator.py" = ["PLR2004", "PLW2901", "D205", "D401"]
 "thalos_nexus/**/*.py" = ["PLC0415", "TRY003", "EM101", "EM102", "TC003"]
-"thalos_nexus/cli.py" = ["PLC0415", "TRY003", "EM101", "T201", "S603", "S607", "FBT001"]
+"thalos_nexus/cli.py" = ["PLC0415", "TRY003", "EM101", "T201", "S603", "S607", "FBT001", "PLR0915"]
 "thalos_nexus/tools/gates.py" = ["S603", "S607", "T201"]
 "thalos_nexus/lysosome/windows_adapter.py" = ["S603", "S607", "ANN401", "N801", "FBT003", "TRY300"]
 "thalos_nexus/attest/sbom.py" = ["S603", "S607"]

@@ -48,17 +48,21 @@ class KeyPair:
 
     @classmethod
     def load(cls, path: Path) -> KeyPair:
-        """Load a key pair from PEM files at *path*/private.pem and *path*/public.pem.
+        """Load a key pair from the private key PEM file at *path*/private.pem.
+
+        The public key is derived from the private key; ``public.pem`` is not
+        read (it is written by :meth:`save` for external consumers but is not
+        required here).
 
         Args:
-            path: Directory containing ``private.pem`` and ``public.pem``.
+            path: Directory containing ``private.pem``.
 
         Returns:
-            :class:`KeyPair` loaded from the PEM files.
+            :class:`KeyPair` loaded from the private PEM file.
 
         Raises:
-            FileNotFoundError: If the PEM files do not exist.
-            ValueError: If the key files cannot be parsed.
+            FileNotFoundError: If ``private.pem`` does not exist.
+            TypeError: If the key file does not contain an Ed25519 private key.
 
         """
         private_pem = (path / "private.pem").read_bytes()

@@ -11,6 +11,6 @@
     "event_type": {"type": "string", "minLength": 1},
     "payload": {"type": "object"},
     "chain_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "prev_hash": {"type": "string"}
+    "prev_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   }
 }

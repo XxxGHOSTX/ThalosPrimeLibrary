@@ -1,0 +1,24 @@
+{
+  "artifacts": {
+    "event_log": {
+      "path": "event_log.jsonl",
+      "sha256": "b82bf1b8f3f4dd3a14c181a1bf866fb7bd5f36859d51233f6a98e7d977b1bc1f"
+    },
+    "gate_results": {
+      "path": "gate_results.json",
+      "sha256": "88ad27ac0f06d2970f378a35d3e5abb48b1e7e45ea00aed5b55109cf1e83ac30"
+    }
+  },
+  "config_hash": "8f416cc4248fd27820ca8e0c4febf6d1c40e0ea22fd53d0fba51ec0de36dfe60",
+  "genome_hash": "abc",
+  "run_id": "a7cee7f0ae6c6acd6aff48a22a2169930f8c5ab5cdbd2ea2d49949a25cd6d285",
+  "schema_version": "1.0.0",
+  "seed": 0,
+  "signature": {
+    "algorithm": "ed25519",
+    "public_key_hex": "fde2f0a527ef3ac4175d142ffc0badcf393273874a8be876de80af75ff4462e2",
+    "signature_hex": "81ed617d0a21ec3f6fa083ba05adeeda6543c74bcf264a9117daa332b9810fce6e2f7c9fa881c1a8710b7e4d00b1a7f94caafbf8587e9020ee59283e6164df08"
+  },
+  "task": "test",
+  "timestamp": "2026-03-02T22:50:13.140697+00:00"
+}

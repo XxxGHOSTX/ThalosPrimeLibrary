@@ -1,4 +1,4 @@
-"""Allow ``python -m thalos_nexus.cli`` execution."""
+"""Allow ``python -m thalos_nexus`` execution."""
 
 from __future__ import annotations
 

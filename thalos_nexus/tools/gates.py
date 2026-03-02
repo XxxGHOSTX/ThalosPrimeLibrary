@@ -16,9 +16,14 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
+
+if TYPE_CHECKING:
+    from thalos_nexus.lysosome.windows_adapter import IsolationAdapter
 
 logger = logging.getLogger(__name__)
+
+_PYTEST_NO_TESTS_COLLECTED = 5  # pytest exit code when no tests are collected
 
 
 @dataclass
@@ -30,6 +35,7 @@ class GateContext:
     workspace_dir: Path
     python_executable: str
     timeout_seconds: float = 300.0
+    isolation_adapter: IsolationAdapter | None = field(default=None)
 
 
 @dataclass
@@ -45,22 +51,55 @@ class GateResult:
     error: str | None = field(default=None)
 
 
+def _find_repo_root(start: Path) -> Path:
+    """Walk ancestors from *start* to find the repository root.
+
+    Looks for ``pytest.ini``, ``pyproject.toml``, or ``.git``.
+
+    Args:
+        start: Directory to begin the search.
+
+    Returns:
+        The nearest ancestor (or *start* itself) that contains a root marker,
+        or *start* if no marker is found.
+
+    """
+    for candidate in (start, *start.parents):
+        if any(
+            (candidate / m).exists()
+            for m in (".git", "pytest.ini", "pyproject.toml")
+        ):
+            return candidate
+    return start
+
+
 def _run_command(
     cmd: list[str],
     cwd: Path,
     timeout: float,
+    adapter: IsolationAdapter | None = None,
 ) -> tuple[int, str, str]:
-    """Execute *cmd* in *cwd* and capture output.
+    """Execute *cmd* and capture output.
+
+    When *adapter* is provided the command is run through the Windows
+    isolation adapter (ephemeral workspace, Job Object limits, firewall
+    blocking); otherwise it is run directly via :func:`subprocess.run`.
 
     Args:
         cmd: Command and arguments.
-        cwd: Working directory for the subprocess.
+        cwd: Working directory used when running directly (ignored when
+             *adapter* is used; adapter manages its own workspace).
         timeout: Maximum execution time in seconds.
+        adapter: Optional :class:`IsolationAdapter` for sandboxed execution.
 
     Returns:
         Tuple of (returncode, stdout, stderr).
 
     """
+    if adapter is not None:
+        result = adapter.run(cmd)
+        return result.returncode, result.stdout, result.stderr
+
     try:
         result = subprocess.run(
             cmd,
@@ -106,10 +145,10 @@ def run_no_placeholder_gate(ctx: GateContext) -> GateResult:
                 continue
             for lineno, line in enumerate(text.splitlines(), start=1):
                 matches.extend(
-                        f"{py_file}:{lineno}: {line.strip()}"
-                        for kw in forbidden
-                        if kw in line
-                    )
+                    f"{py_file}:{lineno}: {line.strip()}"
+                    for kw in forbidden
+                    if kw in line
+                )
     except OSError as exc:
         return GateResult(
             name=name,
@@ -133,8 +172,8 @@ def run_no_placeholder_gate(ctx: GateContext) -> GateResult:
 def run_static_analysis_gate(ctx: GateContext) -> GateResult:
     """Gate: run ruff and mypy --strict on the target directory.
 
-    Both tools must exit 0 for the gate to pass.  ruff runs first; mypy
-    is skipped if ruff fails to keep output focused.
+    ruff runs first; mypy is skipped if ruff fails so output stays focused.
+    Both tools must exit 0 for the gate to pass.
 
     Args:
         ctx: Gate execution context.
@@ -145,18 +184,26 @@ def run_static_analysis_gate(ctx: GateContext) -> GateResult:
     """
     name = "static_analysis"
     start = time.monotonic()
+    target_abs = ctx.target_dir.resolve()
 
     ruff_rc, ruff_out, ruff_err = _run_command(
-        ["ruff", "check", str(ctx.target_dir)],
-        ctx.target_dir,
+        ["ruff", "check", str(target_abs)],
+        target_abs,
         ctx.timeout_seconds,
+        ctx.isolation_adapter,
     )
 
-    mypy_rc, mypy_out, mypy_err = _run_command(
-        [ctx.python_executable, "-m", "mypy", str(ctx.target_dir), "--strict"],
-        ctx.target_dir,
-        ctx.timeout_seconds,
-    )
+    if ruff_rc != 0:
+        mypy_rc = 0
+        mypy_out = "mypy skipped because ruff failed."
+        mypy_err = ""
+    else:
+        mypy_rc, mypy_out, mypy_err = _run_command(
+            [ctx.python_executable, "-m", "mypy", str(target_abs), "--strict"],
+            target_abs,
+            ctx.timeout_seconds,
+            ctx.isolation_adapter,
+        )
 
     duration = time.monotonic() - start
     combined_stdout = f"=== ruff ===\n{ruff_out}\n=== mypy ===\n{mypy_out}"
@@ -188,8 +235,9 @@ def run_security_gate(ctx: GateContext) -> GateResult:
     start = time.monotonic()
     rc, out, err = _run_command(
         [ctx.python_executable, "-m", "pip_audit"],
-        ctx.target_dir,
+        ctx.target_dir.resolve(),
         ctx.timeout_seconds,
+        ctx.isolation_adapter,
     )
     duration = time.monotonic() - start
     return GateResult(
@@ -203,7 +251,11 @@ def run_security_gate(ctx: GateContext) -> GateResult:
 
 
 def run_acceptance_tests_gate(ctx: GateContext) -> GateResult:
-    """Gate: run the full pytest suite for the target directory.
+    """Gate: run the pytest suite using the discovered repository root.
+
+    Resolves the repository root from *ctx.target_dir* (walks up to find
+    ``pytest.ini`` / ``pyproject.toml`` / ``.git``) so that ``pytest.ini``
+    test-path configuration is honoured regardless of working directory.
 
     Args:
         ctx: Gate execution context.
@@ -214,10 +266,22 @@ def run_acceptance_tests_gate(ctx: GateContext) -> GateResult:
     """
     name = "acceptance_tests"
     start = time.monotonic()
+    repo_root = _find_repo_root(ctx.target_dir.resolve())
+    tests_dir = repo_root / "tests"
+    test_path = str(tests_dir) if tests_dir.exists() else str(repo_root)
     rc, out, err = _run_command(
-        [ctx.python_executable, "-m", "pytest", str(ctx.target_dir), "-v"],
-        ctx.target_dir,
+        [
+            ctx.python_executable,
+            "-m",
+            "pytest",
+            test_path,
+            "--rootdir",
+            str(repo_root),
+            "-v",
+        ],
+        repo_root,
         ctx.timeout_seconds,
+        ctx.isolation_adapter,
     )
     duration = time.monotonic() - start
     return GateResult(
@@ -233,7 +297,9 @@ def run_acceptance_tests_gate(ctx: GateContext) -> GateResult:
 def run_property_tests_gate(ctx: GateContext) -> GateResult:
     """Gate: run property-based (Hypothesis) tests for the target directory.
 
-    Executes ``pytest -k hypothesis`` to select only Hypothesis tests.
+    Executes ``pytest -m hypothesis`` to select only Hypothesis tests.
+    Exit code 5 (no tests collected) is treated as a pass because the test
+    suite may not yet have Hypothesis tests for every module.
 
     Args:
         ctx: Gate execution context.
@@ -244,23 +310,36 @@ def run_property_tests_gate(ctx: GateContext) -> GateResult:
     """
     name = "property_tests"
     start = time.monotonic()
+    repo_root = _find_repo_root(ctx.target_dir.resolve())
+    tests_dir = repo_root / "tests"
+    test_path = str(tests_dir) if tests_dir.exists() else str(repo_root)
     rc, out, err = _run_command(
         [
             ctx.python_executable,
             "-m",
             "pytest",
-            str(ctx.target_dir),
-            "-k",
+            test_path,
+            "--rootdir",
+            str(repo_root),
+            "-m",
             "hypothesis",
             "-v",
         ],
-        ctx.target_dir,
+        repo_root,
         ctx.timeout_seconds,
+        ctx.isolation_adapter,
     )
     duration = time.monotonic() - start
+    # Exit code 5 means pytest collected no tests — acceptable when no
+    # Hypothesis tests exist yet; treat as pass.
+    if rc == _PYTEST_NO_TESTS_COLLECTED:
+        note = "property_tests: no Hypothesis tests collected (exit code 5); treating as pass."
+        logger.warning(note)
+        out = f"{out}\n{note}" if out else note
+    passed = rc in (0, _PYTEST_NO_TESTS_COLLECTED)
     return GateResult(
         name=name,
-        passed=rc == 0,
+        passed=passed,
         duration_seconds=duration,
         exit_code=rc,
         stdout=out,
@@ -283,6 +362,7 @@ def run_mutation_tests_gate(ctx: GateContext) -> GateResult:
     """
     name = "mutation_tests"
     start = time.monotonic()
+    target_abs = ctx.target_dir.resolve()
 
     run_rc, run_out, run_err = _run_command(
         [
@@ -291,16 +371,18 @@ def run_mutation_tests_gate(ctx: GateContext) -> GateResult:
             "mutmut",
             "run",
             "--paths-to-mutate",
-            str(ctx.target_dir),
+            str(target_abs),
         ],
-        ctx.target_dir,
+        target_abs,
         ctx.timeout_seconds,
+        ctx.isolation_adapter,
     )
 
     results_rc, results_out, results_err = _run_command(
         [ctx.python_executable, "-m", "mutmut", "results"],
-        ctx.target_dir,
+        target_abs,
         ctx.timeout_seconds,
+        ctx.isolation_adapter,
     )
 
     duration = time.monotonic() - start

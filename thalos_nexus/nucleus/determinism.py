@@ -86,9 +86,13 @@ class EventLogWriter:
 
     Each entry's ``chain_hash`` is the SHA-256 of the concatenation of
     the previous entry's ``chain_hash`` bytes and the canonical JSON of
-    the current entry's *core* fields (seq, timestamp, event_type,
-    payload, prev_hash).  This produces a tamper-evident chain rooted at
-    :data:`GENESIS_PREV_HASH`.
+    the current entry's *deterministic core* fields (seq, event_type,
+    payload, prev_hash).  The wall-clock ``timestamp`` is stored in the
+    entry for audit purposes but is **not** included in the hash
+    computation, ensuring identical inputs produce identical chain hashes
+    regardless of when entries are written.
+
+    This produces a tamper-evident chain rooted at :data:`GENESIS_PREV_HASH`.
 
     Args:
         path: Path to the JSONL output file.  The file is created on first
@@ -106,6 +110,10 @@ class EventLogWriter:
     def append(self, event_type: str, payload: dict[str, Any]) -> str:
         """Append a new entry to the event log and return its chain_hash.
 
+        The chain_hash covers (seq, event_type, payload, prev_hash) only;
+        the timestamp is recorded separately and does not affect the hash,
+        preserving replay determinism across runs.
+
         Args:
             event_type: Non-empty event type string.
             payload: Arbitrary JSON-serialisable payload mapping.
@@ -121,9 +129,9 @@ class EventLogWriter:
             raise ValueError("event_type must be a non-empty string")
 
         timestamp = datetime.now(UTC).isoformat()
+        # Deterministic core — this is what's hashed (no wall-clock timestamp).
         entry_core: dict[str, Any] = {
             "seq": self._seq,
-            "timestamp": timestamp,
             "event_type": event_type,
             "payload": payload,
             "prev_hash": self._prev_hash,
@@ -131,7 +139,15 @@ class EventLogWriter:
         chain_input = self._prev_hash.encode() + canonical_json(entry_core)
         chain_hash = compute_sha256(chain_input)
 
-        entry: dict[str, Any] = {**entry_core, "chain_hash": chain_hash}
+        # Full entry written to file also includes the wall-clock timestamp.
+        entry: dict[str, Any] = {
+            "seq": self._seq,
+            "timestamp": timestamp,
+            "event_type": event_type,
+            "payload": payload,
+            "prev_hash": self._prev_hash,
+            "chain_hash": chain_hash,
+        }
 
         with self._path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
@@ -184,9 +200,11 @@ class EventLogVerifier:
                     continue
 
                 stored_chain = entry.get("chain_hash", "")
+                # Re-derive the chain_hash from the deterministic core
+                # (seq, event_type, payload, prev_hash) — matching how
+                # EventLogWriter produces it (timestamp excluded).
                 entry_core: dict[str, Any] = {
                     "seq": entry.get("seq"),
-                    "timestamp": entry.get("timestamp"),
                     "event_type": entry.get("event_type"),
                     "payload": entry.get("payload"),
                     "prev_hash": entry.get("prev_hash"),

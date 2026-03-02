@@ -35,10 +35,10 @@ jobs:
       - name: Ingest genome
         id: ingest
         run: |
-          $hash = python -m thalos_nexus.cli ingest-genome `
+          $hash = (python -m thalos_nexus.cli ingest-genome `
             --path test_genome.bin `
             --key-dir $env:RUNNER_TEMP\nexus_keys `
-            --out-dir nexus_runs
+            --out-dir nexus_runs).Trim()
           echo "genome_hash=$hash" >> $env:GITHUB_OUTPUT
 
       - name: Evolve

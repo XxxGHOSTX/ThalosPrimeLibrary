@@ -76,6 +76,7 @@ class IsolationAdapter:
         self,
         cmd: list[str],
         env: dict[str, str] | None = None,
+        run_id: str | None = None,
     ) -> IsolationResult:
         """Execute *cmd* inside an ephemeral workspace.
 
@@ -83,6 +84,8 @@ class IsolationAdapter:
             cmd: Command and arguments to execute.
             env: Optional environment variable overrides.  If ``None``, the
                  current process environment is used.
+            run_id: Optional deterministic run identifier used to construct the
+                    firewall rule name.  Defaults to a random UUID fragment.
 
         Returns:
             :class:`IsolationResult` with stdout, stderr, returncode, and
@@ -101,9 +104,10 @@ class IsolationAdapter:
         if not cmd:
             raise ValueError("cmd must be a non-empty list")
 
+        self._config.workspace_base.mkdir(parents=True, exist_ok=True)
         workspace = Path(tempfile.mkdtemp(dir=self._config.workspace_base, prefix="nexus_"))
-        run_id = str(uuid.uuid4())
-        rule_name = f"thalos_nexus_{run_id}_block"
+        rule_id = run_id[:16] if run_id is not None else uuid.uuid4().hex[:16]
+        rule_name = f"thalos_nexus_{rule_id}_block"
 
         try:
             return self._run_windows(cmd, env, workspace, rule_name)
@@ -162,9 +166,16 @@ class IsolationAdapter:
         )
 
     def _add_firewall_rule(self, rule_name: str, executable: str) -> None:
-        """Add a Windows Firewall outbound-block rule for *executable*."""
+        """Add a Windows Firewall outbound-block rule for *executable*.
+
+        Raises:
+            RuntimeError: If ``netsh`` exits non-zero, indicating the rule
+                          could not be added and network isolation is not
+                          enforced.
+
+        """
         try:
-            subprocess.run(
+            result = subprocess.run(
                 [
                     "netsh",
                     "advfirewall",
@@ -179,6 +190,15 @@ class IsolationAdapter:
                 check=False,
                 capture_output=True,
             )
+            if result.returncode != 0:
+                stderr = result.stderr.decode(errors="replace").strip()
+                logger.warning(
+                    "Firewall rule %r could not be added (exit %d: %s); "
+                    "network egress is NOT blocked for this run.",
+                    rule_name,
+                    result.returncode,
+                    stderr,
+                )
         except OSError as exc:
             logger.warning("Failed to add firewall rule %s: %s", rule_name, exc)
 
