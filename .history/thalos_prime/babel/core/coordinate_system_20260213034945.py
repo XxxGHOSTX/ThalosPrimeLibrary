@@ -1,0 +1,60 @@
+"""
+Deterministic coordinate mathematics for Babel responses.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from hashlib import sha256
+from typing import Final
+
+from .context_hasher import ContextHasher
+from .variational_coordinate_system import VariationalContext
+
+
+@dataclass(frozen=True)
+class Coordinate:
+    """Deterministic address for a generated response."""
+
+    seed: str
+    digest: str
+    variation_index: int
+
+    def as_string(self) -> str:
+        """Return canonical coordinate string representation."""
+        return f"{self.seed}:{self.digest}:{self.variation_index}"
+
+    def __str__(self) -> str:
+        return self.as_string()
+
+
+class CoordinateValidator:
+    """Validate coordinate integrity and structure."""
+
+    MIN_DIGEST_LENGTH: Final[int] = 16
+
+    @classmethod
+    def validate(cls, coordinate: Coordinate) -> bool:
+        digest = coordinate.digest
+        if len(digest) < cls.MIN_DIGEST_LENGTH:
+            return False
+        if not all(c in "0123456789abcdef" for c in digest):
+            return False
+        return coordinate.variation_index >= 0
+
+
+class DeterministicCoordinateDeriver:
+    """Derive deterministic coordinates from input context."""
+
+    def __init__(self, seed: str):
+        self.seed: Final[str] = seed
+
+    def derive(self, text: str, context: VariationalContext) -> Coordinate:
+        """Compute coordinate deterministically from text and context."""
+        normalized = ContextHasher.normalize_text(text)
+        digest_source = f"{self.seed}|{normalized}|{context.session_id}|{context.turn_index}|{context.variation_index}"
+        digest = sha256(digest_source.encode("utf-8")).hexdigest()
+        coordinate = Coordinate(seed=self.seed, digest=digest[:32], variation_index=context.variation_index)
+        if not CoordinateValidator.validate(coordinate):
+            raise ValueError("Invalid coordinate generated")
+        return coordinate

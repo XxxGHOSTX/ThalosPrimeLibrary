@@ -5,10 +5,16 @@ These models define the schema for all API endpoints.
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Any, ClassVar
+
+from pydantic import BaseModel, Field, field_validator
 from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
+
+class SearchMode(StrEnum):
+    """Search mode: local generation or remote fetch."""
 
 class SearchMode(StrEnum):
     """Search mode: local generation or remote fetch."""
@@ -47,7 +53,9 @@ class AddressInfo(BaseModel):
     url: str | None = Field(None, description="Full URL to page")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "hex_address": "abc123def456",
                 "wall": 1,
@@ -55,6 +63,7 @@ class AddressInfo(BaseModel):
                 "volume": 3,
                 "page": 4,
                 "url": "https://libraryofbabel.info/book.cgi?hex=abc123def456",
+            }
             },
         }
 
@@ -72,7 +81,9 @@ class CoherenceInfo(BaseModel):
     metrics: dict[str, Any] = Field(default_factory=dict, description="Additional metrics")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "overall_score": 75.5,
                 "language_score": 65.0,
@@ -81,6 +92,7 @@ class CoherenceInfo(BaseModel):
                 "exact_match_score": 100.0,
                 "confidence_level": "medium",
                 "metrics": {"word_count": 150, "sentence_count": 8},
+            }
             },
         }
 
@@ -97,7 +109,9 @@ class ProvenanceInfo(BaseModel):
     llm_provider: str | None = Field(None, description="LLM provider if used")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "address": "abc123",
                 "source": "local",
@@ -105,6 +119,7 @@ class ProvenanceInfo(BaseModel):
                 "timestamp": 1707768000.0,
                 "normalized": False,
                 "llm_provider": None,
+            }
             },
         }
 
@@ -121,13 +136,19 @@ class PageResult(BaseModel):
     normalized_text: str | None = Field(None, description="Normalized text if available")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                "address": {"hex_address": "abc123", "url": "https://libraryofbabel.info/book.cgi?hex=abc123"},
+                "address": {
+                    "hex_address": "abc123",
+                    "url": "https://libraryofbabel.info/book.cgi?hex=abc123",
+                },
                 "text": "the quick brown fox...",
                 "snippet": "the quick brown fox...",
                 "coherence": {"overall_score": 75.5, "confidence_level": "medium"},
                 "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0},
+            }
             },
         }
 
@@ -141,6 +162,13 @@ class ChatRequest(BaseModel):
     max_results: int = Field(default=5, ge=1, le=20, description="Maximum results to return")
     mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode")
 
+    @field_validator("message")
+    @classmethod
+    def message_not_empty(cls, v: str) -> str:
+        """Validate message is not empty."""
+        empty_message_error = "Message cannot be empty or whitespace only"
+        if not v.strip():
+            raise ValueError(empty_message_error)
     @validator("message")
     def message_not_empty(self, v: str) -> str:
         if not v.strip():
@@ -149,12 +177,15 @@ class ChatRequest(BaseModel):
         return v.strip()
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "message": "hello world",
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
                 "max_results": 5,
                 "mode": "hybrid",
+            }
             },
         }
 
@@ -168,12 +199,15 @@ class ChatResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "reply": "Found 5 results for your query...",
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
                 "results": [],
                 "metadata": {"query_time_ms": 150},
+            }
             },
         }
 
@@ -187,6 +221,13 @@ class SearchRequest(BaseModel):
     mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode")
     min_score: float = Field(default=0.0, ge=0, le=100, description="Minimum coherence score")
 
+    @field_validator("query")
+    @classmethod
+    def query_not_empty(cls, v: str) -> str:
+        """Validate query is not empty."""
+        empty_query_error = "Query cannot be empty or whitespace only"
+        if not v.strip():
+            raise ValueError(empty_query_error)
     @validator("query")
     def query_not_empty(self, v: str) -> str:
         if not v.strip():
@@ -195,12 +236,15 @@ class SearchRequest(BaseModel):
         return v.strip()
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "query": "the meaning of life",
                 "max_results": 10,
                 "mode": "hybrid",
                 "min_score": 40.0,
+            }
             },
         }
 
@@ -216,7 +260,9 @@ class SearchResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "query": "test query",
                 "results": [],
@@ -224,6 +270,7 @@ class SearchResponse(BaseModel):
                 "mode": "hybrid",
                 "cached": False,
                 "metadata": {"search_time_ms": 250},
+            }
             },
         }
 
@@ -234,6 +281,7 @@ class GenerateRequest(BaseModel):
 
     address: str | None = Field(None, description="Hex address to generate from")
     query: str | None = Field(None, description="Query to convert to address")
+    validate: bool = Field(default=True, description="Whether to validate generated page")
     validate_page: bool = Field(default=True, description="Whether to validate generated page", alias="validate")
 
     @validator("address", "query")
@@ -244,10 +292,13 @@ class GenerateRequest(BaseModel):
         return v
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "address": "abc123def456",
                 "validate": True,
+            }
             },
         }
 
@@ -261,12 +312,18 @@ class GenerateResponse(BaseModel):
     generation_time_ms: float = Field(..., description="Generation time in milliseconds")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                "address": {"hex_address": "abc123", "url": "https://libraryofbabel.info/book.cgi?hex=abc123"},
+                "address": {
+                    "hex_address": "abc123",
+                    "url": "https://libraryofbabel.info/book.cgi?hex=abc123",
+                },
                 "text": "generated page text...",
                 "valid": True,
                 "generation_time_ms": 0.5,
+            }
             },
         }
 
@@ -279,6 +336,13 @@ class EnumerateRequest(BaseModel):
     max_results: int = Field(default=10, ge=1, le=100, description="Maximum addresses")
     depth: int = Field(default=1, ge=1, le=10, description="Enumeration depth")
 
+    @field_validator("query")
+    @classmethod
+    def query_not_empty(cls, v: str) -> str:
+        """Validate query is not empty."""
+        empty_query_error = "Query cannot be empty or whitespace only"
+        if not v.strip():
+            raise ValueError(empty_query_error)
     @validator("query")
     def query_not_empty(self, v: str) -> str:
         if not v.strip():
@@ -287,11 +351,14 @@ class EnumerateRequest(BaseModel):
         return v.strip()
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "query": "hello world",
                 "max_results": 10,
                 "depth": 2,
+            }
             },
         }
 
@@ -305,7 +372,9 @@ class EnumerateResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "query": "hello world",
                 "addresses": [
@@ -313,6 +382,7 @@ class EnumerateResponse(BaseModel):
                 ],
                 "total_found": 10,
                 "metadata": {"enumeration_time_ms": 5.0},
+            }
             },
         }
 
@@ -324,15 +394,21 @@ class DecodeRequest(BaseModel):
     address: str = Field(..., description="Page address")
     text: str = Field(..., min_length=1, description="Page text to decode")
     query: str | None = Field(None, description="Query for relevance scoring")
+    normalization: NormalizationMode = Field(
+        default=NormalizationMode.HEURISTIC, description="Normalization mode"
+    )
     normalization: NormalizationMode = Field(default=NormalizationMode.HEURISTIC, description="Normalization mode")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "address": "abc123",
                 "text": "page text to analyze...",
                 "query": "test query",
                 "normalization": "heuristic",
+            }
             },
         }
 
@@ -347,12 +423,20 @@ class DecodeResponse(BaseModel):
     provenance: ProvenanceInfo = Field(..., description="Provenance information")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "address": {"hex_address": "abc123"},
                 "raw_text": "original text...",
                 "normalized_text": None,
                 "coherence": {"overall_score": 65.0, "confidence_level": "medium"},
+                "provenance": {
+                    "address": "abc123",
+                    "source": "local",
+                    "timestamp": 1707768000.0,
+                },
+            }
                 "provenance": {"address": "abc123", "source": "local", "timestamp": 1707768000.0},
             },
         }
@@ -368,11 +452,19 @@ class StatusResponse(BaseModel):
     features: dict[str, bool] = Field(default_factory=dict, description="Available features")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "status": "healthy",
                 "version": "1.0.0",
                 "uptime_seconds": 3600.0,
+                "features": {
+                    "local_generation": True,
+                    "remote_search": True,
+                    "llm_normalization": False,
+                },
+            }
                 "features": {"local_generation": True, "remote_search": True, "llm_normalization": False},
             },
         }
@@ -384,14 +476,21 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
     details: dict[str, Any] | None = Field(None, description="Additional error details")
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="Error timestamp"
+    )
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
 
     class Config:
-        json_schema_extra = {
+        """Pydantic configuration."""
+
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "error": "ValidationError",
                 "message": "Invalid request parameters",
                 "details": {"field": "query", "issue": "cannot be empty"},
                 "timestamp": "2026-02-12T20:00:00Z",
+            }
             },
         }
+

@@ -1,3 +1,9 @@
+# Core dependencies for Thalos Prime Library
+# Mirrors pyproject.toml runtime dependencies for compatibility
+pydantic>=2.0.0
+flask>=3.0.0
 sympy>=1.12
 z3-solver>=4.12.0
 networkx>=3.0
+fastapi>=0.115.0
+uvicorn>=0.30.0

@@ -34,6 +34,8 @@ from thalos_prime.models.db_models import (
 
 __all__ = [
     "AddressInfo",
+    "Base",
+    "CachedResult",
     # DB Models
     "Base",
     "CachedResult",

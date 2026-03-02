@@ -1,3 +1,10 @@
+# Files Index
+
+- Babel subsystem: see thalos_prime/babel/**/* for deterministic conversational pipeline.
+- Tests: tests/babel covers determinism, semantic preservation, orchestrator status.
+- Docs placeholders: START_HERE.txt (quick orientation), DELIVERY_SUMMARY.txt (status).
+
+Pending population: broader API/database/model modules remain to be implemented.
 # Thalos Prime Library — File Index
 
 Complete index of significant files in the Thalos Prime repository.

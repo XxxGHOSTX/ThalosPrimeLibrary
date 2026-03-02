@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:thalos-nexus:fitness:v1",
+  "title": "Fitness",
+  "type": "object",
+  "required": ["version", "global_floor", "thresholds"],
+  "properties": {
+    "version": {"type": "string"},
+    "global_floor": {"type": "number", "minimum": 0, "maximum": 100},
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": {"type": "number", "minimum": 0, "maximum": 100}
+    },
+    "ratchet": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}

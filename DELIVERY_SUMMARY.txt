@@ -1,5 +1,10 @@
+ThalosPrimeLibrary Delivery Summary
+-----------------------------------
+
+Scope: Deterministic Babel subsystem vertical slice integrated under thalos_prime/babel.
+Status: Operational; Babel tests passing (pytest tests/babel -v).
+Next: Implement remaining non-Babel modules (api, database, models) to meet full completion criteria.
 Thalos Prime Library — Delivery Summary
-=======================================
 
 Project: Thalos Prime — Deterministic Library of Babel Exploration Toolkit
 Version: 0.1.0

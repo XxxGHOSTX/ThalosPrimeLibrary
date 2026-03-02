@@ -24,6 +24,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
+    "pydantic>=2.0.0",
+    "flask>=3.0.0",
     "requests>=2.31.0",
     "aiohttp>=3.13.3",
     "sympy>=1.12",
@@ -32,6 +34,9 @@ dependencies = [
     "rdflib>=7.0.0",
     "beautifulsoup4>=4.12.0",
     "libcst>=1.1.0",
+    "jsonschema>=4.21.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
@@ -47,15 +52,18 @@ dev = [
     "sympy>=1.12",
     "z3-solver>=4.12.0",
     "networkx>=3.0",
+    "hypothesis>=6.100.0",
+    "mutmut>=2.4.0",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["thalos_prime*"]
+include = ["thalos_prime*", "thalos_nexus*"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 thalos_prime = ["*.txt", "*.md"]
+thalos_nexus = ["schemas/*.json"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -82,6 +90,8 @@ module = [
     "sqlalchemy.*",
     "uvicorn",
     "uvicorn.*",
+    "jsonschema",
+    "jsonschema.*",
 ]
 ignore_missing_imports = true
 
@@ -212,6 +222,16 @@ disable_error_code = ["no-untyped-call"]
     "PT011",
     # 0.0.0.0 bind address in test assertions for serve subcommand
     "S104",
+    # long lines in test data literals - clarity takes priority
+    "E501",
+    # /tmp paths in test assertions - test environment
+    "S108",
+    # unused fixture arguments are common in test parameterization
+    "ARG002",
+    # nested with statements in pytest.raises patterns
+    "SIM117",
+    # inline exception messages in tests for clarity
+    "TRY003", "EM101",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
@@ -263,6 +283,8 @@ disable_error_code = ["no-untyped-call"]
     "TC001", "TC003",
 ]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
+"thalos_nexus/cli.py" = ["T201"]
+"thalos_nexus/gates.py" = ["S603", "S607"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
 "thalos_prime/lob_babel_generator.py" = ["PLC0415", "SLF001", "D205", "D401"]
