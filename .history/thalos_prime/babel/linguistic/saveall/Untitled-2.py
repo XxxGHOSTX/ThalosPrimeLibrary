@@ -1,0 +1,1 @@
+"""Archived history snapshot module for linguistic save-all experiments; no executable content is retained in this archived file."""
