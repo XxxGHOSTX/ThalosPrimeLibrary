@@ -1,3 +1,5 @@
+__pycache__/
+*.pyc
 # Python
 __pycache__/
 *.py[cod]
@@ -68,3 +70,4 @@ data/*
 
 # Lock files
 .thalos_prime.lock
+__pycache__

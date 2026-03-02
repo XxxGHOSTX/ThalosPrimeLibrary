@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:thalos-nexus:repro-manifest:v1",
+  "title": "ReproManifest",
+  "type": "object",
+  "required": [
+    "schema_version", "seed", "config_hash", "thalos_nexus_version",
+    "python_version", "platform", "created_at", "genome_hash"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "seed": {"type": "integer"},
+    "config_hash": {"type": "string"},
+    "thalos_nexus_version": {"type": "string"},
+    "python_version": {"type": "string"},
+    "platform": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "genome_hash": {"type": "string"}
+  },
+  "additionalProperties": false
+}

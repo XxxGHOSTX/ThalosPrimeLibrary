@@ -66,18 +66,19 @@ class DocstringChecker(ast.NodeVisitor):
             else:
                 # Check if docstring mentions parameters and return type
                 docstring = ast.get_docstring(node)
+                docstring_str = docstring if docstring is not None else ""
                 has_args = len(node.args.args) > 1 or (
                     len(node.args.args) == 1 and node.args.args[0].arg != "self"
                 )
                 has_return = node.returns is not None
 
-                if has_args and "Args:" not in docstring and "Parameters:" not in docstring:
+                if has_args and "Args:" not in docstring_str and "Parameters:" not in docstring_str:
                     self.issues.append(
                         f"Line {node.lineno}: Function '{node.name}' docstring "
                         f"should document parameters"
                     )
 
-                if has_return and "Returns:" not in docstring and "Return:" not in docstring:
+                if has_return and "Returns:" not in docstring_str and "Return:" not in docstring_str:
                     self.issues.append(
                         f"Line {node.lineno}: Function '{node.name}' docstring "
                         f"should document return value"

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:thalos-nexus:intent:v1",
+  "title": "Intent",
+  "type": "object",
+  "required": ["version", "id", "description", "objectives"],
+  "properties": {
+    "version": {"type": "string"},
+    "id": {"type": "string"},
+    "description": {"type": "string"},
+    "objectives": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+  },
+  "additionalProperties": false
+}

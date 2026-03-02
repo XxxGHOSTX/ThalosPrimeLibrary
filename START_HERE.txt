@@ -5,3 +5,115 @@ Start Here
 2) Run Babel tests: `C:/Users/LT/AppData/Local/Programs/Python/Python314/python.exe -m pytest tests/babel -v`
 3) Explore code: thalos_prime/babel for deterministic conversational pipeline.
 4) Outstanding work: implement non-Babel modules (api, database, models) and expand tests to reach full completion.
+Thalos Prime Library — Quick Start Guide
+
+Welcome to Thalos Prime, a deterministic Library of Babel exploration toolkit.
+
+------------------------------------------------------------------------
+1. INSTALL
+------------------------------------------------------------------------
+
+Clone the repository and install in development mode:
+
+  git clone https://github.com/XxxGHOSTX/ThalosPrimeLibrary
+  cd ThalosPrimeLibrary
+  pip install -e ".[dev]"
+
+------------------------------------------------------------------------
+2. RUN THE SERVER
+------------------------------------------------------------------------
+
+  python run_thalos.py
+
+  The API server starts at http://localhost:8000
+  Interactive API docs: http://localhost:8000/docs
+  Redoc docs:          http://localhost:8000/redoc
+
+Alternatively, use the CLI:
+
+  thalos-prime serve --host 0.0.0.0 --port 8000
+
+Or Docker:
+
+  docker-compose up
+
+------------------------------------------------------------------------
+3. USE THE CLI
+------------------------------------------------------------------------
+
+Generate a page from an address:
+  thalos-prime generate --address abc123def456
+
+Enumerate candidate addresses for a query:
+  thalos-prime enumerate --query "hello world" --max-results 10
+
+Decode a page and get coherence scores:
+  thalos-prime decode --address abc123 --query "hello"
+
+Full search pipeline (enumerate → generate → decode → rank):
+  thalos-prime search --query "the quick brown fox" --max-results 5
+
+Save search results to a file:
+  thalos-prime search --query "meaning of life" --output results.json
+
+Start the API server:
+  thalos-prime serve --host 127.0.0.1 --port 8000
+
+------------------------------------------------------------------------
+4. RUN TESTS
+------------------------------------------------------------------------
+
+  pytest
+
+Or with coverage report:
+
+  pytest --cov=thalos_prime --cov-report=term-missing
+
+------------------------------------------------------------------------
+5. AUTHENTICATION (API SERVER)
+------------------------------------------------------------------------
+
+Set allowed API keys (comma-separated):
+  export THALOS_API_KEYS="key1,key2,key3"
+
+Disable authentication (development only):
+  export THALOS_AUTH_DISABLED=1
+
+Set admin API key:
+  export THALOS_ADMIN_API_KEY="your-admin-key"
+
+------------------------------------------------------------------------
+6. CONFIGURATION
+------------------------------------------------------------------------
+
+Set a local library path:
+  export THALOS_LIBRARY_PATH="/path/to/library"
+
+All configuration is via environment variables. See .env.example for
+a full list with defaults.
+
+------------------------------------------------------------------------
+7. DOCUMENTATION
+------------------------------------------------------------------------
+
+  README.md              — Project overview
+  ARCHITECTURE.md        — System architecture and design
+  IMPLEMENTATION_COMPLETE.md — Implementation status
+  VERIFICATION_REPORT.md — Test results
+  FILES_INDEX.md         — Complete file index
+  DELIVERY_SUMMARY.txt   — Delivery summary
+
+------------------------------------------------------------------------
+8. DEVELOPMENT WORKFLOW
+------------------------------------------------------------------------
+
+  make test           # Run all tests with coverage
+  make lint           # Run ruff linter
+  make type-check     # Run mypy + pyright
+  make all            # Run everything
+
+Or manually:
+  ruff check thalos_prime tests --select ALL --ignore COM812,ISC001,ANN101,ANN102,D203,D213
+  mypy thalos_prime tests --strict
+  pyright thalos_prime tests
+  pytest tests -v --cov=thalos_prime --cov-fail-under=80

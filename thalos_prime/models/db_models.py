@@ -4,6 +4,7 @@ These models define the database schema for persistent storage.
 """
 
 import uuid
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -22,7 +23,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 def generate_uuid() -> str:
     """Generate a new UUID string."""
@@ -37,7 +38,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(
         String(36), unique=True, default=generate_uuid,
-        nullable=False, index=True
+        nullable=False, index=True,
     )
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
@@ -47,15 +48,15 @@ class User(Base):
     api_key = Column(String(64), unique=True, index=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(
-        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
 
     # Relationships
     sessions = relationship(
-        "Session", back_populates="user", cascade="all, delete-orphan"
+        "Session", back_populates="user", cascade="all, delete-orphan",
     )
     queries = relationship(
-        "Query", back_populates="user", cascade="all, delete-orphan"
+        "Query", back_populates="user", cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -71,16 +72,16 @@ class Session(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(
         String(36), unique=True, default=generate_uuid,
-        nullable=False, index=True
+        nullable=False, index=True,
     )
     user_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, index=True
+        Integer, ForeignKey("users.id"), nullable=True, index=True,
     )
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     last_activity = Column(
-        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
     is_active = Column(Boolean, default=True, nullable=False)
     metadata = Column(JSON, default=dict, nullable=True)
@@ -88,7 +89,7 @@ class Session(Base):
     # Relationships
     user = relationship("User", back_populates="sessions")
     queries = relationship(
-        "Query", back_populates="session", cascade="all, delete-orphan"
+        "Query", back_populates="session", cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -111,13 +112,13 @@ class Query(Base):
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(
         String(36), unique=True, default=generate_uuid,
-        nullable=False, index=True
+        nullable=False, index=True,
     )
     session_id = Column(
-        Integer, ForeignKey("sessions.id"), nullable=False, index=True
+        Integer, ForeignKey("sessions.id"), nullable=False, index=True,
     )
     user_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, index=True
+        Integer, ForeignKey("users.id"), nullable=True, index=True,
     )
     query_text = Column(Text, nullable=False)
     search_mode = Column(String(20), nullable=False, default="hybrid")
@@ -127,7 +128,7 @@ class Query(Base):
     execution_time_ms = Column(Float, nullable=True)
     cached = Column(Boolean, default=False, nullable=False)
     created_at = Column(
-        DateTime, default=func.now(), nullable=False, index=True
+        DateTime, default=func.now(), nullable=False, index=True,
     )
     metadata = Column(JSON, default=dict, nullable=True)
 
@@ -135,7 +136,7 @@ class Query(Base):
     session = relationship("Session", back_populates="queries")
     user = relationship("User", back_populates="queries")
     results = relationship(
-        "CachedResult", back_populates="query", cascade="all, delete-orphan"
+        "CachedResult", back_populates="query", cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -158,7 +159,7 @@ class CachedResult(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     query_id = Column(
-        Integer, ForeignKey("queries.id"), nullable=False, index=True
+        Integer, ForeignKey("queries.id"), nullable=False, index=True,
     )
     address_hex = Column(String(255), nullable=False, index=True)
     page_text = Column(Text, nullable=False)
@@ -197,7 +198,7 @@ class GeneratedPage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     address_hex = Column(
-        String(255), unique=True, nullable=False, index=True
+        String(255), unique=True, nullable=False, index=True,
     )
     page_text = Column(Text, nullable=False)
     validation_status = Column(Boolean, default=True, nullable=False)
@@ -205,7 +206,7 @@ class GeneratedPage(Base):
     access_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     last_accessed = Column(
-        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
     metadata = Column(JSON, default=dict, nullable=True)
 
@@ -238,7 +239,7 @@ class APILog(Base):
     user_agent = Column(String(255), nullable=True)
     error_message = Column(Text, nullable=True)
     created_at = Column(
-        DateTime, default=func.now(), nullable=False, index=True
+        DateTime, default=func.now(), nullable=False, index=True,
     )
     metadata = Column(JSON, default=dict, nullable=True)
 

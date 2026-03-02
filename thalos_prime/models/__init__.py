@@ -36,6 +36,10 @@ __all__ = [
     "AddressInfo",
     "Base",
     "CachedResult",
+    # DB Models
+    "Base",
+    "CachedResult",
+    # API Models
     "ChatRequest",
     "ChatResponse",
     "CoherenceInfo",
