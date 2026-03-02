@@ -22,7 +22,7 @@ def _load_schema(name: str) -> dict[str, Any]:
     return data
 
 
-def test_load_schema_rejects_non_dict(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_schema_rejects_non_object(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Non-object schemas are rejected."""
     schemas_dir = tmp_path / "schemas"
     schemas_dir.mkdir()

@@ -379,7 +379,12 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
                 return result
             if allow_arith and isinstance(result, z3.ArithRef):
                 return result
-            logger.warning("Constraint %r did not produce a boolean expression", constraint_str)
+            expected = "boolean or arithmetic" if allow_arith else "boolean"
+            logger.warning(
+                "Constraint %r did not produce a %s expression",
+                constraint_str,
+                expected,
+            )
             return None
 
     def solve(self, constraint_set: ConstraintSet) -> SymbolicSolution:
@@ -405,7 +410,7 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
                 return SymbolicSolution(
                     satisfiable=False,
                     model={},
-                    message=f"Failed to parse constraint: {constraint_str!r}",
+                    message=f"Constraint {constraint_str!r} did not yield a boolean expression",
                 )
             solver.add(expr)
 
@@ -467,7 +472,10 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             return SymbolicSolution(
                 satisfiable=False,
                 model={},
-                message=f"Failed to parse objective: {objective.expression!r}",
+                message=(
+                    f"Objective expression must be arithmetic, got: "
+                    f"{objective.expression!r}"
+                ),
             )
 
         if objective.direction == "minimize":
