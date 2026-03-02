@@ -32,4 +32,32 @@
       }
     }
   }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:thalos-nexus:gate-results:v1",
+  "title": "GateResults",
+  "type": "object",
+  "required": ["schema_version", "all_passed", "total_duration_seconds", "gates"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "all_passed": {"type": "boolean"},
+    "total_duration_seconds": {"type": "number"},
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "passed", "exit_code", "duration_seconds", "fatal"],
+        "properties": {
+          "name": {"type": "string"},
+          "passed": {"type": "boolean"},
+          "exit_code": {"type": "integer"},
+          "duration_seconds": {"type": "number"},
+          "fatal": {"type": "boolean"},
+          "stdout": {"type": "string"},
+          "stderr": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
 }

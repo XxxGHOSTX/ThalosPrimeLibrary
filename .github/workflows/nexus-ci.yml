@@ -1,0 +1,113 @@
+name: NEXUS CI (Windows)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "thalos_nexus/**"
+      - "tests/test_thalos_nexus.py"
+      - ".github/workflows/nexus-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "thalos_nexus/**"
+      - "tests/test_thalos_nexus.py"
+      - ".github/workflows/nexus-ci.yml"
+
+jobs:
+  nexus-windows:
+    name: NEXUS Gates — Windows
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: windows-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            windows-pip-
+
+      - name: Install project and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff lint (thalos_nexus)
+        run: ruff check thalos_nexus/ --output-format=github
+
+      - name: Ruff lint (tests)
+        run: ruff check tests/test_thalos_nexus.py --output-format=github
+
+      - name: Mypy strict type check
+        run: mypy thalos_nexus/ --strict
+
+      - name: Run NEXUS unit tests with coverage
+        run: >
+          python -m pytest tests/test_thalos_nexus.py -v
+          --cov=thalos_nexus
+          --cov-report=term-missing
+          --cov-report=json:coverage.json
+          --cov-fail-under=80
+
+      - name: Verify CLI entry point
+        run: python -m thalos_nexus.cli --help
+
+      - name: Ingest sample genome
+        run: |
+          python - << 'EOF'
+          import json, pathlib, sys
+          genome = {
+            "intent": {
+              "version": "1.0.0",
+              "id": "ci-test-intent",
+              "description": "CI test genome",
+              "objectives": ["validate", "evolve"]
+            },
+            "policy": {
+              "version": "1.0.0",
+              "id": "ci-test-policy",
+              "rules": [{"id": "r1", "effect": "allow", "action": "*"}]
+            },
+            "fitness": {
+              "version": "1.0.0",
+              "global_floor": 80.0,
+              "thresholds": {"coverage": 80.0},
+              "ratchet": True
+            },
+            "lineages": [{"id": "gen-0", "parent_id": None, "version": "1.0.0"}]
+          }
+          p = pathlib.Path("ci_genome.json")
+          p.write_text(json.dumps(genome), encoding="utf-8")
+          EOF
+          python -m thalos_nexus.cli ingest-genome ci_genome.json
+
+      - name: Generate repro_manifest + gate artifacts
+        run: |
+          python -m thalos_nexus.cli evolve --genome ci_genome.json --output-dir nexus_out
+        continue-on-error: true
+
+      - name: Upload NEXUS artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-artifacts-${{ github.run_id }}
+          path: |
+            nexus_out/repro_manifest.json
+            nexus_out/gate_results.json
+            nexus_out/event_log.jsonl
+            nexus_out/artifacts.json
+            nexus_out/sbom.json
+            coverage.json
+          if-no-files-found: warn
+          retention-days: 30

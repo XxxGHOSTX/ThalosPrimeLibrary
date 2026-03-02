@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:thalos-nexus:lineages:v1",
+  "title": "Lineages",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "parent_id", "version"],
+    "properties": {
+      "id": {"type": "string"},
+      "parent_id": {"type": ["string", "null"]},
+      "version": {"type": "string"},
+      "tags": {"type": "array", "items": {"type": "string"}}
+    },
+    "additionalProperties": false
+  }
+}

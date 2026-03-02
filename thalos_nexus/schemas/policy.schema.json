@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:thalos-nexus:policy:v1",
+  "title": "Policy",
+  "type": "object",
+  "required": ["version", "id", "rules"],
+  "properties": {
+    "version": {"type": "string"},
+    "id": {"type": "string"},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "effect", "action"],
+        "properties": {
+          "id": {"type": "string"},
+          "effect": {"type": "string", "enum": ["allow", "deny"]},
+          "action": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
