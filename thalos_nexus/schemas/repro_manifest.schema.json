@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "repro_manifest.schema.json",
+  "title": "ReproManifest",
+  "description": "Deterministic reproduction manifest for a NEXUS Core v1 evolution run.",
+  "type": "object",
+  "required": ["schema_version", "run_id", "genome_hash", "task", "seed", "config_hash", "timestamp", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "run_id": {"type": "string", "description": "SHA-256 of seed:task:genome_hash:config_hash"},
+    "genome_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "task": {"type": "string", "minLength": 1},
+    "seed": {"type": "integer", "minimum": 0},
+    "config_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "artifacts": {
+      "type": "object",
+      "required": ["gate_results", "event_log"],
+      "additionalProperties": false,
+      "properties": {
+        "gate_results": {"$ref": "#/$defs/artifact_ref"},
+        "event_log": {"$ref": "#/$defs/artifact_ref"},
+        "sbom": {"$ref": "#/$defs/artifact_ref"},
+        "trait_bundle": {"$ref": "#/$defs/artifact_ref"}
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "public_key_hex", "signature_hex"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {"type": "string", "const": "ed25519"},
+        "public_key_hex": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "signature_hex": {"type": "string", "pattern": "^[0-9a-f]{128}$"}
+      }
+    }
+  },
+  "$defs": {
+    "artifact_ref": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

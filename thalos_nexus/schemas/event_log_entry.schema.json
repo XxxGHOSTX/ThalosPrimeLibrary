@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event_log_entry.schema.json",
+  "title": "EventLogEntry",
+  "type": "object",
+  "required": ["seq", "timestamp", "event_type", "payload", "chain_hash", "prev_hash"],
+  "additionalProperties": false,
+  "properties": {
+    "seq": {"type": "integer", "minimum": 0},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "event_type": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"},
+    "chain_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prev_hash": {"type": "string"}
+  }
+}

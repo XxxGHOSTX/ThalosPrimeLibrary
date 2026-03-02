@@ -1,0 +1,69 @@
+name: NEXUS Windows CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  nexus-windows:
+    name: NEXUS Core v1 — Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package with nexus extras
+        run: pip install -e ".[nexus]"
+
+      - name: Verify CLI help
+        run: python -m thalos_nexus.cli --help
+
+      - name: Create test genome file
+        run: |
+          echo "nexus_test_genome_v1_deterministic_seed_0" > test_genome.bin
+
+      - name: Ingest genome
+        id: ingest
+        run: |
+          $hash = python -m thalos_nexus.cli ingest-genome `
+            --path test_genome.bin `
+            --key-dir $env:RUNNER_TEMP\nexus_keys `
+            --out-dir nexus_runs
+          echo "genome_hash=$hash" >> $env:GITHUB_OUTPUT
+
+      - name: Evolve
+        id: evolve
+        run: |
+          python -m thalos_nexus.cli evolve `
+            --genome ${{ steps.ingest.outputs.genome_hash }} `
+            --task "ci_smoke_test" `
+            --seed 0 `
+            --target-dir thalos_nexus `
+            --key-dir $env:RUNNER_TEMP\nexus_keys `
+            --run-dir nexus_runs\ci_run
+
+      - name: Replay verification
+        run: |
+          python -m thalos_nexus.cli replay `
+            --repro-manifest nexus_runs\ci_run\repro_manifest.json
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-run-artifacts
+          path: |
+            nexus_runs/ci_run/repro_manifest.json
+            nexus_runs/ci_run/gate_results.json
+            nexus_runs/ci_run/event_log.jsonl
+            nexus_runs/${{ steps.ingest.outputs.genome_hash }}/sbom.json
+          if-no-files-found: warn
+          retention-days: 30
