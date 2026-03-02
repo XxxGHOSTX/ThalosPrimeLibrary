@@ -44,7 +44,11 @@ class RelationshipRecordDict(TypedDict):
 
 
 class CypherQueryDict(TypedDict, total=False):
-    """Serialized representation of a Cypher query."""
+    """Serialized representation of a Cypher query.
+
+    Uses total=False with Required[...] so common fields (operation, limit)
+    stay required while allowing other filters to remain optional.
+    """
 
     operation: Required[Literal["match_nodes", "match_relationships", "shortest_path", "neighbors"]]
     limit: Required[int]

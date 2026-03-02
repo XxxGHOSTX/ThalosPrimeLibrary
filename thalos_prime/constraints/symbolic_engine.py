@@ -36,7 +36,11 @@ class VariableSort(StrEnum):
 
 
 class VariableDeclarationDict(TypedDict, total=False):
-    """Serialized representation of a variable declaration."""
+    """Serialized representation of a variable declaration.
+
+    Uses total=False with Required[...] to keep bounds optional while enforcing
+    that name and sort are always present.
+    """
 
     name: Required[str]
     sort: Required[str]
@@ -53,7 +57,11 @@ class ConstraintSetDict(TypedDict):
 
 
 class SymbolicSolutionDict(TypedDict, total=False):
-    """Serialized representation of a symbolic solution."""
+    """Serialized representation of a symbolic solution.
+
+    Uses total=False with Required[...] to capture required solution fields
+    while allowing objective_value to be omitted when not applicable.
+    """
 
     satisfiable: Required[bool]
     model: Required[dict[str, str]]
