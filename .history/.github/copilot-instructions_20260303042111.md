@@ -435,29 +435,6 @@ All code must converge to complete, deterministic, and operational state before 
 - `thalos_prime/lob_babel_enumerator.py`: Query enumeration and address mapping.
 - `thalos_prime/lob_decoder.py`: Multi-metric coherence scoring.
 
-### API structure (`thalos_prime/api/`)
-- `server.py`: FastAPI app with lifespan management, middleware, error handlers
-- `routes/`: Modular route definitions
-  - `chat.py`: Conversational interface
-  - `search.py`: Library search endpoints
-  - `generate.py`, `enumerate.py`, `decode.py`: Core operations
-  - `agent.py`: Multi-agent orchestration
-  - `admin.py`: Administrative endpoints
-
-### Advanced systems
-- `babel/`: Control plane orchestration, lifecycle management
-- `constraints/`: Z3-based symbolic constraint solving (SymbolicConstraintEngine)
-- `knowledge_graph/`: Neo4j integration (Neo4jKnowledgeGraph, CypherQuery)
-- `planning/`: MCTS and Tree-of-Thoughts planners for search strategy
-- `library_of_sense/`: Graph-RAG retrieval layer for semantic search
-- `simulation/`: WorldModel for state space exploration
-
-### Thalos Nexus (biological metaphor)
-- `thalos_nexus/nucleus.py`: Core orchestration hub
-- `thalos_nexus/membrane.py`: Input/output boundaries and filtering
-- `thalos_nexus/mitochondria.py`: Energy and resource management
-- `thalos_nexus/lysosome.py`: Cleanup and resource recycling
-
 ### Reference documentation
 - `ARCHITECTURE.md`: System architecture and design.
 - `IMPLEMENTATION_COMPLETE.md`: Implementation status and completeness.
