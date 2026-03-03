@@ -100,7 +100,9 @@ class SemanticCLI:
         return str(deterministic_uuid)
 
     def _print_banner(self) -> None:
-        pass
+        """Print startup banner; no-op in non-interactive mode."""
 
     def _emit_event(self, event: str, detail: str) -> None:
-        pass
+        """Emit a lifecycle event; no-op stub (override to enable)."""
+        _ = event
+        _ = detail
