@@ -16,8 +16,6 @@ def _length_reward(state: str) -> float:
 
 
 
-
-
 class TestMCTSNode:
     def test_default_fields(self) -> None:
         node = MCTSNode(state="root")

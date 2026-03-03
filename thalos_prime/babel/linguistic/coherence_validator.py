@@ -18,8 +18,8 @@ class CoherenceReport:
 class LinguisticCoherenceValidator:
     """Validate linguistic coherence of responses."""
 
-    MIN_LENGTH = 8
-    MIN_WORD_COUNT = 2
+    MIN_LENGTH: int = 8
+    MIN_WORD_COUNT: int = 2
 
     def validate(self, text: str) -> CoherenceReport:
         """Validate coherence of the given text."""

@@ -102,7 +102,5 @@ class SemanticCLI:
     def _print_banner(self) -> None:
         """Print startup banner; no-op in non-interactive mode."""
 
-    def _emit_event(self, event: str, detail: str) -> None:
+    def _emit_event(self, _event: str, _detail: str) -> None:
         """Emit a lifecycle event; no-op stub (override to enable)."""
-        _ = event
-        _ = detail

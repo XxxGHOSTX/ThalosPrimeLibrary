@@ -173,7 +173,7 @@ class Neo4jKnowledgeGraph(BaseLifecycleComponent):
 
     def initialize(self) -> None:
         """Create the internal graph and mark as initialized."""
-        self._graph = nx.DiGraph[str]()
+        self._graph = nx.DiGraph()
         self._node_count = 0
         self._rel_count = 0
         self._query_count = 0
