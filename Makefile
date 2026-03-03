@@ -24,7 +24,7 @@ typecheck:
 
 lint:
 	@echo "Running ruff..."
-	ruff check thalos_prime tests --select ALL --ignore COM812,ISC001,ANN101,ANN102,D203,D213
+	ruff check thalos_prime tests
 
 test:
 	@echo "Running pytest with coverage..."

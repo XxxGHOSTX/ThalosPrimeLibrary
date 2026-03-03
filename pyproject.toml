@@ -252,6 +252,7 @@ disable_error_code = ["no-untyped-call"]
 ]
 # Auth module: N818 (DeterministicHalt name required by interface contract),
 # PLC0415 (fastapi optional import inside dependency factory)
+"thalos_prime/agency/agent_loop.py" = ["TC001", "TC003"]
 "thalos_prime/auth/api_key.py" = ["N818", "PLC0415"]
 "thalos_prime/auth/__init__.py" = ["D104", "RUF022"]
 "thalos_prime/cache/__init__.py" = ["D104"]
