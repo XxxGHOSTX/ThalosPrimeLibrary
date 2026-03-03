@@ -1,17 +1,21 @@
-"""
-Flask API for Babel subsystem.
-"""
+"""Flask API for Babel subsystem."""
 
 from __future__ import annotations
 
-from pathlib import Path
-from flask import Flask, request, jsonify, Response
+from typing import TYPE_CHECKING
 
-from ..control.semantic_orchestrator import SemanticOrchestrator
+from flask import Flask, Response, jsonify, request
+
+from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
 from .protocol import RequestProtocol, ResponseProtocol
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def create_app(storage_path: Path) -> Flask:
+    """Create and configure the Flask application."""
     orchestrator = SemanticOrchestrator(storage_path)
     orchestrator.initialize()
     app = Flask(__name__)
@@ -31,8 +35,8 @@ def create_app(storage_path: Path) -> Flask:
 
     app.add_url_rule("/health", view_func=health, methods=["GET"])
 
-    @app.post("/converse")
-    def converse():
+    def converse() -> tuple[Response, int]:
+        """Handle conversation request."""
         data = request.get_json(force=True)
         req = RequestProtocol(**data)
         response = orchestrator.handle_semantic_input(req.user_input, req.session_id)
@@ -47,11 +51,15 @@ def create_app(storage_path: Path) -> Flask:
                 "variation_degree": response.variation_degree,
             },
         )
-        return jsonify(payload.dict())
+        return jsonify(payload.model_dump()), 200
 
-    @app.post("/checkpoint")
-    def checkpoint():
+    app.add_url_rule("/converse", view_func=converse, methods=["POST"])
+
+    def checkpoint() -> tuple[Response, int]:
+        """Handle checkpoint creation request."""
         path = orchestrator.checkpoint()
-        return jsonify({"checkpoint_path": str(path)})
+        return jsonify({"checkpoint_path": str(path)}), 200
+
+    app.add_url_rule("/checkpoint", view_func=checkpoint, methods=["POST"])
 
     return app

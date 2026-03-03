@@ -1,15 +1,15 @@
-"""
-Deterministic coordinate mathematics for Babel responses.
-"""
+"""Deterministic coordinate mathematics for Babel responses."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from .context_hasher import ContextHasher
-from .variational_coordinate_system import VariationalContext
+
+if TYPE_CHECKING:
+    from .variational_coordinate_system import VariationalContext
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,7 @@ class Coordinate:
         return f"{self.seed}:{self.digest}:{self.variation_index}"
 
     def __str__(self) -> str:
+        """Return canonical string representation."""
         return self.as_string()
 
 
@@ -35,6 +36,7 @@ class CoordinateValidator:
 
     @classmethod
     def validate(cls, coordinate: Coordinate) -> bool:
+        """Validate coordinate integrity."""
         digest = coordinate.digest
         if len(digest) < cls.MIN_DIGEST_LENGTH:
             return False
@@ -46,16 +48,24 @@ class CoordinateValidator:
 class DeterministicCoordinateDeriver:
     """Derive deterministic coordinates from input context."""
 
-    def __init__(self, seed: str):
+    def __init__(self, seed: str) -> None:
+        """Initialize with seed."""
         self.seed: Final[str] = seed
 
     def derive(self, text: str, context: VariationalContext) -> Coordinate:
         """Compute coordinate deterministically from text and context."""
         normalized = ContextHasher.normalize_text(text)
-        # Derive coordinate deterministically from global seed, normalized text, and variation index.
-        digest_source = f"{self.seed}|{normalized}|{context.turn_index}|{context.variation_index}"
+        # Derive coordinate deterministically from seed, text, and variation index.
+        digest_source = (
+            f"{self.seed}|{normalized}|{context.turn_index}|{context.variation_index}"
+        )
         digest = sha256(digest_source.encode("utf-8")).hexdigest()
-        coordinate = Coordinate(seed=self.seed, digest=digest[:32], variation_index=context.variation_index)
+        coordinate = Coordinate(
+            seed=self.seed,
+            digest=digest[:32],
+            variation_index=context.variation_index,
+        )
         if not CoordinateValidator.validate(coordinate):
-            raise ValueError("Invalid coordinate generated")
+            msg = "Invalid coordinate generated"
+            raise ValueError(msg)
         return coordinate

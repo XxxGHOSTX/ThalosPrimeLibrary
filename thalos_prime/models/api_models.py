@@ -3,17 +3,11 @@
 These models define the schema for all API endpoints.
 """
 
-from datetime import datetime
 from enum import StrEnum
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Any
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel, Field, validator
-
-class SearchMode(StrEnum):
-    """Search mode: local generation or remote fetch."""
 
 class SearchMode(StrEnum):
     """Search mode: local generation or remote fetch."""
@@ -141,4 +135,110 @@ class PageResult(BaseModel):
             }
         }
 
-# ... (Rest of code unchanged, ensure to apply same fix if unmatched braces are found elsewhere)
+class ChatRequest(BaseModel):
+    """Chat request model."""
+
+    message: str = Field(..., description="User message")
+    session_id: str | None = Field(None, description="Optional session ID")
+    mode: str = Field(default="local", description="Search mode")
+    max_results: int = Field(default=5, ge=1, le=50, description="Max results")
+
+
+class ChatResponse(BaseModel):
+    """Chat response model."""
+
+    reply: str = Field(..., description="Bot reply")
+    session_id: str = Field(..., description="Session ID")
+    results: list[PageResult] = Field(default_factory=list, description="Search results")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata")
+
+
+class DecodeRequest(BaseModel):
+    """Decode request model."""
+
+    address: str = Field(..., description="Page address")
+    text: str = Field(..., description="Page text")
+    query: str | None = Field(None, description="Optional query")
+    normalization: NormalizationMode = Field(default=NormalizationMode.NONE, description="Normalization mode")
+
+
+class DecodeResponse(BaseModel):
+    """Decode response model."""
+
+    address: AddressInfo = Field(..., description="Page address")
+    raw_text: str = Field(..., description="Raw page text")
+    normalized_text: str | None = Field(None, description="Normalized text")
+    coherence: CoherenceInfo = Field(..., description="Coherence scores")
+    provenance: ProvenanceInfo = Field(..., description="Provenance info")
+
+
+class EnumerateRequest(BaseModel):
+    """Enumerate request model."""
+
+    query: str = Field(..., description="Query string")
+    max_results: int = Field(default=10, ge=1, le=100, description="Max results")
+    depth: int = Field(default=2, ge=1, le=5, description="Search depth")
+
+
+class EnumerateResponse(BaseModel):
+    """Enumerate response model."""
+
+    query: str = Field(..., description="Original query")
+    addresses: list[dict[str, Any]] = Field(..., description="Found addresses")
+    total_found: int = Field(..., description="Total addresses found")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata")
+
+
+class GenerateRequest(BaseModel):
+    """Generate request model."""
+
+    address: str | None = Field(None, description="Hex address")
+    query: str | None = Field(None, description="Query to convert")
+    validate_page: bool = Field(default=True, description="Validate generated page")
+
+
+class GenerateResponse(BaseModel):
+    """Generate response model."""
+
+    address: AddressInfo = Field(..., description="Page address")
+    text: str = Field(..., description="Generated page text")
+    valid: bool = Field(..., description="Whether page is valid")
+    generation_time_ms: float = Field(..., description="Generation time in ms")
+
+
+class SearchRequest(BaseModel):
+    """Search request model."""
+
+    query: str = Field(..., description="Search query")
+    max_results: int = Field(default=10, ge=1, le=100, description="Max results")
+    mode: SearchMode = Field(default=SearchMode.LOCAL, description="Search mode")
+    min_score: float = Field(default=0.0, ge=0.0, le=100.0, description="Minimum coherence score")
+
+
+class SearchResponse(BaseModel):
+    """Search response model."""
+
+    query: str = Field(..., description="Original query")
+    results: list[PageResult] = Field(..., description="Search results")
+    total_found: int = Field(..., description="Total results found")
+    mode: SearchMode = Field(..., description="Search mode used")
+    cached: bool = Field(default=False, description="Whether result was cached")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata")
+
+
+class ErrorResponse(BaseModel):
+    """Error response model."""
+
+    error: str = Field(..., description="Error code")
+    message: str = Field(..., description="Error message")
+    details: dict[str, Any] = Field(default_factory=dict, description="Error details")
+
+
+class StatusResponse(BaseModel):
+    """Status response model."""
+
+    status: str = Field(..., description="System status")
+    version: str = Field(..., description="API version")
+    uptime_seconds: float = Field(..., description="Uptime in seconds")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata")
+

@@ -1,15 +1,19 @@
-"""
-Output formatting helpers.
-"""
+"""Output formatting helpers."""
 
 from __future__ import annotations
 
-from ..core.response_generator import GeneratedResponse
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from thalos_prime.babel.core.response_generator import GeneratedResponse
 
 
 class OutputFormatter:
+    """Format Babel responses for output."""
+
     @staticmethod
-    def format_response(response: GeneratedResponse, verbose: bool = False) -> str:
+    def format_response(response: GeneratedResponse, *, verbose: bool = False) -> str:
+        """Format a generated response as a string."""
         lines = [f"Babel: {response.text}"]
         if verbose:
             lines.append("[Metadata]")

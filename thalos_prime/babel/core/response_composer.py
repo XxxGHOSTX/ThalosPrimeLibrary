@@ -1,19 +1,22 @@
-"""
-Deterministic response composition from semantic frames.
-"""
+"""Deterministic response composition from semantic frames."""
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import TYPE_CHECKING
 
-from .coordinate_system import Coordinate
-from ..linguistic.semantic_frames import SemanticFrame
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from thalos_prime.babel.linguistic.semantic_frames import SemanticFrame
+
+    from .coordinate_system import Coordinate
 
 
 class DeterministicResponseComposer:
     """Compose responses deterministically from frames and templates."""
 
     def compose(self, frame: SemanticFrame, template: str, coordinate: Coordinate) -> str:
+        """Compose a deterministic response from frame and template."""
         variables: Mapping[str, str] = frame.to_variables()
         materialized = template.format(**variables)
         # Append coordinate metadata while preserving terminal punctuation for coherence checks.

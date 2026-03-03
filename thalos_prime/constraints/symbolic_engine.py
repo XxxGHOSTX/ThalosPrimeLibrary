@@ -14,7 +14,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal, cast
 
 import z3
 
@@ -52,7 +52,7 @@ class VariableDeclaration:
     lower_bound: float | None = None
     upper_bound: float | None = None
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -82,7 +82,7 @@ class ConstraintSet:
     variables: list[VariableDeclaration] = field(default_factory=list)
     constraints: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -109,7 +109,7 @@ class OptimizationObjective:
     expression: str
     direction: Literal["minimize", "maximize"]
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -136,7 +136,7 @@ class SymbolicSolution:
     objective_value: str | None = None
     message: str = ""
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -301,9 +301,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             z3_vars[var.name] = z3_var
 
             if var.lower_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var >= var.lower_bound)  # type: ignore[operator]
+                bounds.append(cast("z3.ArithRef", z3_var) >= var.lower_bound)
             if var.upper_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var <= var.upper_bound)  # type: ignore[operator]
+                bounds.append(cast("z3.ArithRef", z3_var) <= var.upper_bound)
 
         return z3_vars, bounds
 
@@ -336,7 +336,7 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             logger.warning("Cannot parse constraint %r: %s", constraint_str, exc)
             return None
         else:
-            return result  # type: ignore[return-value]
+            return result
 
     def solve(self, constraint_set: ConstraintSet) -> SymbolicSolution:
         """Solve a constraint satisfaction problem.

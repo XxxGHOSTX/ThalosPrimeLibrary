@@ -8,18 +8,18 @@ from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
 
 
 def _echo_handler(params: dict[str, object]) -> ActionResult:
-    """Simple handler that echoes params back in the output."""
+    """Echo params back in the output."""
     return ActionResult(action="echo", success=True, output=dict(params))
 
 
 def _fail_handler(params: dict[str, object]) -> ActionResult:
-    """Handler that always reports failure."""
+    """Report failure unconditionally."""
     _ = params
     return ActionResult(action="fail", success=False, error="intentional failure")
 
 
 def _raising_handler(params: dict[str, object]) -> ActionResult:
-    """Handler that raises an exception."""
+    """Raise a RuntimeError unconditionally."""
     _ = params
     msg = "boom"
     raise RuntimeError(msg)

@@ -20,7 +20,7 @@ def _make_agent() -> AgentLoop:
 
 
 def _echo_handler(params: dict[str, object]) -> ActionResult:
-    """Simple handler that echoes params."""
+    """Echo params back in the output."""
     return ActionResult(action="echo", success=True, output=dict(params))
 
 

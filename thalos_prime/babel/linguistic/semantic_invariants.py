@@ -1,6 +1,4 @@
-"""
-Semantic invariants and validation.
-"""
+"""Semantic invariants and validation."""
 
 from __future__ import annotations
 
@@ -22,6 +20,7 @@ class SemanticCore:
 class SemanticInvariantChecker:
     """Validate semantic preservation for frames."""
 
-    def validate(self, frame: "SemanticFrame") -> bool:
+    def validate(self, frame: SemanticFrame) -> bool:
+        """Validate semantic invariants for the given frame."""
         # In this deterministic slice, preservation means topic is non-empty and fingerprint exists.
         return bool(frame.semantic_core.topic) and bool(frame.semantic_core.fingerprint)
