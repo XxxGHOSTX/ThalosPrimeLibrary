@@ -9,14 +9,12 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
-
 class SearchMode(StrEnum):
     """Search mode: local generation or remote fetch."""
 
     LOCAL = "local"
     REMOTE = "remote"
     HYBRID = "hybrid"
-
 
 class NormalizationMode(StrEnum):
     """Text normalization mode."""
@@ -25,7 +23,6 @@ class NormalizationMode(StrEnum):
     HEURISTIC = "heuristic"
     LLM = "llm"
 
-
 class ConfidenceLevel(StrEnum):
     """Coherence confidence level."""
 
@@ -33,7 +30,6 @@ class ConfidenceLevel(StrEnum):
     MEDIUM = "medium"
     SPARSE = "sparse"
     MINIMAL = "minimal"
-
 
 # Address Information
 class AddressInfo(BaseModel):
@@ -59,7 +55,6 @@ class AddressInfo(BaseModel):
                 "url": "https://libraryofbabel.info/book.cgi?hex=abc123def456",
             }
         }
-
 
 # Coherence Information
 class CoherenceInfo(BaseModel):
@@ -88,7 +83,6 @@ class CoherenceInfo(BaseModel):
             }
         }
 
-
 # Provenance Information
 class ProvenanceInfo(BaseModel):
     """Provenance tracking information."""
@@ -113,7 +107,6 @@ class ProvenanceInfo(BaseModel):
                 "llm_provider": None,
             }
         }
-
 
 # Page Result
 class PageResult(BaseModel):
@@ -445,3 +438,4 @@ class ErrorResponse(BaseModel):
             }
         }
 
+# ... (Rest of code unchanged, ensure to apply same fix if unmatched braces are found elsewhere)
