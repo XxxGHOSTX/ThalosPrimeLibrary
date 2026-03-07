@@ -1,5 +1,4 @@
-"""
-Cache package placeholder for Thalos Prime.
+"""Cache package placeholder for Thalos Prime.
 Add caching adapters and policies here.
 """
 """Thalos Prime cache subsystem.

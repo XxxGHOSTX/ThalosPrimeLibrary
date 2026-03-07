@@ -1,5 +1,4 @@
-"""
-Database package placeholder for Thalos Prime.
+"""Database package placeholder for Thalos Prime.
 Define connections, repositories, and migrations here.
 """
 """Thalos Prime database subsystem.

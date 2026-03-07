@@ -1,16 +1,14 @@
-"""
-Tests for deterministic ingestion and canonicalization.
-"""
+"""Tests for deterministic ingestion and canonicalization."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from hashlib import sha256
 
 from thalos_prime.ingest import (
     CanonicalArtifact,
-    compute_meaning_hash,
     canonicalize_text,
+    compute_meaning_hash,
     ingest_fragment,
 )
-from hashlib import sha256
 
 
 def test_canonicalize_text_collapses_whitespace_and_quotes() -> None:
@@ -34,7 +32,7 @@ def test_compute_meaning_hash_deterministic() -> None:
 
 def test_ingest_fragment_builds_artifact() -> None:
     """Ingestion returns a deterministic CanonicalArtifact."""
-    created = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    created = datetime(2024, 1, 1, tzinfo=UTC)
     artifact: CanonicalArtifact = ingest_fragment(
         "Noise   turns  into PATTERNS",
         source="unit-test",

@@ -1,28 +1,34 @@
-"""
-Semantic orchestrator for Babel subsystem.
-"""
+"""Semantic orchestrator for Babel subsystem."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from ..core.coordinate_system import DeterministicCoordinateDeriver
-from ..core.response_generator import ResponseGenerator, GeneratedResponse
-from ..core.semantic_preserving_composer import SemanticPreservingComposer
-from ..core.variational_coordinate_system import VariationalCoordinateDeriver, VariationalContext
-from ..core.search_engine import DeterministicSearchEngine
-from ..linguistic.intent_classifier import DeterministicIntentClassifier
-from ..linguistic.semantic_frames import FrameConstructor
-from ..linguistic.semantic_invariants import SemanticInvariantChecker
-from ..linguistic.response_corpus import ResponseCorpus
-from ..linguistic.coherence_validator import LinguisticCoherenceValidator
+from thalos_prime.babel.core.coordinate_system import DeterministicCoordinateDeriver
+from thalos_prime.babel.core.response_generator import GeneratedResponse, ResponseGenerator
+from thalos_prime.babel.core.search_engine import DeterministicSearchEngine
+from thalos_prime.babel.core.semantic_preserving_composer import SemanticPreservingComposer
+from thalos_prime.babel.core.variational_coordinate_system import (
+    VariationalContext,
+    VariationalCoordinateDeriver,
+)
+from thalos_prime.babel.linguistic.coherence_validator import LinguisticCoherenceValidator
+from thalos_prime.babel.linguistic.intent_classifier import DeterministicIntentClassifier
+from thalos_prime.babel.linguistic.response_corpus import ResponseCorpus
+from thalos_prime.babel.linguistic.semantic_frames import FrameConstructor
+from thalos_prime.babel.linguistic.semantic_invariants import SemanticInvariantChecker
+
 from .orchestrator import ThalobalOrchestrator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class SemanticOrchestrator(ThalobalOrchestrator):
     """Full semantic orchestrator with deterministic variation."""
 
     def __init__(self, storage_path: Path, seed: str = "thalos-babel-seed") -> None:
+        """Initialize the semantic orchestrator and all data-plane subsystems."""
         super().__init__(storage_path, seed)
         self.coordinate_deriver = DeterministicCoordinateDeriver(seed)
         self.variation_deriver = VariationalCoordinateDeriver(seed)
@@ -41,6 +47,7 @@ class SemanticOrchestrator(ThalobalOrchestrator):
         self.search_engine = DeterministicSearchEngine()
 
     def handle_semantic_input(self, user_input: str, session_id: str) -> GeneratedResponse:
+        """Process user input deterministically and return a generated response."""
         turn_index = self.state_manager.next_turn_index(session_id, self.state)
         variation_index = turn_index
         context = VariationalContext(

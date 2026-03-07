@@ -1,5 +1,4 @@
-"""
-Authentication package placeholder for Thalos Prime.
+"""Authentication package placeholder for Thalos Prime.
 Implement auth providers and policies here.
 """
 """Thalos Prime authentication subsystem.

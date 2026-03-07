@@ -1,6 +1,4 @@
-"""
-Variation-aware coordinate derivation utilities.
-"""
+"""Variation-aware coordinate derivation utilities."""
 
 from __future__ import annotations
 
@@ -22,7 +20,8 @@ class VariationalContext:
 class VariationalCoordinateDeriver:
     """Derive variation-aware coordinates."""
 
-    def __init__(self, base_seed: str):
+    def __init__(self, base_seed: str) -> None:
+        """Store the base seed for variation derivation."""
         self.base_seed: Final[str] = base_seed
 
     def variation_seed(self, context: VariationalContext) -> str:

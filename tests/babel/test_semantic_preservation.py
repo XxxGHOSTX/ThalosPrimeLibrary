@@ -1,10 +1,11 @@
-"""
-Semantic preservation tests for Babel subsystem.
-"""
+"""Semantic preservation tests for Babel subsystem."""
 
 from __future__ import annotations
 
-from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
 
 
 def test_semantic_preservation_flags(test_orchestrator: SemanticOrchestrator) -> None:
