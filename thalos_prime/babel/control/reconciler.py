@@ -28,7 +28,7 @@ class Reconciler:
                 coord = Coordinate(seed=seed, digest=digest, variation_index=int(var_str))
                 if not CoordinateValidator.validate(coord):
                     issues.append(Inconsistency("state", "Invalid coordinate format", "critical"))
-            except ValueError:
+            except (ValueError, AttributeError, IndexError):
                 issues.append(Inconsistency("state", "Malformed coordinate string", "critical"))
         return issues
 

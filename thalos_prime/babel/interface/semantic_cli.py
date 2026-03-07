@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import TYPE_CHECKING
 
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
     from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
 
 _SESSION_NAMESPACE = uuid.UUID("c2cdd8a5-0a70-4e12-b12b-309c2b8985ff")
+_logger = logging.getLogger(__name__)
 
 
 class SemanticCLI:
@@ -55,7 +57,9 @@ class SemanticCLI:
             self._emit_event("session.terminate", "user requested exit")
             return False
         if command == "/status":
-            self.orchestrator.get_status()
+            status = self.orchestrator.get_status()
+            detail = f"phase={status.phase.name} conversations={status.conversations_handled}"
+            self._emit_event("status.queried", detail)
             return True
         if command == "/checkpoint":
             path = self.orchestrator.checkpoint()
@@ -80,7 +84,9 @@ class SemanticCLI:
         return str(deterministic_uuid)
 
     def _print_banner(self) -> None:
-        pass
+        """Print the CLI welcome banner to stdout."""
+        _logger.info("Thalos Prime Babel CLI started (session=%s)", self.session_id)
 
     def _emit_event(self, event: str, detail: str) -> None:
-        pass
+        """Emit a structured lifecycle event to the logger."""
+        _logger.info("event=%s detail=%s session=%s", event, detail, self.session_id)

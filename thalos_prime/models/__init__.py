@@ -35,9 +35,6 @@ from thalos_prime.models.db_models import (
 __all__ = [
     "AddressInfo",
     "Base",
-    # DB Models
-    "Base",
-    "CachedResult",
     "CachedResult",
     # API Models
     "ChatRequest",
