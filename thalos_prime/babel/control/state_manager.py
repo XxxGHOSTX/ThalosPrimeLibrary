@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -66,3 +69,33 @@ class FileStateManager:
         )
         self.save(updated)
         return updated
+
+    def initialize(self) -> None:
+        """Ensure storage directories exist and log readiness."""
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        (self.base_dir / "state").mkdir(parents=True, exist_ok=True)
+        _log.info("FileStateManager initialized: base_dir=%s", self.base_dir)
+
+    def validate(self) -> bool:
+        """Return True if the state directory is accessible."""
+        return self.state_path.parent.is_dir()
+
+    def operate(self) -> None:
+        """No-op operation phase; state updates are triggered via record_conversation()."""
+
+    def reconcile(self) -> None:
+        """Ensure storage directories exist, recreating them if absent."""
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        (self.base_dir / "state").mkdir(parents=True, exist_ok=True)
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return a snapshot of the state manager configuration."""
+        return {
+            "base_dir": str(self.base_dir),
+            "state_path": str(self.state_path),
+            "state_exists": self.state_path.exists(),
+        }
+
+    def terminate(self) -> None:
+        """No-op termination; state file is preserved on disk for recovery."""
+        _log.info("FileStateManager terminated")

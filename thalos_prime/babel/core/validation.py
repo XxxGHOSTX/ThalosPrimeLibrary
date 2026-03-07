@@ -22,6 +22,26 @@ class Validator(Protocol):
         """Run validation and return result."""
         ...
 
+    def initialize(self) -> None:
+        """Set up resources and establish initial state."""
+        ...
+
+    def operate(self) -> None:
+        """Execute primary operational work."""
+        ...
+
+    def reconcile(self) -> None:
+        """Converge validator to a consistent state."""
+        ...
+
+    def checkpoint(self) -> dict[str, object]:
+        """Serialize validator state for restart."""
+        ...
+
+    def terminate(self) -> None:
+        """Release all resources and finalize shutdown."""
+        ...
+
 
 class SystemValidator:
     """Run registered validators and aggregate results."""

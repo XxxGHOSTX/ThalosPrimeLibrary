@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING
@@ -14,6 +15,8 @@ from .state_manager import FileStateManager
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 
 class SystemPhase(Enum):
@@ -85,6 +88,14 @@ class ThalobalOrchestrator:
     def terminate(self) -> None:
         """Transition orchestrator to HALTED phase."""
         self.phase = SystemPhase.HALTED
+
+    def operate(self) -> None:
+        """Execute one operational cycle, logging phase and conversation count."""
+        _log.info(
+            "operate: phase=%s conversations=%d",
+            self.phase,
+            self.state.conversations_handled,
+        )
 
     def _record_state(self, coordinate: str) -> None:
         self.state = self.state_manager.record_conversation(self.state, coordinate)

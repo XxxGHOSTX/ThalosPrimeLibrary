@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from enum import Enum, auto
 from typing import Protocol
+
+_log = logging.getLogger(__name__)
 
 
 class LifecyclePhase(Enum):
@@ -22,6 +25,26 @@ class LifecycleComponent(Protocol):
 
     def initialize(self) -> None:
         """Set up resources and establish initial state."""
+        ...
+
+    def validate(self) -> None:
+        """Verify all invariants and preconditions are satisfied."""
+        ...
+
+    def operate(self) -> None:
+        """Execute primary operational work."""
+        ...
+
+    def reconcile(self) -> None:
+        """Converge component to a consistent state."""
+        ...
+
+    def checkpoint(self) -> dict[str, object]:
+        """Serialize component state for restart."""
+        ...
+
+    def terminate(self) -> None:
+        """Release all resources and finalize shutdown."""
         ...
 
     def start(self) -> None:
@@ -67,3 +90,30 @@ class LifecycleManager:
         """Call cleanup() on every registered component in reverse registration order."""
         for component in reversed(self.components):
             component.cleanup()
+
+    def initialize(self) -> None:
+        """Initialize all registered components in registration order."""
+        self.initialize_all()
+        _log.info("LifecycleManager initialized: %d components", len(self.components))
+
+    def validate(self) -> None:
+        """Verify all registered components satisfy their lifecycle invariants."""
+        for component in self.components:
+            component.validate()
+
+    def operate(self) -> None:
+        """Start all registered components in registration order."""
+        self.start_all()
+
+    def reconcile(self) -> None:
+        """No-op reconciliation; component ordering is enforced externally."""
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return a snapshot of lifecycle manager state."""
+        return {"component_count": len(self.components)}
+
+    def terminate(self) -> None:
+        """Stop and clean up all registered components."""
+        self.stop_all()
+        self.cleanup_all()
+        _log.info("LifecycleManager terminated")

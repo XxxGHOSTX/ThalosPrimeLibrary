@@ -44,6 +44,22 @@ class CoordinateValidator:
             return False
         return coordinate.variation_index >= 0
 
+    def initialize(self) -> None:
+        """No-op initialization; CoordinateValidator holds no mutable state."""
+
+    def operate(self) -> None:
+        """No-op operation phase; validation is triggered via validate()."""
+
+    def reconcile(self) -> None:
+        """No-op reconciliation; CoordinateValidator holds no mutable state."""
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return a snapshot of validator configuration."""
+        return {"min_digest_length": self.MIN_DIGEST_LENGTH}
+
+    def terminate(self) -> None:
+        """No-op termination; CoordinateValidator holds no mutable state."""
+
 
 class DeterministicCoordinateDeriver:
     """Derive deterministic coordinates from input context."""
