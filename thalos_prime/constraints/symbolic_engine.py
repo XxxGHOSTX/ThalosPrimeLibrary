@@ -301,9 +301,9 @@ class SymbolicConstraintEngine(BaseLifecycleComponent):
             z3_vars[var.name] = z3_var
 
             if var.lower_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var >= var.lower_bound)
+                bounds.append(z3_var >= var.lower_bound)  # pyright: ignore[reportOperatorIssue]
             if var.upper_bound is not None and var.sort != VariableSort.BOOL:
-                bounds.append(z3_var <= var.upper_bound)
+                bounds.append(z3_var <= var.upper_bound)  # pyright: ignore[reportOperatorIssue]
 
         return z3_vars, bounds
 

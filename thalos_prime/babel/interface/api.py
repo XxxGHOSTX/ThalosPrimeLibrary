@@ -36,7 +36,7 @@ def create_app(storage_path: Path) -> Flask:
     app.add_url_rule("/health", view_func=health, methods=["GET"])
 
     @app.post("/converse")
-    def converse() -> tuple[Response, int]:
+    def converse() -> tuple[Response, int]:  # pyright: ignore[reportUnusedFunction]
         """Handle a converse request and return a semantic response."""
         data = request.get_json(force=True)
         req = RequestProtocol(**data)
@@ -52,10 +52,10 @@ def create_app(storage_path: Path) -> Flask:
                 "variation_degree": response.variation_degree,
             },
         )
-        return jsonify(payload.dict()), 200
+        return jsonify(payload.model_dump()), 200
 
     @app.post("/checkpoint")
-    def checkpoint() -> tuple[Response, int]:
+    def checkpoint() -> tuple[Response, int]:  # pyright: ignore[reportUnusedFunction]
         """Trigger an orchestrator checkpoint and return the checkpoint path."""
         path = orchestrator.checkpoint()
         return jsonify({"checkpoint_path": str(path)}), 200

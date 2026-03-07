@@ -25,6 +25,31 @@ logger = logging.getLogger(__name__)
 ActionHandler = Callable[[dict[str, object]], "ActionResult"]
 
 
+class ActionExecutionError(Exception):
+    """Raised by ActionExecutor.execute() when a handler raises an exception.
+
+    Attributes:
+        action: Name of the action that caused the error.
+        result: Failure ActionResult capturing the error.
+        cause: The original exception raised by the handler.
+
+    """
+
+    def __init__(self, action: str, result: ActionResult, cause: BaseException) -> None:
+        """Initialize with the failed action, result, and originating exception.
+
+        Args:
+            action: Name of the action that raised.
+            result: Failure ActionResult capturing the error state.
+            cause: The underlying exception from the handler.
+
+        """
+        super().__init__(f"Handler for action {action!r} raised: {cause!r}")
+        self.action = action
+        self.result = result
+        self.cause = cause
+
+
 @dataclass
 class ActionResult:
     """Result produced by executing an action.
@@ -217,12 +242,15 @@ class ActionExecutor(BaseLifecycleComponent):
         try:
             result = handler(params)
         except Exception as exc:
-            result = ActionResult(
+            failure = ActionResult(
                 action=action,
                 success=False,
                 error=f"{type(exc).__name__}: {exc}",
             )
             logger.exception("ActionExecutor.execute: handler raised for %r", action)
+            self._history.append(failure)
+            self._execution_count += 1
+            raise ActionExecutionError(action, failure, exc) from exc
 
         self._history.append(result)
         self._execution_count += 1
@@ -232,6 +260,26 @@ class ActionExecutor(BaseLifecycleComponent):
             result.success,
         )
         return result
+
+    def safe_execute(self, action: str, params: dict[str, object]) -> ActionResult:
+        """Execute an action, capturing any handler exception as a failure result.
+
+        Unlike execute(), this method never raises: handler exceptions are
+        captured and returned as a failure ActionResult.
+
+        Args:
+            action: Name of the registered action to execute.
+            params: Parameters to pass to the action handler.
+
+        Returns:
+            ActionResult from the handler, or a failure result if the handler
+            raises or the action is not registered.
+
+        """
+        try:
+            return self.execute(action, params)
+        except ActionExecutionError as exc:
+            return exc.result
 
     def get_history(self) -> list[ActionResult]:
         """Return an immutable copy of the execution history.

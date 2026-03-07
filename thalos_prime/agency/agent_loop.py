@@ -284,7 +284,7 @@ class AgentLoop(BaseLifecycleComponent):
 
         predicted_state = self._world_model.predict(world_state, chosen_action)
 
-        action_result = self._action_executor.execute(
+        action_result = self._action_executor.safe_execute(
             chosen_action,
             {"query": query, "step": step_index},
         )
