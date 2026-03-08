@@ -302,11 +302,27 @@ pytest tests/test_generator.py -v
 - 100% coverage for critical lifecycle paths
 - All tests must be deterministic
 
+## Architecture
+
+For a concise, contributor-oriented description of the full deterministic
+pipeline, control-plane / data-plane separation, SBI reference model, and
+CI/coverage expectations, see:
+
+📐 **[docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md)** — Deterministic Architecture Blueprint
+
+Topics covered:
+- 7-stage MNN production pipeline (Normalization → Constraint Generation → Index Mapping → Sequence Generation → Analysis & Filtering → Center-Weighted Scoring → Output Handling)
+- Determinism guarantees (single seed, stable sort, checkpoint integrity, replay)
+- Synthetic Biological Intelligence (SBI) — logic / abstract / governance lobes and proof-checking
+- CI / coverage expectations (80 % baseline, 100 % for critical paths)
+- LRU caching strategy and dry-run / offline mode
+
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow and standards
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Complete deployment guide
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
+- [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) - Deterministic Architecture Blueprint
 - [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - Implementation details
 - [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - System verification
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) - Enforcement criteria
