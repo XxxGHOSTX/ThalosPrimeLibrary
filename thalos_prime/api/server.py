@@ -240,15 +240,19 @@ def register_routes(app: FastAPI) -> None:
     try:
         from thalos_prime.api.routes.admin import router as admin_router
         from thalos_prime.api.routes.agent import router as agent_router
+        from thalos_prime.api.routes.auth import router as auth_router
         from thalos_prime.api.routes.chat import router as chat_router
         from thalos_prime.api.routes.decode import router as decode_router
         from thalos_prime.api.routes.enumerate import router as enumerate_router
         from thalos_prime.api.routes.generate import router as generate_router
         from thalos_prime.api.routes.main import router as main_router
         from thalos_prime.api.routes.search import router as search_router
+        from thalos_prime.api.routes.subscription import router as subscription_router
 
         # Register routers with prefixes
         app.include_router(main_router, tags=["Main"])
+        app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
+        app.include_router(subscription_router, prefix="/api/v1/subscription", tags=["Subscription"])
         app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
         app.include_router(search_router, prefix="/api/v1/search", tags=["Search"])
         app.include_router(generate_router, prefix="/api/v1/generate", tags=["Generate"])

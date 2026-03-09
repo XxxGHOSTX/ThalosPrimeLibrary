@@ -279,6 +279,7 @@ disable_error_code = ["no-untyped-call"]
     "PLR0913",
     "PLR2004",
 ]
+"thalos_prime/models/api_models.py" = ["TC003"]
 "thalos_prime/__init__.py" = ["E402", "PTH110"]
 "thalos_nexus/cli.py" = ["T201"]
 "thalos_nexus/gates.py" = ["S603", "S607"]

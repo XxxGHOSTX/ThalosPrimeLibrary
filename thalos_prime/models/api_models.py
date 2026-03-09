@@ -5,6 +5,7 @@ These models define the schema for all API endpoints.
 
 from __future__ import annotations
 
+import time
 from datetime import datetime
 from enum import StrEnum
 from typing import Any, ClassVar
@@ -249,7 +250,7 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Human-readable error message")
     details: dict[str, Any] = Field(default_factory=dict, description="Additional error details")
-    timestamp: datetime = Field(default_factory=datetime.now, description="Error timestamp")
+    timestamp: float = Field(default_factory=time.time, description="Error timestamp (Unix epoch)")
 
 
 class StatusResponse(BaseModel):
