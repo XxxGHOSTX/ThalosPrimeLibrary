@@ -94,7 +94,7 @@ class TestLogin:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["token_type"] == "bearer"
+        assert data["token_type"] == "bearer"  # noqa: S105 - "bearer" is the RFC 6750 token type, not a password
         assert "access_token" in data
         assert len(data["access_token"]) > 0
         assert data["username"] == "user"
