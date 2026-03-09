@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 import networkx as nx
 
@@ -39,9 +39,9 @@ class NodeRecord:
 
     node_id: str
     labels: set[str] = field(default_factory=set)
-    properties: dict[str, object] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize node to dictionary.
 
         Returns:
@@ -70,9 +70,9 @@ class RelationshipRecord:
     source_id: str
     target_id: str
     rel_type: str
-    properties: dict[str, object] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize relationship to dictionary.
 
         Returns:
@@ -107,10 +107,10 @@ class CypherQuery:
     rel_type: str = ""
     source_id: str = ""
     target_id: str = ""
-    properties: dict[str, object] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
     limit: int = 100
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize query to dictionary.
 
         Returns:
