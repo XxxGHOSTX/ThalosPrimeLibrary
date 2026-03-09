@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
         import uvicorn
 
-        from src.api import app
+        from thalos_prime.api.server import app
 
 
 
