@@ -32,7 +32,7 @@ def create_app(storage_path: Path) -> Flask:
     app.add_url_rule("/health", view_func=health, methods=["GET"])
 
     @app.post("/converse")
-    def converse():
+    def converse() -> tuple[Response, int]:
         data = request.get_json(force=True)
         req = RequestProtocol(**data)
         response = orchestrator.handle_semantic_input(req.user_input, req.session_id)
@@ -47,11 +47,11 @@ def create_app(storage_path: Path) -> Flask:
                 "variation_degree": response.variation_degree,
             },
         )
-        return jsonify(payload.dict())
+        return jsonify(payload.dict()), 200
 
     @app.post("/checkpoint")
-    def checkpoint():
+    def checkpoint() -> tuple[Response, int]:
         path = orchestrator.checkpoint()
-        return jsonify({"checkpoint_path": str(path)})
+        return jsonify({"checkpoint_path": str(path)}), 200
 
     return app
