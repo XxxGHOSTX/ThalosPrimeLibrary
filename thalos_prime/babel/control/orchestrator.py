@@ -41,7 +41,7 @@ class ThalobalOrchestrator:
         self.checkpoint_manager = CheckpointManager(self.storage_path)
         self.reconciler = Reconciler()
         self.validator = SystemValidator()
-        self.state = self.state_manager.load()
+        self.state: SystemState = self.state_manager.load()
         self._ensure_storage_layout()
 
     def initialize(self) -> None:
@@ -50,7 +50,7 @@ class ThalobalOrchestrator:
         self.phase = SystemPhase.OPERATIONAL
 
     def validate(self) -> None:
-        results = self.validator.validate_all()
+        results: list[ValidationResult] = self.validator.validate_all()
         failures = [r for r in results if not r.passed]
         if failures:
             raise RuntimeError(f"Validation failed: {[f.message for f in failures]}")

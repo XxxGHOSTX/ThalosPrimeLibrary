@@ -15,7 +15,7 @@ def _length_reward(state: str) -> float:
     return min(len(state) / 50.0, 1.0)
 
 
-def _constant_reward(value: float) -> object:
+def _constant_reward(value: float) -> object:  # pyright: ignore[reportUnusedFunction]
     """Return an evaluator that always returns the given value."""
     def evaluator(state: str) -> float:
         _ = state
