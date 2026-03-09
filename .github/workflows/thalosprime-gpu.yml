@@ -1,0 +1,46 @@
+name: ThalosPrime GPU CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gpu-gates:
+    name: GPU Gates — Self-Hosted CUDA / Python 3.12
+    runs-on: [self-hosted, linux, x64, gpu, cuda-11]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check GPU availability
+        run: nvidia-smi
+
+      - name: Install dev dependencies
+        run: make install
+
+      - name: Validate determinism
+        run: python tools/validate_determinism.py
+
+      - name: Validate lifecycle methods
+        run: python tools/validate_lifecycle.py
+
+      - name: Validate state management
+        run: python tools/validate_state.py
+
+      - name: Detect prohibited patterns
+        run: python tools/detect_prohibited_patterns.py
+
+      - name: Run GPU-marked tests
+        run: pytest -q -m gpu --no-header

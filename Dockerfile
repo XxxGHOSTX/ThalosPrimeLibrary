@@ -1,16 +1,16 @@
-FROM python:3.11-slim AS build
+FROM python:3.12-slim AS build
 WORKDIR /app
 COPY pyproject.toml setup.py ./
 COPY thalos_prime thalos_prime
 RUN python -m pip install --upgrade pip && pip install --no-cache-dir .
 
-FROM python:3.11-slim
+FROM python:3.12-slim
 RUN useradd --create-home appuser && \
     apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY . /app
 USER appuser

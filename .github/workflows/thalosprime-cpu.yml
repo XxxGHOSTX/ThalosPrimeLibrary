@@ -1,0 +1,51 @@
+name: ThalosPrime CPU CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cpu-gates:
+    name: CPU Gates — Ubuntu / Python 3.12
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dev dependencies
+        run: make install
+
+      - name: Run full gate (typecheck + lint + test + validate)
+        run: make check
+
+      - name: Upload coverage and bandit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-ci-artifacts-${{ github.run_id }}
+          path: |
+            coverage.xml
+            .coverage
+            bandit-report.json
+          if-no-files-found: ignore
+          retention-days: 30
