@@ -5,6 +5,7 @@ middleware, and route registration.
 """
 
 import logging
+import os
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -17,6 +18,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from thalos_prime import __version__
+from thalos_prime.config import get_config
 from thalos_prime.models.api_models import ErrorResponse
 
 # Configure logging
@@ -61,6 +63,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 async def initialize_services() -> None:
     """Initialize all application services."""
+    # Ensure the library data directory exists and is writable
+    library_path = get_config().get_local_library_path()
+    os.makedirs(library_path, exist_ok=True)
+    logger.info("Library data directory ready: %s", library_path)
+
     # Initialize cache
     logger.info("Initializing cache service...")
 
