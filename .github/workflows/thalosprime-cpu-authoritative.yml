@@ -1,0 +1,48 @@
+name: ThalosPrimeLibrary CPU (Authoritative)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-authoritative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONHASHSEED: "0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dev dependencies (authoritative)
+        run: |
+          python -m pip install --upgrade pip
+          make install
+
+      - name: Run full gate (typecheck + lint + test + validate)
+        run: make check
+
+      - name: Upload validator artifacts (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thalosprime-validator-artifacts
+          path: |
+            bandit-report.json
+            .coverage
+            coverage.xml
+          if-no-files-found: ignore
