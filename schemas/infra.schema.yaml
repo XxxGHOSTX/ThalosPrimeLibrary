@@ -1,0 +1,37 @@
+# schemas/infra.schema.yaml
+# Sample infrastructure schema for Thalos Prime infra-synthesis.
+# Run: thalos build --schema schemas/infra.schema.yaml --out dist
+
+project:
+  name: thalos-prime-sample
+  version: "1.0.0"
+  description: "Sample infrastructure schema for Thalos Prime"
+  owner: devops@example.com
+
+compute:
+  type: container          # container | serverless | vm
+  image: python:3.12-slim
+  scaling: 3               # number of replicas (max 50 enforced by policy)
+  entrypoint: thalos_prime # Python module to run
+
+network:
+  protocol: https          # must be https (require_ssl policy)
+  domain: example.com
+  port: 8080
+  region: us-east-1
+  cloudflare_account_id: "REPLACE_WITH_ACCOUNT_ID"
+
+storage:
+  backend: s3
+  bucket: thalos-prime-artifacts
+  region: us-east-1
+  encryption: AES256
+
+ci:
+  provider: github_actions
+  python_version: "3.12"
+  package_name: thalos_prime
+  release_strategy: direct   # direct | blue_green | canary
+  branches:
+    - main
+    - develop

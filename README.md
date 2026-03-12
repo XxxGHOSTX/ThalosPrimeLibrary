@@ -317,6 +317,81 @@ Topics covered:
 - CI / coverage expectations (80 % baseline, 100 % for critical paths)
 - LRU caching strategy and dry-run / offline mode
 
+## Infra Synthesis Engine
+
+The `thalos_prime.infra_synthesis` package is a deterministic infrastructure-synthesis spine
+that reads a YAML schema and emits provider artifacts.
+
+### Installation
+
+```bash
+pip install -e .
+```
+
+### Quick Start
+
+Generate provider artifacts from the sample schema:
+
+```bash
+thalos build --schema schemas/infra.schema.yaml --out dist
+```
+
+This creates the following files in `dist/`:
+
+| File | Description |
+|------|-------------|
+| `dist/terraform/provider.tf` | Terraform provider declaration |
+| `dist/terraform/main.tf` | Terraform main configuration |
+| `dist/opentofu/main.tf` | OpenTofu main configuration |
+| `dist/wrangler.toml` | Cloudflare Wrangler configuration |
+| `dist/ci.yml` | GitHub Actions CI workflow |
+| `dist/Dockerfile` | Container image definition (when `compute.type: container`) |
+| `dist/artifact_manifest.json` | SHA-256 manifest of all generated files |
+
+### Validate Schema + Policies
+
+```bash
+thalos verify --schema schemas/infra.schema.yaml
+```
+
+### Deploy with Release Strategy
+
+```bash
+thalos deploy --schema schemas/infra.schema.yaml --deploy-key v1.2.3
+```
+
+### Schema Format
+
+See [`schemas/infra.schema.yaml`](schemas/infra.schema.yaml) for a complete example.
+Required top-level sections: `project`, `compute`, `network`, `storage`, `ci`.
+
+### Architecture
+
+| Layer | Modules |
+|-------|---------|
+| Adapters | `adapters/terraform.py`, `adapters/opentofu.py`, `adapters/cloudflare.py`, `adapters/github_actions.py`, `adapters/docker.py` |
+| Engine | `engine.py` — orchestrates adapters, hashes artifacts |
+| Validation | `validator.py`, `schema_loader.py` |
+| Policy | `policy/engine.py` — `require_ssl`, `limit_scaling` rules |
+| Secrets | `secrets/local_vault.py` — Fernet (AES-GCM) encrypted vault |
+| State | `state/local.py` — JSON-on-disk snapshot backend |
+| Rollback | `rollback/manager.py` — pre-deploy snapshots + restore |
+| Drift | `drift.py` — DeepDiff schema drift detection |
+| Release | `release/orchestrator.py` — direct / blue_green / canary strategies |
+| Events | `events/bus.py` — pub/sub event bus |
+| Telemetry | `telemetry/metrics.py` — metric recording + JSON export |
+| Security | `security/rbac.py` — role-based access control |
+| Audit | `audit/logger.py` — structured JSON audit log |
+| Plugins | `plugins/loader.py` — entry-point-based plugin discovery |
+| Schema Versioning | `schema_versioning/registry.py` + `diff.py` |
+| CLI | `cli/main.py` — `thalos build|verify|deploy` |
+
+### Running Tests
+
+```bash
+pytest tests/infra_synthesis/ -v
+```
+
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow and standards
