@@ -5,14 +5,14 @@ Validation utilities for Babel subsystem.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, List
+from typing import Any, Protocol, List
 
 
 @dataclass(frozen=True)
 class ValidationResult:
     passed: bool
     message: str
-    details: dict
+    details: dict[str, Any]
 
 
 class Validator(Protocol):

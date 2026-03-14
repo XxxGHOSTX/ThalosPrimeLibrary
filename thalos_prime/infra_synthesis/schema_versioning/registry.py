@@ -48,7 +48,7 @@ class SchemaVersionRegistry:
         if not isinstance(data, list):
             msg = f"Schema version registry '{self._path}' is not a JSON array"
             raise TypeError(msg)
-        return data  # type: ignore[return-value]
+        return data
 
     def register(self, version: str, schema: dict[str, Any]) -> None:
         """Append *schema* to the registry under *version*.
@@ -81,7 +81,7 @@ class SchemaVersionRegistry:
         """
         for entry in self._entries:
             if entry.get("version") == version:
-                return entry.get("schema")  # type: ignore[return-value]
+                return entry.get("schema")
         return None
 
     def list_versions(self) -> list[str]:

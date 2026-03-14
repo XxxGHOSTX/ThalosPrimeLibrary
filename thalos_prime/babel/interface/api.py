@@ -32,7 +32,7 @@ def create_app(storage_path: Path) -> Flask:
     app.add_url_rule("/health", view_func=health, methods=["GET"])
 
     @app.post("/converse")
-    def converse():
+    def converse() -> Response:
         data = request.get_json(force=True)
         req = RequestProtocol(**data)
         response = orchestrator.handle_semantic_input(req.user_input, req.session_id)
@@ -50,7 +50,7 @@ def create_app(storage_path: Path) -> Flask:
         return jsonify(payload.dict())
 
     @app.post("/checkpoint")
-    def checkpoint():
+    def checkpoint() -> Response:
         path = orchestrator.checkpoint()
         return jsonify({"checkpoint_path": str(path)})
 

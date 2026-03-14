@@ -6,7 +6,7 @@ These models define the schema for all API endpoints.
 from enum import StrEnum
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SearchMode(StrEnum):
@@ -45,8 +45,8 @@ class AddressInfo(BaseModel):
     page: int | None = Field(None, description="Page number")
     url: str | None = Field(None, description="Full URL to page")
 
-    model_config: ClassVar[dict[str, Any]] = {
-        "json_schema_extra": {
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={
             "example": {
                 "hex_address": "abc123def456",
                 "wall": 1,
@@ -56,7 +56,7 @@ class AddressInfo(BaseModel):
                 "url": "https://libraryofbabel.info/book.cgi?hex=abc123def456",
             }
         }
-    }
+    )
 
 
 # Coherence Information
@@ -71,8 +71,8 @@ class CoherenceInfo(BaseModel):
     confidence_level: ConfidenceLevel = Field(..., description="Confidence level")
     metrics: dict[str, Any] = Field(default_factory=dict, description="Additional metrics")
 
-    model_config: ClassVar[dict[str, Any]] = {
-        "json_schema_extra": {
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={
             "example": {
                 "overall_score": 75.5,
                 "language_score": 65.0,
@@ -83,7 +83,7 @@ class CoherenceInfo(BaseModel):
                 "metrics": {"word_count": 150, "sentence_count": 8},
             }
         }
-    }
+    )
 
 
 # Provenance Information
@@ -97,8 +97,8 @@ class ProvenanceInfo(BaseModel):
     normalized: bool = Field(default=False, description="Whether normalization was applied")
     llm_provider: str | None = Field(None, description="LLM provider if used")
 
-    model_config: ClassVar[dict[str, Any]] = {
-        "json_schema_extra": {
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={
             "example": {
                 "address": "abc123",
                 "source": "local",
@@ -108,7 +108,7 @@ class ProvenanceInfo(BaseModel):
                 "llm_provider": None,
             }
         }
-    }
+    )
 
 
 # Page Result
@@ -122,8 +122,8 @@ class PageResult(BaseModel):
     provenance: ProvenanceInfo = Field(..., description="Provenance information")
     normalized_text: str | None = Field(None, description="Normalized text if available")
 
-    model_config: ClassVar[dict[str, Any]] = {
-        "json_schema_extra": {
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={
             "example": {
                 "address": {
                     "hex_address": "abc123",
@@ -139,7 +139,7 @@ class PageResult(BaseModel):
                 },
             }
         }
-    }
+    )
 
 
 # Error Response

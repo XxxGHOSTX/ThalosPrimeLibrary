@@ -89,7 +89,7 @@ class LocalStateBackend(StateBackend):
         if not isinstance(data, dict):
             msg = f"Snapshot file '{path}' does not contain a JSON object"
             raise TypeError(msg)
-        return data  # type: ignore[return-value]
+        return data
 
     def delete(self, key: str) -> None:
         """Delete snapshot for *key* (no-op if absent).

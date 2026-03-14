@@ -69,7 +69,7 @@ class SchemaLoader:
             raise SchemaLoadError(msg)
 
         logger.debug("Schema loaded from '%s' (%d top-level keys)", schema_path, len(data))
-        return data  # type: ignore[return-value]
+        return data
 
 
 __all__ = ["SchemaLoadError", "SchemaLoader"]
