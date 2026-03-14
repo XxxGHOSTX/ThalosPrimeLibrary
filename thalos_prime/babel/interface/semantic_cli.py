@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
 
+logger = logging.getLogger(__name__)
+
 _SESSION_NAMESPACE = uuid.UUID("c2cdd8a5-0a70-4e12-b12b-309c2b8985ff")
+_BANNER = "Thalos Prime Semantic CLI — type /help for commands, /quit to exit."
 
 
 class SemanticCLI:
@@ -76,7 +80,9 @@ class SemanticCLI:
         return str(deterministic_uuid)
 
     def _print_banner(self) -> None:
-        pass
+        """Print the CLI welcome banner to stdout."""
+        print(_BANNER)  # noqa: T201
 
     def _emit_event(self, event: str, detail: str) -> None:
-        pass
+        """Log a structured lifecycle event."""
+        logger.info("event=%s detail=%s session=%s", event, detail, self.session_id)
