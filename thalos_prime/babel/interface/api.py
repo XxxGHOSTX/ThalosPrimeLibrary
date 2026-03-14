@@ -47,7 +47,7 @@ def create_app(storage_path: Path) -> Flask:
                 "variation_degree": response.variation_degree,
             },
         )
-        return jsonify(payload.dict())
+        return jsonify(payload.model_dump())
 
     @app.post("/checkpoint")
     def checkpoint() -> Response:
