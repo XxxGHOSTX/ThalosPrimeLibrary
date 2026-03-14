@@ -34,6 +34,41 @@ class SnapshotManager:
 
         """
         self._backend = backend
+        self._initialized: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle methods
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Initialize the snapshot manager."""
+        self._initialized = True
+        logger.debug("SnapshotManager: initialized")
+
+    def validate(self) -> None:
+        """Validate that the snapshot manager is ready.
+
+        Raises:
+            RuntimeError: When the manager has not been initialized.
+
+        """
+        if not self._initialized:
+            msg = "SnapshotManager not initialized; call initialize() first"
+            raise RuntimeError(msg)
+
+    def operate(self) -> None:
+        """Execute primary work (no background operation; no-op)."""
+
+    def reconcile(self) -> None:
+        """Reconcile snapshot manager state (stateless; no-op)."""
+
+    def checkpoint(self) -> None:
+        """Serialize snapshot manager state (snapshot state held by backend)."""
+
+    def terminate(self) -> None:
+        """Terminate the snapshot manager and reset state."""
+        self._initialized = False
+        logger.debug("SnapshotManager: terminated")
 
     def capture(self, key: str, schema: dict[str, Any]) -> dict[str, Any]:
         """Capture a snapshot of *schema* and persist it under *key*.

@@ -1,15 +1,15 @@
-"""
-Deterministic coordinate mathematics for Babel responses.
-"""
+"""Deterministic coordinate mathematics for Babel responses."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from .context_hasher import ContextHasher
-from .variational_coordinate_system import VariationalContext
+
+if TYPE_CHECKING:
+    from .variational_coordinate_system import VariationalContext
 
 
 @dataclass(frozen=True)
@@ -35,6 +35,15 @@ class CoordinateValidator:
 
     @classmethod
     def validate(cls, coordinate: Coordinate) -> bool:
+        """Validate a coordinate for integrity and structure.
+
+        Args:
+            coordinate: Coordinate to validate.
+
+        Returns:
+            True if the coordinate is valid, False otherwise.
+
+        """
         digest = coordinate.digest
         if len(digest) < cls.MIN_DIGEST_LENGTH:
             return False
@@ -42,11 +51,26 @@ class CoordinateValidator:
             return False
         return coordinate.variation_index >= 0
 
+    def initialize(self) -> None:
+        """Initialize the coordinate validator (stateless; no-op)."""
+
+    def operate(self) -> None:
+        """Execute primary work (stateless validator; no-op)."""
+
+    def reconcile(self) -> None:
+        """Reconcile validator state (stateless; no-op)."""
+
+    def checkpoint(self) -> None:
+        """Serialize validator state (stateless; no state to serialize)."""
+
+    def terminate(self) -> None:
+        """Terminate the coordinate validator (stateless; no-op)."""
+
 
 class DeterministicCoordinateDeriver:
     """Derive deterministic coordinates from input context."""
 
-    def __init__(self, seed: str):
+    def __init__(self, seed: str) -> None:
         self.seed: Final[str] = seed
 
     def derive(self, text: str, context: VariationalContext) -> Coordinate:
@@ -57,5 +81,6 @@ class DeterministicCoordinateDeriver:
         digest = sha256(digest_source.encode("utf-8")).hexdigest()
         coordinate = Coordinate(seed=self.seed, digest=digest[:32], variation_index=context.variation_index)
         if not CoordinateValidator.validate(coordinate):
-            raise ValueError("Invalid coordinate generated")
+            msg = "Invalid coordinate generated"
+            raise ValueError(msg)
         return coordinate

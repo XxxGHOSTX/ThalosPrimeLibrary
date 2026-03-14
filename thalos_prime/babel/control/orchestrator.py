@@ -1,18 +1,19 @@
-"""
-Base orchestrator for Babel subsystem.
-"""
+"""Base orchestrator for Babel subsystem."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from ..core.validation import SystemValidator, ValidationResult
-from .state_manager import FileStateManager, SystemState
+from thalos_prime.babel.core.validation import SystemValidator
+
 from .checkpoint import CheckpointManager
 from .reconciler import Reconciler
+from .state_manager import FileStateManager
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class SystemPhase(Enum):
@@ -26,7 +27,7 @@ class SystemPhase(Enum):
 class SystemStatus:
     phase: SystemPhase
     conversations_handled: int
-    last_coordinate: Optional[str]
+    last_coordinate: str | None
     integrity_verified: bool
 
 
@@ -45,15 +46,21 @@ class ThalobalOrchestrator:
         self._ensure_storage_layout()
 
     def initialize(self) -> None:
+        """Initialize orchestrator: validate and transition to OPERATIONAL."""
         self.phase = SystemPhase.VALIDATING
         self.validate()
         self.phase = SystemPhase.OPERATIONAL
+
+    def operate(self) -> None:
+        """Execute primary orchestration work: reconcile current state."""
+        self.reconcile()
 
     def validate(self) -> None:
         results = self.validator.validate_all()
         failures = [r for r in results if not r.passed]
         if failures:
-            raise RuntimeError(f"Validation failed: {[f.message for f in failures]}")
+            msg = f"Validation failed: {[f.message for f in failures]}"
+            raise RuntimeError(msg)
 
     def get_status(self) -> SystemStatus:
         return SystemStatus(

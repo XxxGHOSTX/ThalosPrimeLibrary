@@ -5,10 +5,10 @@ middleware, and route registration.
 """
 
 import logging
-import os
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -65,7 +65,7 @@ async def initialize_services() -> None:
     """Initialize all application services."""
     # Ensure the library data directory exists and is writable
     library_path = get_config().get_local_library_path()
-    os.makedirs(library_path, exist_ok=True)
+    Path(library_path).mkdir(parents=True, exist_ok=True)
     logger.info("Library data directory ready: %s", library_path)
 
     # Initialize cache

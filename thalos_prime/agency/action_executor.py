@@ -26,6 +26,26 @@ ActionHandler = Callable[[dict[str, object]], "ActionResult"]
 
 
 @dataclass
+class ActionExecutionError(Exception):
+    """Raised by execute() when a registered handler raises an exception.
+
+    Attributes:
+        action: Name of the action that failed.
+        result: The failure ActionResult produced from the handler exception.
+        cause: The original exception raised by the handler.
+
+    """
+
+    action: str
+    result: ActionResult
+    cause: BaseException
+
+    def __str__(self) -> str:
+        """Return string representation."""
+        return f"ActionExecutionError(action={self.action!r}, cause={self.cause!r})"
+
+
+@dataclass
 class ActionResult:
     """Result produced by executing an action.
 
@@ -191,7 +211,7 @@ class ActionExecutor(BaseLifecycleComponent):
         return False
 
     def execute(self, action: str, params: dict[str, object]) -> ActionResult:
-        """Execute a registered action with the given parameters.
+        """Execute a registered action; raise ActionExecutionError if handler throws.
 
         Args:
             action: Name of the registered action to execute.
@@ -199,7 +219,10 @@ class ActionExecutor(BaseLifecycleComponent):
 
         Returns:
             ActionResult from the handler, or a failure result if the
-            action is not registered or the handler raises.
+            action is not registered.
+
+        Raises:
+            ActionExecutionError: When the registered handler raises any exception.
 
         """
         handler = self._handlers.get(action)
@@ -217,12 +240,13 @@ class ActionExecutor(BaseLifecycleComponent):
         try:
             result = handler(params)
         except Exception as exc:
-            result = ActionResult(
+            failure = ActionResult(
                 action=action,
                 success=False,
                 error=f"{type(exc).__name__}: {exc}",
             )
             logger.exception("ActionExecutor.execute: handler raised for %r", action)
+            raise ActionExecutionError(action=action, result=failure, cause=exc) from exc
 
         self._history.append(result)
         self._execution_count += 1
@@ -232,6 +256,29 @@ class ActionExecutor(BaseLifecycleComponent):
             result.success,
         )
         return result
+
+    def safe_execute(self, action: str, params: dict[str, object]) -> ActionResult:
+        """Execute a registered action; capture any handler exception as a failure result.
+
+        Args:
+            action: Name of the registered action to execute.
+            params: Parameters to pass to the action handler.
+
+        Returns:
+            ActionResult from the handler, or a failure ActionResult if the
+            action is not registered or the handler raises.
+
+        """
+        try:
+            return self.execute(action, params)
+        except ActionExecutionError as err:
+            result = err.result
+            self._history.append(result)
+            self._execution_count += 1
+            logger.exception(
+                "ActionExecutor.safe_execute: handler raised for %r", action
+            )
+            return result
 
     def get_history(self) -> list[ActionResult]:
         """Return an immutable copy of the execution history.
@@ -260,4 +307,4 @@ class ActionExecutor(BaseLifecycleComponent):
         return hasher.hexdigest()
 
 
-__all__ = ["ActionExecutor", "ActionHandler", "ActionResult"]
+__all__ = ["ActionExecutionError", "ActionExecutor", "ActionHandler", "ActionResult"]

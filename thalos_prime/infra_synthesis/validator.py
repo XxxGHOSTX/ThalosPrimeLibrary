@@ -40,6 +40,15 @@ class SchemaValidator:
     fields are reported as violations.
     """
 
+    def __init__(self) -> None:
+        """Initialize the schema validator."""
+        self._initialized: bool = False
+
+    def initialize(self) -> None:
+        """Initialize the schema validator."""
+        self._initialized = True
+        logger.debug("SchemaValidator: initialized")
+
     def validate(self, schema: dict[str, Any]) -> ValidationResult:
         """Validate *schema* and return a :class:`ValidationResult`.
 
@@ -126,6 +135,20 @@ class SchemaValidator:
             return
         if "provider" not in section:
             violations.append("'ci.provider' is required")
+
+    def operate(self) -> None:
+        """Execute primary work (stateless validator; no-op)."""
+
+    def reconcile(self) -> None:
+        """Reconcile validator state (stateless; no-op)."""
+
+    def checkpoint(self) -> None:
+        """Serialize validator state (stateless; no state to serialize)."""
+
+    def terminate(self) -> None:
+        """Terminate the schema validator and reset state."""
+        self._initialized = False
+        logger.debug("SchemaValidator: terminated")
 
 
 __all__ = ["SchemaValidator", "ValidationResult"]

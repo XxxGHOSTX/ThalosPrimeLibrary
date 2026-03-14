@@ -1,10 +1,11 @@
-"""
-Output formatting helpers.
-"""
+"""Output formatting helpers."""
 
 from __future__ import annotations
 
-from ..core.response_generator import GeneratedResponse
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from thalos_prime.babel.core.response_generator import GeneratedResponse
 
 
 class OutputFormatter:

@@ -1,6 +1,4 @@
-"""
-Deterministic intent classification.
-"""
+"""Deterministic intent classification."""
 
 from __future__ import annotations
 
@@ -8,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Final
 
-from ..core.context_hasher import ContextHasher
+from thalos_prime.babel.core.context_hasher import ContextHasher
 
 
 class Intent(Enum):

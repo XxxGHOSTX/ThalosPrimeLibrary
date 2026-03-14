@@ -45,6 +45,37 @@ def get_babel_endpoints() -> dict[str, str]:
     }
 
 # Re-export synthesis helpers
+from thalos_prime.constraints.symbolic_engine import (
+    ConstraintSet,
+    OptimizationObjective,
+    SymbolicConstraintEngine,
+    SymbolicSolution,
+    VariableDeclaration,
+    VariableSort,
+)
+
+# Graph-RAG Add-on (standalone module)
+from thalos_prime.graph_rag.interfaces import (
+    GraphEdge,
+    GraphNode,
+    GraphQueryResult,
+)
+from thalos_prime.graph_rag.retriever import HybridResult, HybridRetriever
+from thalos_prime.graph_rag.simple_graph import SimpleKnowledgeGraph
+from thalos_prime.ingest import (
+    CanonicalArtifact,
+    canonicalize_text,
+    compute_meaning_hash,
+    ingest_fragment,
+)
+from thalos_prime.knowledge_graph.neo4j_graph import (
+    CypherQuery,
+    Neo4jKnowledgeGraph,
+    NodeRecord,
+    RelationshipRecord,
+)
+from thalos_prime.library_of_sense.retrieval.graph_rag import GraphRAGRetriever
+from thalos_prime.lifecycle import BaseLifecycleComponent, LifecycleProtocol
 from thalos_prime.lob_babel_enumerator import (
     BabelEnumerator,
     enumerate_addresses,
@@ -65,43 +96,8 @@ from thalos_prime.lob_decoder import (
     decode_page,
     score_coherence,
 )
-from thalos_prime.ingest import (
-    CanonicalArtifact,
-    canonicalize_text,
-    compute_meaning_hash,
-    ingest_fragment,
-)
-
-from .synthesis import deep_synthesis
-
-from thalos_prime.lifecycle import BaseLifecycleComponent, LifecycleProtocol
-from thalos_prime.library_of_sense.retrieval.graph_rag import GraphRAGRetriever
-from thalos_prime.planning.tree_of_thoughts import ThoughtNode, TreeOfThoughtsPlanner
 from thalos_prime.planning.mcts_planner import MCTSNode, MCTSPlanner, MCTSResult
-from thalos_prime.simulation.world_model import WorldModel, WorldState
-from thalos_prime.knowledge_graph.neo4j_graph import (
-    CypherQuery,
-    Neo4jKnowledgeGraph,
-    NodeRecord,
-    RelationshipRecord,
-)
-from thalos_prime.constraints.symbolic_engine import (
-    ConstraintSet,
-    OptimizationObjective,
-    SymbolicConstraintEngine,
-    SymbolicSolution,
-    VariableDeclaration,
-    VariableSort,
-)
-
-# Graph-RAG Add-on (standalone module)
-from thalos_prime.graph_rag.interfaces import (
-    GraphEdge,
-    GraphNode,
-    GraphQueryResult,
-)
-from thalos_prime.graph_rag.retriever import HybridResult, HybridRetriever
-from thalos_prime.graph_rag.simple_graph import SimpleKnowledgeGraph
+from thalos_prime.planning.tree_of_thoughts import ThoughtNode, TreeOfThoughtsPlanner
 
 # Reasoning Add-on (standalone module)
 from thalos_prime.reasoning.engine import (
@@ -109,84 +105,85 @@ from thalos_prime.reasoning.engine import (
     ReasoningRequest,
     ReasoningResponse,
 )
+from thalos_prime.simulation.world_model import WorldModel, WorldState
+
+from .synthesis import deep_synthesis
 
 __all__ = [
+    # Library motto
+    "LIBRARY_MOTTO",
     # Library of Babel endpoints
     "LIBRARY_OF_BABEL_BASE_URL",
     "LIBRARY_OF_BABEL_SEARCH_API",
     "LIBRARY_OF_BABEL_SEARCH_URL",
     "LOCAL_LIBRARY_PATH",
-    # Library motto
-    "LIBRARY_MOTTO",
     # Decoder
-    'BabelDecoder',
-    'CoherenceScore',
-    'DecodedPage',
-    'score_coherence',
-    'decode_page',
-
-    # Ingestion
-    'CanonicalArtifact',
-    'canonicalize_text',
-    'compute_meaning_hash',
-    'ingest_fragment',
-
+    "BabelDecoder",
     "BabelDecoder",
     # Enumerator
     "BabelEnumerator",
     # Generator
     "BabelGenerator",
+    # Lifecycle
+    "BaseLifecycleComponent",
+    # Ingestion
+    "CanonicalArtifact",
     "CoherenceScore",
+    "CoherenceScore",
+    # Symbolic Constraint Engine (Z3)
+    "ConstraintSet",
+    # Knowledge Graph (Neo4j)
+    "CypherQuery",
     "DecodedPage",
+    "DecodedPage",
+    # Graph-RAG (standalone)
+    "GraphEdge",
+    "GraphNode",
+    "GraphQueryResult",
+    # GraphRAG
+    "GraphRAGRetriever",
+    "HybridResult",
+    "HybridRetriever",
+    "LifecycleProtocol",
+    # MCTS Planner
+    "MCTSNode",
+    "MCTSPlanner",
+    "MCTSResult",
+    "Neo4jKnowledgeGraph",
+    "NodeRecord",
+    "OptimizationObjective",
+    # Reasoning (standalone)
+    "ReasoningControlPlane",
+    "ReasoningRequest",
+    "ReasoningResponse",
+    "RelationshipRecord",
+    "SimpleKnowledgeGraph",
+    "SymbolicConstraintEngine",
+    "SymbolicSolution",
+    # Planning
+    "ThoughtNode",
+    "TreeOfThoughtsPlanner",
+    "VariableDeclaration",
+    "VariableSort",
+    # Simulation
+    "WorldModel",
+    "WorldState",
     "__author__",
     # Version info
     "__version__",
     "address_to_page",
+    "canonicalize_text",
+    "compute_meaning_hash",
+    "decode_page",
     "decode_page",
     # Synthesis
     "deep_synthesis",
     "enumerate_addresses",
     "get_babel_endpoints",
+    "ingest_fragment",
     "normalize_text",
     "query_to_addresses",
     "score_coherence",
+    "score_coherence",
     "text_to_address",
-    # Lifecycle
-    "BaseLifecycleComponent",
-    "LifecycleProtocol",
-    # GraphRAG
-    "GraphRAGRetriever",
-    # Planning
-    "ThoughtNode",
-    "TreeOfThoughtsPlanner",
-    # Simulation
-    "WorldModel",
-    "WorldState",
-    # Knowledge Graph (Neo4j)
-    "CypherQuery",
-    "Neo4jKnowledgeGraph",
-    "NodeRecord",
-    "RelationshipRecord",
-    # Symbolic Constraint Engine (Z3)
-    "ConstraintSet",
-    "OptimizationObjective",
-    "SymbolicConstraintEngine",
-    "SymbolicSolution",
-    "VariableDeclaration",
-    "VariableSort",
-    # MCTS Planner
-    "MCTSNode",
-    "MCTSPlanner",
-    "MCTSResult",
-    # Graph-RAG (standalone)
-    "GraphEdge",
-    "GraphNode",
-    "GraphQueryResult",
-    "HybridResult",
-    "HybridRetriever",
-    "SimpleKnowledgeGraph",
-    # Reasoning (standalone)
-    "ReasoningControlPlane",
-    "ReasoningRequest",
-    "ReasoningResponse",
 ]

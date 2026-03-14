@@ -43,6 +43,41 @@ class RollbackManager:
 
         """
         self._snapshot_manager = SnapshotManager(backend)
+        self._initialized: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle methods
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Initialize the rollback manager."""
+        self._initialized = True
+        logger.debug("RollbackManager: initialized")
+
+    def validate(self) -> None:
+        """Validate that the rollback manager is ready.
+
+        Raises:
+            RuntimeError: When the manager has not been initialized.
+
+        """
+        if not self._initialized:
+            msg = "RollbackManager not initialized; call initialize() first"
+            raise RuntimeError(msg)
+
+    def operate(self) -> None:
+        """Execute primary work (no background operation; no-op)."""
+
+    def reconcile(self) -> None:
+        """Reconcile rollback manager state (stateless; no-op)."""
+
+    def checkpoint(self) -> None:
+        """Serialize rollback manager state (snapshot state is held by backend)."""
+
+    def terminate(self) -> None:
+        """Terminate the rollback manager and reset state."""
+        self._initialized = False
+        logger.debug("RollbackManager: terminated")
 
     def pre_deploy(self, deploy_key: str, schema: dict[str, Any]) -> dict[str, Any]:
         """Capture a pre-deploy snapshot of *schema*.

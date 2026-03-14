@@ -1,22 +1,27 @@
-"""
-Semantic orchestrator for Babel subsystem.
-"""
+"""Semantic orchestrator for Babel subsystem."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from ..core.coordinate_system import DeterministicCoordinateDeriver
-from ..core.response_generator import ResponseGenerator, GeneratedResponse
-from ..core.semantic_preserving_composer import SemanticPreservingComposer
-from ..core.variational_coordinate_system import VariationalCoordinateDeriver, VariationalContext
-from ..core.search_engine import DeterministicSearchEngine
-from ..linguistic.intent_classifier import DeterministicIntentClassifier
-from ..linguistic.semantic_frames import FrameConstructor
-from ..linguistic.semantic_invariants import SemanticInvariantChecker
-from ..linguistic.response_corpus import ResponseCorpus
-from ..linguistic.coherence_validator import LinguisticCoherenceValidator
+from thalos_prime.babel.core.coordinate_system import DeterministicCoordinateDeriver
+from thalos_prime.babel.core.response_generator import GeneratedResponse, ResponseGenerator
+from thalos_prime.babel.core.search_engine import DeterministicSearchEngine
+from thalos_prime.babel.core.semantic_preserving_composer import SemanticPreservingComposer
+from thalos_prime.babel.core.variational_coordinate_system import (
+    VariationalContext,
+    VariationalCoordinateDeriver,
+)
+from thalos_prime.babel.linguistic.coherence_validator import LinguisticCoherenceValidator
+from thalos_prime.babel.linguistic.intent_classifier import DeterministicIntentClassifier
+from thalos_prime.babel.linguistic.response_corpus import ResponseCorpus
+from thalos_prime.babel.linguistic.semantic_frames import FrameConstructor
+from thalos_prime.babel.linguistic.semantic_invariants import SemanticInvariantChecker
+
 from .orchestrator import ThalobalOrchestrator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class SemanticOrchestrator(ThalobalOrchestrator):

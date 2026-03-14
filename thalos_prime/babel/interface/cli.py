@@ -1,12 +1,11 @@
-"""
-Command-line entry for Babel subsystem.
-"""
+"""Command-line entry for Babel subsystem."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from ..control.semantic_orchestrator import SemanticOrchestrator
+from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
 from .semantic_cli import SemanticCLI
 
 

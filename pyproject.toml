@@ -249,6 +249,8 @@ disable_error_code = ["no-untyped-call"]
     "SIM117",
     # inline exception messages in tests for clarity
     "TRY003", "EM101",
+    # section comments in test assertions - not commented-out code
+    "ERA001",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
@@ -296,7 +298,7 @@ disable_error_code = ["no-untyped-call"]
     "PLR0913",
     "PLR2004",
 ]
-"thalos_prime/__init__.py" = ["E402", "PTH110"]
+"thalos_prime/__init__.py" = ["E402", "PTH110", "ERA001"]
 "thalos_nexus/cli.py" = ["T201"]
 "thalos_nexus/gates.py" = ["S603", "S607"]
 "thalos_prime/config.py" = ["D205", "D401"]
@@ -316,4 +318,10 @@ disable_error_code = ["no-untyped-call"]
     "T201", "S324", "E501", "PLR2004", "PLC0415",
     "TRY003", "EM101", "EM102",
     "TRY401",
+]
+# Babel subsystem: missing docstrings are acceptable in internal components
+"thalos_prime/babel/**/*.py" = [
+    "D101", "D102", "D103", "D105", "D107",
+    "E501", "FBT001", "FBT002",
+    "PLR0911", "PLR2004",
 ]

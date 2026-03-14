@@ -1,16 +1,14 @@
-"""
-Semantic frame construction for deterministic responses.
-"""
+"""Semantic frame construction for deterministic responses."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict
 
-from .intent_classifier import DeterministicIntentClassifier, IntentAnalysis, Intent
+from thalos_prime.babel.core.context_hasher import ContextHasher
+
+from .intent_classifier import DeterministicIntentClassifier, Intent, IntentAnalysis
 from .semantic_invariants import SemanticCore
-from ..core.context_hasher import ContextHasher
 
 
 class FrameType(Enum):
@@ -26,16 +24,16 @@ class SemanticFrame:
 
     frame_type: FrameType
     semantic_core: SemanticCore
-    variables: Dict[str, str]
+    variables: dict[str, str]
 
-    def to_variables(self) -> Dict[str, str]:
+    def to_variables(self) -> dict[str, str]:
         return self.variables
 
 
 class FrameConstructor:
     """Deterministically construct frames from user input."""
 
-    def __init__(self, classifier: DeterministicIntentClassifier):
+    def __init__(self, classifier: DeterministicIntentClassifier) -> None:
         self.classifier = classifier
 
     def construct(self, user_input: str) -> SemanticFrame:

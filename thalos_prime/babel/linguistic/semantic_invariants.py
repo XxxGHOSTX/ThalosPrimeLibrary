@@ -1,6 +1,4 @@
-"""
-Semantic invariants and validation.
-"""
+"""Semantic invariants and validation."""
 
 from __future__ import annotations
 
@@ -22,6 +20,29 @@ class SemanticCore:
 class SemanticInvariantChecker:
     """Validate semantic preservation for frames."""
 
-    def validate(self, frame: "SemanticFrame") -> bool:
-        # In this deterministic slice, preservation means topic is non-empty and fingerprint exists.
+    def initialize(self) -> None:
+        """Initialize the checker (stateless; no-op)."""
+
+    def validate(self, frame: SemanticFrame) -> bool:
+        """Validate semantic invariants for the given frame.
+
+        Args:
+            frame: The semantic frame to validate.
+
+        Returns:
+            True if topic is non-empty and fingerprint exists.
+
+        """
         return bool(frame.semantic_core.topic) and bool(frame.semantic_core.fingerprint)
+
+    def operate(self) -> None:
+        """Execute primary work (stateless checker; no-op)."""
+
+    def reconcile(self) -> None:
+        """Reconcile checker state (stateless; no-op)."""
+
+    def checkpoint(self) -> None:
+        """Serialize checker state (stateless; no state to serialize)."""
+
+    def terminate(self) -> None:
+        """Terminate the checker (stateless; no-op)."""
