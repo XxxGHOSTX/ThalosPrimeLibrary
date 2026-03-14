@@ -114,9 +114,14 @@ class TestActionExecutor:
         executor = ActionExecutor()
         executor.initialize()
         executor.register_action("boom", _raising_handler)
+        prev_count = executor._execution_count
         result = executor.safe_execute("boom", {})
         assert result.success is False
         assert "RuntimeError" in result.error
+        assert executor._execution_count == prev_count + 1
+        history = executor.get_history()
+        assert len(history) >= 1
+        assert history[-1] is result
 
     def test_execute_failure_handler(self) -> None:
         executor = ActionExecutor()

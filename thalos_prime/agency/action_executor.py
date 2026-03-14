@@ -275,8 +275,10 @@ class ActionExecutor(BaseLifecycleComponent):
             result = err.result
             self._history.append(result)
             self._execution_count += 1
-            logger.exception(
-                "ActionExecutor.safe_execute: handler raised for %r", action
+            logger.debug(
+                "ActionExecutor.safe_execute: captured error for %r: %s",
+                action,
+                err,
             )
             return result
 

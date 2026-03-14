@@ -319,9 +319,12 @@ disable_error_code = ["no-untyped-call"]
     "TRY003", "EM101", "EM102",
     "TRY401",
 ]
-# Babel subsystem: missing docstrings are acceptable in internal components
+# Babel subsystem: missing docstrings are acceptable in internal components;
+# T201 (print) is intentional for the interactive CLI output
 "thalos_prime/babel/**/*.py" = [
     "D101", "D102", "D103", "D105", "D107",
     "E501", "FBT001", "FBT002",
     "PLR0911", "PLR2004",
+    "T201",
+    "TID252",
 ]
