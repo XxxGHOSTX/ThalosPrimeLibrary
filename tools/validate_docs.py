@@ -15,9 +15,9 @@ from typing import List
 
 
 REQUIRED_DOCS: List[str] = [
-    "ARCHITECTURE.md",
-    "IMPLEMENTATION_COMPLETE.md",
-    "VERIFICATION_REPORT.md",
+    "docs/guides/ARCHITECTURE.md",
+    "docs/IMPLEMENTATION_COMPLETE.md",
+    "docs/VERIFICATION_REPORT.md",
 ]
 
 

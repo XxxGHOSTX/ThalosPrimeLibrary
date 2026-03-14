@@ -1,6 +1,6 @@
 FROM python:3.12-slim AS build
 WORKDIR /app
-COPY pyproject.toml setup.py ./
+COPY pyproject.toml ./
 COPY thalos_prime thalos_prime
 RUN python -m pip install --upgrade pip && pip install --no-cache-dir .
 

@@ -162,8 +162,8 @@ print(result["nexus_result"][0]["coordinates_hint"]["search_api"])
 Run the bundled examples to see more:
 
 ```bash
-python example_usage.py       # Basic usage
-python integration_example.py # Full integration demo
+python scripts/example_usage.py       # Basic usage
+python scripts/integration_example.py # Full integration demo
 ```
 
 ---
@@ -323,7 +323,7 @@ decoding, chat, and administration.
 ### Start the Server
 
 ```bash
-python run_thalos.py   # or ./run_thalos.sh on Linux/macOS
+python run_thalos.py   # or tools/run_thalos.sh on Linux/macOS
 ```
 
 The server starts on **http://localhost:8000** by default.
@@ -467,7 +467,7 @@ ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`
 | `utils/` | Shared utility helpers |
 | `config.py` | `LibraryConfig` and `setup_local_imports()` |
 
-For the complete architectural specification see [ARCHITECTURE.md](ARCHITECTURE.md) and
+For the complete architectural specification see [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) and
 [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md).
 
 ---
@@ -515,7 +515,7 @@ Every pull request and push to `main` runs:
 | Prohibited patterns | Detects TODOs, stubs, mocks, placeholders |
 
 **All checks must pass** before a pull request can be merged.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow.
+See [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) for the full contribution workflow.
 
 ---
 
@@ -547,7 +547,7 @@ pytest tests/infra_synthesis/ -v
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete deployment guide (Docker,
+See [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) for the complete deployment guide (Docker,
 cloud platforms, production configuration, TLS, reverse proxy).
 
 Quick options:
@@ -557,11 +557,11 @@ Quick options:
 python run_thalos.py
 
 # Docker
-docker build -t thalos-prime .
+docker build -t thalos-prime -f infra/Dockerfile .
 docker run -p 8000:8000 thalos-prime
 
 # Docker Compose
-docker-compose up
+docker compose -f infra/docker-compose.yml up
 ```
 
 ---
@@ -570,20 +570,20 @@ docker-compose up
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Full system architecture and layer descriptions |
+| [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Full system architecture and layer descriptions |
 | [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) | Deterministic architecture blueprint and MNN pipeline spec |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Complete deployment guide |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
-| [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
-| [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) | System verification and test results |
+| [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) | Complete deployment guide |
+| [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
+| [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
+| [VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) | System verification and test results |
 
 ---
 
 ## Requirements
 
 - **Python 3.12+** — required for strict type checking and modern language features
-- See [DEPLOYMENT.md](DEPLOYMENT.md) for infrastructure prerequisites
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for development tool requirements
+- See [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) for infrastructure prerequisites
+- See [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) for development tool requirements
 
 ---
 

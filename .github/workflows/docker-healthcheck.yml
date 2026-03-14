@@ -21,12 +21,12 @@ jobs:
         run: mkdir -p data
 
       - name: Build and start container via docker compose
-        run: docker compose up -d --build
+        run: docker compose -f infra/docker-compose.yml up -d --build
 
       - name: Wait for container to become healthy
         run: |
           for i in $(seq 1 40); do
-            STATUS=$(docker compose ps --format json | python3 -c "
+            STATUS=$(docker compose -f infra/docker-compose.yml ps --format json | python3 -c "
           import sys, json
           for line in sys.stdin:
               obj = json.loads(line)
@@ -40,7 +40,7 @@ jobs:
             sleep 3
           done
           echo "Container did not become healthy in time."
-          docker compose logs
+          docker compose -f infra/docker-compose.yml logs
           exit 1
 
       - name: Verify /health endpoint returns healthy JSON
@@ -56,4 +56,4 @@ jobs:
 
       - name: Shutdown containers
         if: always()
-        run: docker compose down
+        run: docker compose -f infra/docker-compose.yml down
