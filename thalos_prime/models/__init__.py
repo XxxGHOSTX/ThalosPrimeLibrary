@@ -21,25 +21,10 @@ from thalos_prime.models.api_models import (
     SearchResponse,
     StatusResponse,
 )
-from thalos_prime.models.db_models import (
-    Base,
-    CachedResult,
-    GeneratedPage,
-    Query,
-    Session,
-    User,
-    create_tables,
-    drop_tables,
-)
 
 __all__ = [
-    "AddressInfo",
-    "Base",
-    "CachedResult",
-    # DB Models
-    "Base",
-    "CachedResult",
     # API Models
+    "AddressInfo",
     "ChatRequest",
     "ChatResponse",
     "CoherenceInfo",
@@ -50,15 +35,38 @@ __all__ = [
     "ErrorResponse",
     "GenerateRequest",
     "GenerateResponse",
-    "GeneratedPage",
     "PageResult",
     "ProvenanceInfo",
-    "Query",
     "SearchRequest",
     "SearchResponse",
-    "Session",
     "StatusResponse",
-    "User",
-    "create_tables",
-    "drop_tables",
 ]
+
+# DB models require SQLAlchemy which is an optional dependency.
+# Import conditionally so the API can run without a database.
+# A bare ImportError catch is intentional here: SQLAlchemy and any of its
+# transitive dependencies may be absent in lightweight deployments (e.g. Vercel).
+try:
+    from thalos_prime.models.db_models import (
+        Base,
+        CachedResult,
+        GeneratedPage,
+        Query,
+        Session,
+        User,
+        create_tables,
+        drop_tables,
+    )
+
+    __all__ += [
+        "Base",
+        "CachedResult",
+        "GeneratedPage",
+        "Query",
+        "Session",
+        "User",
+        "create_tables",
+        "drop_tables",
+    ]
+except ImportError:
+    pass
