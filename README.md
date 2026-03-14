@@ -1,99 +1,273 @@
 # ThalosPrimeLibrary
-The brain
 
-## Overview
-ThalosPrime Library provides a Python package structure that allows importing from your local ThalosPrimeLibraryOfBabel directory.
-It is aligned with the canonical Library of Babel domain at https://libraryofbabel.info (not thelibraryofbabel.com).
-The structured search endpoints used by ThalosPrime are:
-- Human-readable search UI: https://libraryofbabel.info/search.html
-- Programmatic search API: https://libraryofbabel.info/search.cgi
+> *"In the Library of Babel, every truth already exists — Thalos Prime finds it."*
 
-Use `thalos_prime.get_babel_endpoints()` to retrieve the canonical URLs in code when wiring the “Permutation Search Engine” or any downstream navigator.
+ThalosPrimeLibrary is a deterministic, production-grade Python toolkit that integrates the
+[Library of Babel](https://libraryofbabel.info) with hybrid cognitive synthesis, symbolic reasoning,
+autonomous agency, and infrastructure-as-code generation. It is designed around strict
+**Control Plane / Data Plane** separation, enforced lifecycle contracts, and full replay
+determinism — identical inputs always produce identical outputs.
 
-## Deep Synthesis (Nexus Scaffold)
+---
 
-The `deep_synthesis(prompt)` helper performs deterministic semantic decomposition and returns a structured “Nexus Result” across Physical/Chemical, Logical/Mathematical, and Linguistic/Narrative views. It embeds the canonical Library of Babel endpoints for downstream retrieval layers.
-This scaffold emphasizes multi-view coherence and explicit coordinate mapping for structured result organization.
+## Table of Contents
+
+1. [What Is ThalosPrimeLibrary?](#what-is-thalosprimelibrary)
+2. [Key Capabilities](#key-capabilities)
+3. [How It Works](#how-it-works)
+4. [Installation](#installation)
+5. [Quick Start](#quick-start)
+6. [Using the Python API](#using-the-python-api)
+7. [Deterministic Pipeline CLI](#deterministic-pipeline-cli)
+8. [REST API Server](#rest-api-server)
+9. [Infrastructure Synthesis CLI](#infrastructure-synthesis-cli)
+10. [Configuration](#configuration)
+11. [Architecture](#architecture)
+12. [Development](#development)
+13. [Testing](#testing)
+14. [Deployment](#deployment)
+15. [Documentation](#documentation)
+16. [License](#license)
+
+---
+
+## What Is ThalosPrimeLibrary?
+
+ThalosPrimeLibrary (`thalos_prime`) is a multi-subsystem Python library that combines:
+
+- **Library of Babel integration** — deterministic generation and coherence-scored retrieval of
+  pages from [libraryofbabel.info](https://libraryofbabel.info).
+- **Hybrid cognitive synthesis** — multi-view semantic decomposition across Physical/Chemical,
+  Logical/Mathematical, and Linguistic/Narrative knowledge planes.
+- **Symbolic reasoning** — Z3-based constraint solving, proof checking, and planning.
+- **Autonomous agency** — perceive-plan-act loops with belief tracking and multi-path planning.
+- **Knowledge graphs** — Neo4j-compatible graph with hybrid graph+text retrieval (Graph-RAG).
+- **Infrastructure synthesis** — YAML-driven, multi-provider artifact generation (Terraform,
+  OpenTofu, Cloudflare, GitHub Actions, Docker) with policy enforcement and drift detection.
+- **REST API & interactive UI** — FastAPI server with a Matrix-style browser interface.
+
+Every subsystem follows the same six-method lifecycle contract
+(`initialize → validate → operate → reconcile → checkpoint → terminate`) and every operation is
+fully deterministic with a seeded replay guarantee.
+
+---
+
+## Key Capabilities
+
+| Capability | Description |
+|---|---|
+| **Deterministic page generation** | SHA-256-based generation of 3,200-character Babel pages from hex addresses |
+| **Query enumeration** | Map natural-language queries to candidate Babel addresses via n-gram extraction |
+| **Coherence scoring** | Four-metric scoring (language, structure, n-gram, exact match) on a 0–100 scale |
+| **Deep synthesis** | Multi-view semantic decomposition with Physical/Chemical, Logical/Mathematical, Linguistic/Narrative nexus results |
+| **Symbolic reasoning** | Z3 SMT constraint solving, incremental updates, optimization objectives |
+| **Tree of Thoughts / MCTS** | Deterministic multi-path planning with explicit thought-node representation |
+| **Graph-RAG** | Hybrid knowledge graph retrieval combining BFS graph traversal and text search |
+| **Infrastructure synthesis** | YAML-schema → Terraform/OpenTofu/Cloudflare/GitHub Actions/Docker artifacts |
+| **Policy enforcement** | `require_ssl`, `limit_scaling`, and extensible policy rules |
+| **Release strategies** | `direct`, `blue_green`, `canary` deployment orchestration |
+| **Drift detection** | DeepDiff-based schema drift detection and rollback |
+| **Replay determinism** | Single seed controls all pseudo-randomness; identical inputs → identical outputs |
+
+---
+
+## How It Works
+
+### Control Plane / Data Plane Separation
+
+All subsystems enforce strict separation between coordination logic and computational work:
+
+| Layer | Components | Responsibility |
+|---|---|---|
+| **Control Plane** | `ControlPlane`, lifecycle orchestrators | Lifecycle management, seed control, state logging, deterministic halt |
+| **Data Plane** | `BabelClient`, adapters, solvers, planners | Computational work only; no coordination or scheduling logic |
+
+### Six-Method Lifecycle
+
+Every subsystem implements these methods in order:
+
+```
+initialize() → validate() → operate() → reconcile() → checkpoint() → terminate()
+```
+
+Any invariant violation raises `DeterministicHalt` with a full state snapshot and
+JSONL event log. Silent degradation is never permitted.
+
+### Determinism Guarantees
+
+- A single integer `--seed` seeds an isolated `random.Random(seed)` instance.
+- All collections are sorted with stable, deterministic keys (e.g. `score DESC, doc_id ASC`).
+- No module-level RNG state; no implicit async at the module boundary.
+- Checkpoints are blake2b-hashed, versioned, and atomic.
+- Replay: same `--seed` + `--query` always produces byte-for-byte identical output.
+
+### 7-Stage MNN Pipeline
+
+The core data pipeline runs these stages in order:
+
+1. **Normalization** — Canonicalise and hash input text
+2. **Constraint Generation** — Derive symbolic constraints from the query
+3. **Index Mapping** — Map queries to Babel address candidates
+4. **Sequence Generation** — Fetch or generate page content
+5. **Analysis & Filtering** — Score and filter pages with coherence metrics
+6. **Center-Weighted Scoring** — BM25 + four-metric coherence, stable sort
+7. **Output Handling** — Assemble volume, checkpoint state, emit event log
+
+See [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) for the full specification.
+
+---
+
+## Installation
+
+**Python 3.12 or later is required.**
+
+```bash
+# Development install (includes type checkers, linters, and test tools)
+pip install -e ".[dev]"
+
+# Production install
+pip install .
+```
+
+---
+
+## Quick Start
 
 ```python
 import thalos_prime as tp
 
+# Generate a Library of Babel page from a hex address
+page = tp.address_to_page("0a1b2c3d")
+print(page[:80])
+
+# Convert text to its deterministic Babel address
+address = tp.text_to_address("hello world")
+print(address)
+
+# Enumerate candidate addresses for a query
+addresses = tp.query_to_addresses("antimicrobial peptide")
+print(addresses[:3])
+
+# Score how coherent a page is for a given query
+score = tp.score_coherence(page, "antimicrobial peptide")
+print(score.total, score.confidence)
+
+# Multi-view semantic synthesis
 result = tp.deep_synthesis("Find antimicrobial peptide in genomic space")
-print(result["semantic_decomposition"]["modalities"])  # e.g., ["Genomic", "Chemical"]
+print(result["semantic_decomposition"]["modalities"])   # ["Genomic", "Chemical"]
 print(result["nexus_result"][0]["coordinates_hint"]["search_api"])
 # https://libraryofbabel.info/search.cgi
 ```
-ThalosPrime Library provides a Python package structure that allows importing from your local ThalosPrimeLibraryOfBabel directory. It includes deterministic page generation, query enumeration, and enhanced coherence scoring for the Library of Babel.
 
-## Quick Start
+Run the bundled examples to see more:
 
-### Installation
-
-**For Development:**
 ```bash
-pip install -e ".[dev]"
+python example_usage.py       # Basic usage
+python integration_example.py # Full integration demo
 ```
 
-**For Production:**
-```bash
-pip install .
+---
+
+## Using the Python API
+
+### Library of Babel Endpoints
+
+```python
+import thalos_prime as tp
+
+# Retrieve canonical URLs (search UI and programmatic API)
+endpoints = tp.get_babel_endpoints()
+# {
+#   "search_ui":  "https://libraryofbabel.info/search.html",
+#   "search_api": "https://libraryofbabel.info/search.cgi"
+# }
 ```
 
-### Running Examples
-```bash
-# Basic usage
-python example_usage.py
+The canonical Library of Babel domain is **libraryofbabel.info** (not thelibraryofbabel.com).
 
-# Full integration demo
-python integration_example.py
+### Page Generation & Address Mapping
 
-# Run the API server
-python run_thalos.py
+```python
+page    = tp.address_to_page("hex_address_string")   # → 3,200-char page
+address = tp.text_to_address("any text")              # → hex address
+normed  = tp.normalize_text("Any Text!")              # → lowercase, 29-char charset
 ```
 
-## Thalos Prime Deterministic Pipeline (`thalos_prime.py`)
+### Query Enumeration
 
-The `thalos_prime.py` module implements a fully deterministic chatbot-to-Babel
-pipeline that traverses [libraryofbabel.info](https://libraryofbabel.info),
-extracts English-like tokens, scores them with BM25, and assembles a volume of
-exactly **1,312,000 characters** (410 pages × 3,200 chars/page).
+```python
+addresses = tp.enumerate_addresses("search query", depth=2)  # deeper n-gram search
+addresses = tp.query_to_addresses("search query")             # default depth
+```
 
-### Architecture
+### Coherence Scoring
 
-The pipeline enforces strict **Control Plane / Data Plane** separation:
+```python
+from thalos_prime import decode_page, score_coherence
 
-| Layer | Components | Responsibility |
-|---|---|---|
-| **Control Plane** | `ControlPlane` | Lifecycle orchestration, seed management, JSONL logging, deterministic halt |
-| **Data Plane** | `BabelClient`, `TraversalPlanner`, `WordExtractor`, `ConstraintSolver`, `VolumeAssembler` | Computational work only; no coordination logic |
+decoded = decode_page(page_text, "my query")
+print(decoded.total_score)      # 0–100
+print(decoded.confidence)       # "high" | "medium" | "sparse" | "minimal"
+print(decoded.provenance)       # address, query, metrics breakdown
 
-### Lifecycle
+score = score_coherence(page_text, "my query")
+print(score.language_score)     # 30% weight — English word density
+print(score.structure_score)    # 20% weight — punctuation & sentence patterns
+print(score.ngram_score)        # 20% weight — bigram coherence
+print(score.exact_match_score)  # 30% weight — query token matching
+```
 
-Every subsystem implements the six lifecycle methods:
-`initialize()` → `validate()` → `operate()` → `reconcile()` → `checkpoint()` → `terminate()`
+### Fragment Ingestion
 
-Any invariant violation raises `DeterministicHalt` with a full state snapshot.
-No silent degradation is permitted.
+```python
+from thalos_prime import ingest_fragment, canonicalize_text, compute_meaning_hash
 
-### Determinism Guarantees
+artifact  = ingest_fragment("raw fragment text")
+canonical = canonicalize_text("Some Text")
+hash_val  = compute_meaning_hash("Some Text")
+```
 
-- A single `--seed` integer controls all pseudo-randomness via an isolated `random.Random(seed)`.
-- Stable sorting: BM25 results sorted by `(score DESC, doc_id ASC)`.
-- No implicit async, no module-level RNG state.
-- Checkpoints include seed, state hash (blake2b), and schema version.
-- Replay with the same `--seed` and `--query` produces identical output.
+### Import Path Configuration
 
-### CLI Usage
+By default `thalos_prime` adds a local `ThalosPrimeLibraryOfBabel` directory to `sys.path`.
+Override the path with an environment variable or the `setup_local_imports()` helper:
+
+```python
+from thalos_prime.config import setup_local_imports
+
+setup_local_imports()                                       # uses THALOS_LIBRARY_PATH or default
+setup_local_imports(custom_path="/your/custom/babel/path")  # explicit path
+```
+
+Set the `THALOS_LIBRARY_PATH` environment variable to avoid hard-coding a path:
 
 ```bash
-# Live mode (requires network access to libraryofbabel.info)
+# Linux / macOS
+export THALOS_LIBRARY_PATH=/your/path/ThalosPrimeLibraryOfBabel
+
+# Windows
+set THALOS_LIBRARY_PATH=C:\Your\Path\ThalosPrimeLibraryOfBabel
+```
+
+---
+
+## Deterministic Pipeline CLI
+
+`thalos_prime.py` is a standalone CLI that traverses [libraryofbabel.info](https://libraryofbabel.info),
+extracts English-like tokens, scores them with BM25, and assembles a volume of exactly
+**1,312,000 characters** (410 pages × 3,200 chars/page).
+
+### Usage
+
+```bash
+# Live mode — fetches pages from libraryofbabel.info
 python thalos_prime.py \
     --query "test query" \
     --seed 12345 \
     --output ./output.txt \
     --workdir ./thalos_workdir
 
-# Dry-run mode (fully offline, deterministic synthetic corpus)
+# Dry-run mode — fully offline, deterministic synthetic corpus
 python thalos_prime.py \
     --query "test" \
     --seed 12345 \
@@ -103,269 +277,121 @@ python thalos_prime.py \
     --max-pages 10
 ```
 
-**Arguments:**
+### Arguments
 
 | Argument | Required | Description |
 |---|---|---|
-| `--query` | Yes | Natural language query string |
-| `--seed` | Yes | Non-negative integer seed for deterministic replay |
-| `--output` | Yes | Path to write the assembled volume |
-| `--workdir` | Yes | Directory for checkpoints and JSONL event logs |
-| `--max-pages` | No | Maximum pages to fetch (default: 410) |
-| `--dry-run` | No | Skip network; use synthetic deterministic corpus |
+| `--query` | ✅ | Natural-language query string |
+| `--seed` | ✅ | Non-negative integer for deterministic replay |
+| `--output` | ✅ | Path to write the assembled volume |
+| `--workdir` | ✅ | Directory for checkpoints and JSONL event logs |
+| `--max-pages` | — | Maximum pages to fetch (default: 410) |
+| `--dry-run` | — | Skip network; use synthetic deterministic corpus |
 
 ### Invariants
 
-- **Output length**: exactly 1,312,000 characters; any deviation halts with `DeterministicHalt`.
-- **Page length**: each of the 410 pages is exactly 3,200 characters; padded with spaces, hard-trimmed if over.
-- **robots.txt**: any disallowed crawl or fetch failure halts deterministically.
-- **Retry policy**: up to 3 bounded retries with deterministic delay; all failures logged.
+- Output is exactly 1,312,000 characters; deviations raise `DeterministicHalt`.
+- Each page is exactly 3,200 characters (space-padded or hard-trimmed).
+- `robots.txt` violations and fetch failures halt deterministically.
+- Retries: up to 3 bounded attempts with deterministic delay; all failures logged.
 
 ### Observability
 
-Each run writes to `--workdir`:
-- `checkpoint_<timestamp>_seed<N>.json` — JSON state snapshot with blake2b hash
-- `events_<timestamp>_seed<N>.jsonl` — JSONL event log with timestamps, state hashes, and event types
+Each run writes two files to `--workdir`:
 
-### State Fields
+| File | Contents |
+|------|----------|
+| `checkpoint_<timestamp>_seed<N>.json` | JSON state snapshot with blake2b hash |
+| `events_<timestamp>_seed<N>.jsonl` | JSONL event log with timestamps, state hashes, event types |
 
-`SystemState` tracks: `seed`, `traversal_index`, `traversal_path`, `corpus_size`,
-`plan_pages`, `assembled_length`, `output_path`, `last_checkpoint`, `version`.
-
-### Running Tests (Offline)
-
-The deterministic offline test suite requires no network access:
+### Run the Pipeline Tests
 
 ```bash
 pytest tests/test_thalos_prime_pipeline.py -v
 ```
 
-All 64 tests cover: halt semantics, state serialization, BM25 scoring,
-volume assembly (length invariant), traversal determinism, and full dry-run pipeline.
+The 64 offline tests cover halt semantics, state serialisation, BM25 scoring, volume assembly,
+traversal determinism, and a full dry-run end-to-end pass.
 
-## Deployment
+---
 
-For comprehensive deployment instructions including Docker, production setup, and cloud deployment options, see:
+## REST API Server
 
-📖 **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide
+ThalosPrimeLibrary ships a FastAPI server with endpoints for search, generation, enumeration,
+decoding, chat, and administration.
 
-Quick deployment options:
-- **Python package**: `pip install -e .`
-- **API server**: `python run_thalos.py` or `./run_thalos.sh`
-- **Docker**: `docker build -t thalos-prime . && docker run -p 8000:8000 thalos-prime`
-
-## Usage
-
-### Method 1: Automatic Setup (Default Path)
-Simply import the package, and it will automatically configure the import path:
-
-```python
-import thalos_prime
-
-# Now you can import from ThalosPrimeLibraryOfBabel
-# from your_module import your_function
-```
-
-### Method 2: Manual Setup with Default Path
-```python
-from thalos_prime.config import setup_local_imports
-
-# Set up imports with the default path
-setup_local_imports()
-
-# Now you can import from ThalosPrimeLibraryOfBabel
-```
-
-### Method 3: Custom Path
-If your ThalosPrimeLibraryOfBabel is in a different location:
-
-```python
-from thalos_prime.config import setup_local_imports
-
-# Set up imports with a custom path
-setup_local_imports(custom_path=r"C:\Your\Custom\Path\ThalosPrimeLibraryOfBabel")
-
-# Now you can import from your custom location
-```
-
-## Default Configuration
-
-The default local library path is:
-```
-C:\Users\LT\Desktop\THALOSPRIMEBRAIN\ThalosPrimeLibraryOfBabel
-```
-
-You can change this by:
-1. Setting the `THALOS_LIBRARY_PATH` environment variable:
-   ```bash
-   # Windows
-   set THALOS_LIBRARY_PATH=C:\Your\Custom\Path\ThalosPrimeLibraryOfBabel
-   
-   # Linux/Mac
-   export THALOS_LIBRARY_PATH=/your/custom/path/ThalosPrimeLibraryOfBabel
-   ```
-2. Using the `custom_path` parameter in `setup_local_imports()`
-3. Modifying the default value in `thalos_prime/__init__.py` or `thalos_prime/config.py`
-
-## Example
-
-See `example_usage.py` for a complete working example.
+### Start the Server
 
 ```bash
-python example_usage.py
+python run_thalos.py   # or ./run_thalos.sh on Linux/macOS
 ```
 
-## Core Features
+The server starts on **http://localhost:8000** by default.
 
-- **Deterministic Page Generation**: Generate Library of Babel pages from hex addresses
-- **Query Enumeration**: Map search queries to candidate addresses
-- **Enhanced Coherence Scoring**: Multi-metric analysis with language, structure, n-gram, and exact match scoring
-- **Hybrid Search**: Local generation and remote fetching capabilities
-- **REST API**: FastAPI-based server with full documentation
-- **Production Ready**: 80 passing tests, comprehensive error handling, and deterministic behavior
+### Interactive Documentation
 
-## API Server
+| URL | Description |
+|-----|-------------|
+| http://localhost:8000/docs | Swagger UI (interactive) |
+| http://localhost:8000/redoc | ReDoc (read-only) |
+| http://localhost:8000 | Matrix-style browser UI |
 
-Access interactive API documentation:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+### ASGI / Vercel Deployment
 
-## Development
+The root `app.py` is the ASGI entrypoint compatible with Vercel and any ASGI host:
 
-### Setup Development Environment
-
-1. **Install development dependencies:**
-   ```bash
-   make install
-   # or manually: pip install -e ".[dev]"
-   ```
-
-2. **Install pre-commit hooks:**
-   ```bash
-   make pre-commit-install
-   # or manually: pre-commit install
-   ```
-
-### Running Checks Locally
-
-Before committing, run all checks:
 ```bash
-make check
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-This runs:
-- **Type checking**: `mypy` and `pyright`
-- **Linting**: `ruff`
-- **Testing**: `pytest` with coverage (80% minimum)
-- **Validation**: Custom validators for lifecycle, determinism, state, docs
+---
 
-Individual commands:
-```bash
-make typecheck    # Run type checkers
-make lint         # Run linter
-make test         # Run tests with coverage
-make validate     # Run custom validators
-```
+## Infrastructure Synthesis CLI
 
-### CI/CD Pipeline
+The `thalos_prime.infra_synthesis` package reads a YAML schema and emits
+provider-specific deployment artifacts. Install once, then use the `thalos` command.
 
-Every pull request and push to main triggers automated checks:
-
-- ✅ **Type Checking**: mypy --strict, pyright
-- ✅ **Linting**: ruff with comprehensive rules
-- ✅ **Testing**: pytest with 80% coverage requirement
-- ✅ **Lifecycle Validation**: Ensures subsystems implement required methods
-- ✅ **Determinism Validation**: Detects non-deterministic operations
-- ✅ **State Validation**: Checks state serialization and management
-- ✅ **Documentation Validation**: Verifies docstrings and required docs
-- ✅ **Security Scanning**: bandit and pip-audit
-- ✅ **Prohibited Patterns**: Detects TODOs, stubs, mocks, etc.
-
-**All checks must pass** for merge approval. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## Testing
+### Commands
 
 ```bash
-# Run all tests
-make test
-# or: python -m pytest tests -v
-
-# Run with coverage report
-pytest tests -v --cov=thalos_prime --cov-report=html
-
-# Run specific test
-pytest tests/test_generator.py -v
-```
-
-### Test Requirements
-- Minimum 80% line coverage
-- 100% coverage for critical lifecycle paths
-- All tests must be deterministic
-
-## Architecture
-
-For a concise, contributor-oriented description of the full deterministic
-pipeline, control-plane / data-plane separation, SBI reference model, and
-CI/coverage expectations, see:
-
-📐 **[docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md)** — Deterministic Architecture Blueprint
-
-Topics covered:
-- 7-stage MNN production pipeline (Normalization → Constraint Generation → Index Mapping → Sequence Generation → Analysis & Filtering → Center-Weighted Scoring → Output Handling)
-- Determinism guarantees (single seed, stable sort, checkpoint integrity, replay)
-- Synthetic Biological Intelligence (SBI) — logic / abstract / governance lobes and proof-checking
-- CI / coverage expectations (80 % baseline, 100 % for critical paths)
-- LRU caching strategy and dry-run / offline mode
-
-## Infra Synthesis Engine
-
-The `thalos_prime.infra_synthesis` package is a deterministic infrastructure-synthesis spine
-that reads a YAML schema and emits provider artifacts.
-
-### Installation
-
-```bash
-pip install -e .
-```
-
-### Quick Start
-
-Generate provider artifacts from the sample schema:
-
-```bash
+# Generate artifacts from a schema
 thalos build --schema schemas/infra.schema.yaml --out dist
-```
 
-This creates the following files in `dist/`:
-
-| File | Description |
-|------|-------------|
-| `dist/terraform/provider.tf` | Terraform provider declaration |
-| `dist/terraform/main.tf` | Terraform main configuration |
-| `dist/opentofu/main.tf` | OpenTofu main configuration |
-| `dist/wrangler.toml` | Cloudflare Wrangler configuration |
-| `dist/ci.yml` | GitHub Actions CI workflow |
-| `dist/Dockerfile` | Container image definition (when `compute.type: container`) |
-| `dist/artifact_manifest.json` | SHA-256 manifest of all generated files |
-
-### Validate Schema + Policies
-
-```bash
+# Validate schema and policy rules
 thalos verify --schema schemas/infra.schema.yaml
-```
 
-### Deploy with Release Strategy
-
-```bash
+# Deploy with a release strategy
 thalos deploy --schema schemas/infra.schema.yaml --deploy-key v1.2.3
 ```
 
+### Generated Artifacts
+
+Running `thalos build` creates the following in `dist/`:
+
+| File | Description |
+|------|-------------|
+| `terraform/provider.tf` | Terraform provider declaration |
+| `terraform/main.tf` | Terraform main configuration |
+| `opentofu/main.tf` | OpenTofu main configuration |
+| `wrangler.toml` | Cloudflare Wrangler configuration |
+| `ci.yml` | GitHub Actions CI workflow |
+| `Dockerfile` | Container image (when `compute.type: container`) |
+| `artifact_manifest.json` | SHA-256 manifest of all generated files |
+
 ### Schema Format
 
-See [`schemas/infra.schema.yaml`](schemas/infra.schema.yaml) for a complete example.
-Required top-level sections: `project`, `compute`, `network`, `storage`, `ci`.
+```yaml
+# schemas/infra.schema.yaml — required top-level sections
+project:   { name: my-app, version: "1.0.0" }
+compute:   { type: container, scaling: { min: 1, max: 5 } }
+network:   { ssl: true, domain: my-app.example.com }
+storage:   { type: s3, bucket: my-app-data }
+ci:        { provider: github_actions, branch: main }
+```
 
-### Architecture
+See [`schemas/infra.schema.yaml`](schemas/infra.schema.yaml) for a complete example.
+
+### Infra Synthesis Architecture
 
 | Layer | Modules |
 |-------|---------|
@@ -377,37 +403,190 @@ Required top-level sections: `project`, `compute`, `network`, `storage`, `ci`.
 | State | `state/local.py` — JSON-on-disk snapshot backend |
 | Rollback | `rollback/manager.py` — pre-deploy snapshots + restore |
 | Drift | `drift.py` — DeepDiff schema drift detection |
-| Release | `release/orchestrator.py` — direct / blue_green / canary strategies |
+| Release | `release/orchestrator.py` — `direct` / `blue_green` / `canary` strategies |
 | Events | `events/bus.py` — pub/sub event bus |
 | Telemetry | `telemetry/metrics.py` — metric recording + JSON export |
 | Security | `security/rbac.py` — role-based access control |
 | Audit | `audit/logger.py` — structured JSON audit log |
 | Plugins | `plugins/loader.py` — entry-point-based plugin discovery |
 | Schema Versioning | `schema_versioning/registry.py` + `diff.py` |
-| CLI | `cli/main.py` — `thalos build|verify|deploy` |
+| CLI | `cli/main.py` — `thalos build\|verify\|deploy` |
 
-### Running Tests
+### Run Infra Synthesis Tests
 
 ```bash
 pytest tests/infra_synthesis/ -v
 ```
 
+---
+
+## Configuration
+
+| Setting | How to Set | Default |
+|---------|-----------|---------|
+| `THALOS_LIBRARY_PATH` | Environment variable | Windows path to local Babel library |
+
+```bash
+# Linux / macOS
+export THALOS_LIBRARY_PATH=/path/to/ThalosPrimeLibraryOfBabel
+
+# Windows
+set THALOS_LIBRARY_PATH=C:\Path\To\ThalosPrimeLibraryOfBabel
+```
+
+All other configuration is explicit and typed. There are no hidden defaults or implicit globals.
+
+---
+
+## Architecture
+
+ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`:
+
+| Package | Description |
+|---------|-------------|
+| `api/` | FastAPI REST server — search, generation, enumeration, decoding, chat, admin |
+| `ui/` | Matrix-style HTML5 browser interface |
+| `cli/` | Command-line interface with lazy heavy-dependency imports |
+| `library_of_sense/` | Multi-source query orchestration and knowledge synthesis |
+| `knowledge_graph/` | Neo4j-compatible knowledge graph (NetworkX backend) |
+| `graph_rag/` | Hybrid Graph-RAG — BFS graph traversal + text search retrieval |
+| `constraints/` | Z3-based symbolic constraint engine with typed variables |
+| `reasoning/` | Unified reasoning control plane (symbolic + proof + constraint) |
+| `planning/` | Tree of Thoughts and MCTS multi-path planners |
+| `simulation/` | Deterministic world-state simulation |
+| `agency/` | Perceive-plan-act agent loop with belief tracking |
+| `babel/` | Deterministic conversational pipeline and semantic orchestrator |
+| `infra_synthesis/` | YAML → multi-provider infrastructure artifact generation |
+| `auth/` | API key authentication |
+| `models/` | Pydantic data models |
+| `cache/` | TTL-based distributed cache |
+| `monitoring/` | Telemetry, metrics, and structured JSON audit logging |
+| `database/` | Optional SQLAlchemy data persistence |
+| `workers/` | Bounded async background task workers |
+| `remote/` | External service integration |
+| `utils/` | Shared utility helpers |
+| `config.py` | `LibraryConfig` and `setup_local_imports()` |
+
+For the complete architectural specification see [ARCHITECTURE.md](ARCHITECTURE.md) and
+[docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md).
+
+---
+
+## Development
+
+### Setup
+
+```bash
+# 1. Install all development dependencies
+pip install -e ".[dev]"
+# or
+make install
+
+# 2. Install pre-commit hooks
+pre-commit install
+# or
+make pre-commit-install
+```
+
+### Running Checks
+
+```bash
+make check        # Run all checks (type, lint, test, validate)
+make typecheck    # mypy --strict + pyright
+make lint         # ruff check
+make test         # pytest with 80 % coverage requirement
+make validate     # Custom lifecycle / determinism / state / docs validators
+```
+
+### CI/CD Pipeline
+
+Every pull request and push to `main` runs:
+
+| Check | Tool |
+|-------|------|
+| Type checking | `mypy --strict`, `pyright` |
+| Linting | `ruff` (all rules) |
+| Tests | `pytest` — 80 % minimum coverage |
+| Lifecycle validation | Custom validator — ensures subsystems implement required methods |
+| Determinism validation | Custom validator — detects non-deterministic operations |
+| State validation | Custom validator — checks state serialisation |
+| Documentation validation | Custom validator — verifies docstrings and required docs |
+| Security scanning | `bandit`, `pip-audit` |
+| Prohibited patterns | Detects TODOs, stubs, mocks, placeholders |
+
+**All checks must pass** before a pull request can be merged.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow.
+
+---
+
+## Testing
+
+```bash
+# Run all tests with coverage
+make test
+# or
+python -m pytest tests -v --cov=thalos_prime --cov-report=html
+
+# Run a specific test module
+pytest tests/test_generator.py -v
+
+# Run the deterministic pipeline tests (no network required)
+pytest tests/test_thalos_prime_pipeline.py -v
+
+# Run the infra synthesis tests
+pytest tests/infra_synthesis/ -v
+```
+
+### Requirements
+
+- **80 % minimum** line coverage overall
+- **100 % coverage** for all critical lifecycle paths
+- Every test must be deterministic — no flaky or time-dependent tests
+
+---
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete deployment guide (Docker,
+cloud platforms, production configuration, TLS, reverse proxy).
+
+Quick options:
+
+```bash
+# Run locally
+python run_thalos.py
+
+# Docker
+docker build -t thalos-prime .
+docker run -p 8000:8000 thalos-prime
+
+# Docker Compose
+docker-compose up
+```
+
+---
+
 ## Documentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow and standards
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Complete deployment guide
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
-- [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) - Deterministic Architecture Blueprint
-- [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - Implementation details
-- [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - System verification
-- [.github/copilot-instructions.md](.github/copilot-instructions.md) - Enforcement criteria
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Full system architecture and layer descriptions |
+| [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) | Deterministic architecture blueprint and MNN pipeline spec |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Complete deployment guide |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
+| [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
+| [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) | System verification and test results |
+
+---
 
 ## Requirements
 
-- Python 3.12+ (required for type checking and modern features)
-- See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed prerequisites
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for development requirements
+- **Python 3.12+** — required for strict type checking and modern language features
+- See [DEPLOYMENT.md](DEPLOYMENT.md) for infrastructure prerequisites
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for development tool requirements
+
+---
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License — see the [LICENSE](LICENSE) file for details.
