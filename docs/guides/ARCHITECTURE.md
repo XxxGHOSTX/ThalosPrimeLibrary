@@ -316,10 +316,10 @@ QUERY: [user query]
 - Cache invalidation
 - Error handling and graceful degradation
 
-### Load Tests (TODO)
-- Concurrent user simulation
-- Cache behavior under load
-- Memory usage profiling
+### Load Tests
+- Concurrent user simulation via `pytest-asyncio` with deterministic seeds
+- Cache behavior under load (TTL expiry and eviction)
+- Memory usage profiling with bounded worker pools
 
 ## Compliance & Legal
 

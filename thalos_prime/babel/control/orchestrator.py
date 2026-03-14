@@ -66,6 +66,10 @@ class ThalobalOrchestrator:
     def checkpoint(self) -> Path:
         return self.checkpoint_manager.create(self.state)
 
+    def operate(self) -> None:
+        """Execute primary orchestration work: reconcile state and log status."""
+        self.reconcile()
+
     def reconcile(self) -> None:
         inconsistencies = self.reconciler.check_state(self.state.last_coordinate)
         self.reconciler.resolve(inconsistencies)

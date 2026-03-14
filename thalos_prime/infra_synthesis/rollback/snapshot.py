@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 class SnapshotManager:
     """Captures and restores schema snapshots via a :class:`StateBackend`.
 
+    Implements the six-method lifecycle contract for participation in
+    lifecycle-managed pipelines.
+
     Args:
         backend: Configured state backend for persistence.
 
@@ -34,6 +37,54 @@ class SnapshotManager:
 
         """
         self._backend = backend
+        self._initialized: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle contract
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Mark the snapshot manager as initialised."""
+        self._initialized = True
+        logger.debug("SnapshotManager: initialized")
+
+    def validate(self) -> bool:
+        """Return True when the manager is initialized.
+
+        Returns:
+            True when :meth:`initialize` has been called.
+
+        """
+        return self._initialized
+
+    def operate(self) -> None:
+        """Log current operational status (idempotent)."""
+        logger.debug("SnapshotManager: operating, initialized=%s", self._initialized)
+
+    def reconcile(self) -> None:
+        """No-op reconcile; SnapshotManager holds no locally mutable state."""
+        logger.debug("SnapshotManager: reconciled")
+
+    def checkpoint(self) -> dict[str, Any]:
+        """Return a serialisable snapshot of this manager's state.
+
+        Returns:
+            Dict with ``component`` and ``initialized`` fields.
+
+        """
+        return {
+            "component": "SnapshotManager",
+            "initialized": self._initialized,
+        }
+
+    def terminate(self) -> None:
+        """Mark the snapshot manager as uninitialised."""
+        self._initialized = False
+        logger.debug("SnapshotManager: terminated")
+
+    # ------------------------------------------------------------------
+    # Domain operations
+    # ------------------------------------------------------------------
 
     def capture(self, key: str, schema: dict[str, Any]) -> dict[str, Any]:
         """Capture a snapshot of *schema* and persist it under *key*.

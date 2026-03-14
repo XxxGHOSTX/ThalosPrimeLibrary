@@ -60,6 +60,29 @@ class ActionResult:
         }
 
 
+@dataclass
+class ActionExecutionError(Exception):
+    """Raised by :meth:`ActionExecutor.execute` when a handler raises an exception.
+
+    Attributes:
+        action: Name of the action that was executed.
+        result: Failure :class:`ActionResult` capturing the error.
+        cause: Original exception raised by the handler.
+
+    """
+
+    action: str
+    result: ActionResult
+    cause: Exception
+
+    def __str__(self) -> str:
+        """Return a human-readable description of the execution error."""
+        return (
+            f"ActionExecutionError: action={self.action!r} "
+            f"cause={type(self.cause).__name__}: {self.cause}"
+        )
+
+
 class ActionExecutor(BaseLifecycleComponent):
     """Deterministic action executor with handler registry.
 
@@ -223,6 +246,9 @@ class ActionExecutor(BaseLifecycleComponent):
                 error=f"{type(exc).__name__}: {exc}",
             )
             logger.exception("ActionExecutor.execute: handler raised for %r", action)
+            self._history.append(result)
+            self._execution_count += 1
+            raise ActionExecutionError(action=action, result=result, cause=exc) from exc
 
         self._history.append(result)
         self._execution_count += 1
@@ -260,4 +286,4 @@ class ActionExecutor(BaseLifecycleComponent):
         return hasher.hexdigest()
 
 
-__all__ = ["ActionExecutor", "ActionHandler", "ActionResult"]
+__all__ = ["ActionExecutionError", "ActionExecutor", "ActionHandler", "ActionResult"]
