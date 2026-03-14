@@ -14,7 +14,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
 import z3
 
@@ -52,7 +52,7 @@ class VariableDeclaration:
     lower_bound: float | None = None
     upper_bound: float | None = None
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -82,7 +82,7 @@ class ConstraintSet:
     variables: list[VariableDeclaration] = field(default_factory=list)
     constraints: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -109,7 +109,7 @@ class OptimizationObjective:
     expression: str
     direction: Literal["minimize", "maximize"]
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
@@ -136,14 +136,14 @@ class SymbolicSolution:
     objective_value: str | None = None
     message: str = ""
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
 
         Returns:
             Dictionary representation of this solution.
 
         """
-        result: dict[str, object] = {
+        result: dict[str, Any] = {
             "satisfiable": self.satisfiable,
             "model": dict(self.model),
             "message": self.message,
