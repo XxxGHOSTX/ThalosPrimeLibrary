@@ -1,8 +1,13 @@
 #!/bin/bash
 # Quick deployment script for Thalos Prime Library
 # This script automates the deployment process
+# Run from the repository root: bash infra/deploy.sh
 
 set -e  # Exit on error
+
+# Resolve repository root (one level up from this script's directory)
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
 
 echo "=========================================="
 echo "Thalos Prime Library - Quick Deploy"
@@ -56,7 +61,7 @@ case $choice in
         pip install -e ".[dev]"
         success "Installation complete!"
         echo ""
-        info "Try: python example_usage.py"
+        info "Try: python scripts/example_usage.py"
         ;;
     2)
         info "Installing in production mode..."
@@ -89,17 +94,9 @@ case $choice in
             echo "Error: Docker is not installed"
             exit 1
         fi
-        
-        if [ -f "docker-compose.yml" ]; then
-            info "Using Docker Compose..."
-            docker-compose up --build
-        else
-            info "Building Docker image..."
-            docker build -t thalos-prime:latest .
-            success "Docker image built!"
-            info "Starting container..."
-            docker run -p 8000:8000 --name thalos-prime thalos-prime:latest
-        fi
+
+        info "Using Docker Compose (infra/docker-compose.yml)..."
+        docker compose -f infra/docker-compose.yml up --build
         ;;
     6)
         info "Running tests..."

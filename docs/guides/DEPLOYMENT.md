@@ -21,21 +21,21 @@ This guide covers all deployment options for the Thalos Prime Library, from simp
 **Automated deployment script:**
 ```bash
 # Interactive deployment menu
-chmod +x deploy.sh
-./deploy.sh
+chmod +x infra/deploy.sh
+bash infra/deploy.sh
 ```
 
 **For Python library usage:**
 ```bash
 pip install -e .
-python example_usage.py
+python scripts/example_usage.py
 ```
 
 **For API server:**
 ```bash
 pip install -e .
 python run_thalos.py
-# Or: ./run_thalos.sh
+# Or: tools/run_thalos.sh
 ```
 
 **For Docker:**
@@ -44,7 +44,7 @@ docker build -t thalos-prime .
 docker run -p 8000:8000 thalos-prime
 
 # Or with Docker Compose (recommended):
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 ```
 
 ---
@@ -193,7 +193,7 @@ The repository includes example scripts to demonstrate functionality:
 
 **Basic usage example:**
 ```bash
-python example_usage.py
+python scripts/example_usage.py
 ```
 
 **Full integration demo:**
@@ -238,8 +238,8 @@ python run_thalos.py
 
 **Using the shell script (Linux/macOS):**
 ```bash
-chmod +x run_thalos.sh
-./run_thalos.sh
+chmod +x tools/run_thalos.sh
+tools/run_thalos.sh
 ```
 
 **Using uvicorn directly:**
@@ -347,23 +347,23 @@ docker run -d \
 
 ### Docker Compose (Recommended for Production)
 
-A `docker-compose.yml` file is provided in the repository for easy deployment:
+A `infra/docker-compose.yml` file is provided in the repository for easy deployment:
 
 ```bash
 # Start the service
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 
 # View logs
-docker-compose logs -f
+docker compose -f infra/docker-compose.yml logs -f
 
 # Stop the service
-docker-compose down
+docker compose -f infra/docker-compose.yml down
 
 # Rebuild and restart
-docker-compose up --build -d
+docker compose -f infra/docker-compose.yml up --build -d
 ```
 
-The docker-compose configuration includes:
+The `infra/docker-compose.yml` configuration includes:
 - Health checks
 - Automatic restarts
 - Volume mounts for persistent data
@@ -550,12 +550,12 @@ uvicorn thalos_prime.api.server:app --port 8001
 **3. Permission denied on startup scripts**
 
 ```
-Permission denied: ./run_thalos.sh
+Permission denied: tools/run_thalos.sh
 ```
 
 **Solution:**
 ```bash
-chmod +x run_thalos.sh
+chmod +x tools/run_thalos.sh
 ```
 
 **4. Library path not found**

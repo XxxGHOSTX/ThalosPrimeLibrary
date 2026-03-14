@@ -32,12 +32,12 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 # ---------------------------------------------------------------------------
-# Load the root thalos_prime.py as a module named _thalos_pipeline.
-# The root thalos_prime.py is a standalone executable module; its symbols
+# Load scripts/pipeline.py as a module named _thalos_pipeline.
+# scripts/pipeline.py is a standalone executable module; its symbols
 # must be accessed via importlib because the package thalos_prime/ shadows
 # the filename when importing normally.
 # ---------------------------------------------------------------------------
-_PIPELINE_PATH = Path(__file__).parent.parent / "thalos_prime.py"
+_PIPELINE_PATH = Path(__file__).parent.parent / "scripts" / "pipeline.py"
 
 
 def _load_pipeline() -> ModuleType:
