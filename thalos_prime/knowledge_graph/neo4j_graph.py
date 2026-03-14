@@ -162,7 +162,7 @@ class Neo4jKnowledgeGraph(BaseLifecycleComponent):
 
         """
         super().__init__("Neo4jKnowledgeGraph", seed=seed)
-        self._graph: nx.DiGraph[str, dict[str, Any]] = nx.DiGraph()
+        self._graph: nx.DiGraph[str] = nx.DiGraph()
         self._node_count: int = 0
         self._rel_count: int = 0
         self._query_count: int = 0
