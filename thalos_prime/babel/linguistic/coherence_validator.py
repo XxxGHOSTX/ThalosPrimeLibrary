@@ -30,7 +30,7 @@ class LinguisticCoherenceValidator:
     MIN_LENGTH: int = 8
 
     def initialize(self) -> None:
-        """No-op initialiser; LinguisticCoherenceValidator is stateless."""
+        """No-op initializer; LinguisticCoherenceValidator is stateless."""
 
     def operate(self) -> None:
         """No-op operate; this validator has no background work."""

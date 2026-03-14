@@ -40,7 +40,7 @@ class RollbackManager:
     """
 
     def __init__(self, backend: StateBackend) -> None:
-        """Initialise with *backend*.
+        """Initialize with *backend*.
 
         Args:
             backend: State backend for snapshot persistence.
@@ -54,7 +54,7 @@ class RollbackManager:
     # ------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """Initialise the rollback manager and its snapshot manager."""
+        """Initialize the rollback manager and its snapshot manager."""
         self._snapshot_manager.initialize()
         self._initialized = True
         logger.debug("RollbackManager: initialized")
@@ -78,7 +78,7 @@ class RollbackManager:
         logger.debug("RollbackManager: reconciled")
 
     def checkpoint(self) -> dict[str, object]:
-        """Return a serialisable snapshot of this manager's state.
+        """Return a serializable snapshot of this manager's state.
 
         Returns:
             Dict with ``component`` and ``initialized`` fields.

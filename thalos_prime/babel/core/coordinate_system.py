@@ -44,7 +44,7 @@ class CoordinateValidator:
     MIN_DIGEST_LENGTH: Final[int] = 16
 
     def initialize(self) -> None:
-        """No-op initialiser; CoordinateValidator is stateless."""
+        """No-op initializer; CoordinateValidator is stateless."""
 
     def operate(self) -> None:
         """No-op operate; CoordinateValidator has no background work."""
@@ -87,7 +87,7 @@ class DeterministicCoordinateDeriver:
     """Derive deterministic coordinates from input context."""
 
     def __init__(self, seed: str) -> None:
-        """Initialise with *seed*.
+        """Initialize with *seed*.
 
         Args:
             seed: Deterministic seed string for coordinate derivation.

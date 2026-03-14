@@ -39,10 +39,10 @@ class Validator(Protocol):
         ...
 
     def checkpoint(self) -> dict[str, object]:
-        """Serialise state for restart; must be atomic and versioned.
+        """Serialize state for restart; must be atomic and versioned.
 
         Returns:
-            Serialisable state representation.
+            Serializable state representation.
 
         """
         ...
@@ -56,7 +56,7 @@ class SystemValidator:
     """Run registered validators and aggregate results."""
 
     def __init__(self) -> None:
-        """Initialise with an empty validator registry."""
+        """Initialize with an empty validator registry."""
         self.validators: list[Validator] = []
 
     def register(self, validator: Validator) -> None:

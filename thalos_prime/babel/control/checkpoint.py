@@ -23,7 +23,7 @@ class CheckpointManager:
     """
 
     def __init__(self, base_dir: Path) -> None:
-        """Initialise with *base_dir* as the storage root.
+        """Initialize with *base_dir* as the storage root.
 
         Args:
             base_dir: Root directory under which ``state/checkpoints/`` is created.
@@ -37,7 +37,7 @@ class CheckpointManager:
     # ------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """Create the checkpoint directory and mark as initialised."""
+        """Create the checkpoint directory and mark as initialized."""
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self._initialized = True
 
@@ -60,7 +60,7 @@ class CheckpointManager:
             self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     def checkpoint(self) -> dict[str, object]:
-        """Return a serialisable snapshot of this manager's state.
+        """Return a serializable snapshot of this manager's state.
 
         Returns:
             Dict with ``component``, ``checkpoint_dir``, and ``initialized`` fields.
@@ -73,7 +73,7 @@ class CheckpointManager:
         }
 
     def terminate(self) -> None:
-        """Mark as uninitialised; does not remove checkpoint files."""
+        """Mark as uninitialized; does not remove checkpoint files."""
         self._initialized = False
 
     # ------------------------------------------------------------------
@@ -98,7 +98,7 @@ class CheckpointManager:
 
 
 def _state_to_json(state: SystemState) -> str:
-    """Serialise *state* to a JSON string.
+    """Serialize *state* to a JSON string.
 
     Args:
         state: System state dataclass instance.

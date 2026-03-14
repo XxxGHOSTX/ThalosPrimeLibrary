@@ -44,7 +44,7 @@ class SchemaValidator:
     """
 
     def __init__(self) -> None:
-        """Initialise the schema validator."""
+        """Initialize the schema validator."""
         self._initialized: bool = False
 
     # ------------------------------------------------------------------
@@ -52,7 +52,7 @@ class SchemaValidator:
     # ------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """Mark the validator as initialised."""
+        """Mark the validator as initialized."""
         self._initialized = True
         logger.debug("SchemaValidator: initialized")
 
@@ -65,7 +65,7 @@ class SchemaValidator:
         logger.debug("SchemaValidator: reconciled")
 
     def checkpoint(self) -> dict[str, Any]:
-        """Return a serialisable snapshot of this validator's state.
+        """Return a serializable snapshot of this validator's state.
 
         Returns:
             Dict with ``component`` and ``initialized`` fields.
@@ -77,7 +77,7 @@ class SchemaValidator:
         }
 
     def terminate(self) -> None:
-        """Mark the validator as uninitialised."""
+        """Mark the validator as uninitialized."""
         self._initialized = False
         logger.debug("SchemaValidator: terminated")
 

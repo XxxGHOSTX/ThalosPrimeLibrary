@@ -75,7 +75,7 @@ class LifecycleManager:
     """
 
     def __init__(self) -> None:
-        """Initialise with an empty component registry."""
+        """Initialize with an empty component registry."""
         self.components: list[LifecycleComponent] = []
 
     def initialize(self) -> None:

@@ -30,7 +30,7 @@ class SnapshotManager:
     """
 
     def __init__(self, backend: StateBackend) -> None:
-        """Initialise with *backend*.
+        """Initialize with *backend*.
 
         Args:
             backend: State backend for snapshot persistence.
@@ -44,7 +44,7 @@ class SnapshotManager:
     # ------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """Mark the snapshot manager as initialised."""
+        """Mark the snapshot manager as initialized."""
         self._initialized = True
         logger.debug("SnapshotManager: initialized")
 
@@ -66,7 +66,7 @@ class SnapshotManager:
         logger.debug("SnapshotManager: reconciled")
 
     def checkpoint(self) -> dict[str, Any]:
-        """Return a serialisable snapshot of this manager's state.
+        """Return a serializable snapshot of this manager's state.
 
         Returns:
             Dict with ``component`` and ``initialized`` fields.
@@ -78,7 +78,7 @@ class SnapshotManager:
         }
 
     def terminate(self) -> None:
-        """Mark the snapshot manager as uninitialised."""
+        """Mark the snapshot manager as uninitialized."""
         self._initialized = False
         logger.debug("SnapshotManager: terminated")
 

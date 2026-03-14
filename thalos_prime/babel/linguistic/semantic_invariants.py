@@ -30,7 +30,7 @@ class SemanticInvariantChecker:
     """
 
     def initialize(self) -> None:
-        """No-op initialiser; SemanticInvariantChecker is stateless."""
+        """No-op initializer; SemanticInvariantChecker is stateless."""
 
     def operate(self) -> None:
         """No-op operate; this checker has no background work."""

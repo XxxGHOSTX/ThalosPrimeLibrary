@@ -31,7 +31,7 @@ class FileStateManager:
     """
 
     def __init__(self, base_dir: Path) -> None:
-        """Initialise with *base_dir* as the storage root.
+        """Initialize with *base_dir* as the storage root.
 
         Args:
             base_dir: Root directory for state storage.
@@ -46,7 +46,7 @@ class FileStateManager:
     # ------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """Create required directories and mark as initialised."""
+        """Create required directories and mark as initialized."""
         self.base_dir.mkdir(parents=True, exist_ok=True)
         (self.base_dir / "state").mkdir(parents=True, exist_ok=True)
         self._initialized = True
@@ -71,7 +71,7 @@ class FileStateManager:
         (self.base_dir / "state").mkdir(parents=True, exist_ok=True)
 
     def checkpoint(self) -> dict[str, object]:
-        """Return a serialisable snapshot of this manager's state.
+        """Return a serializable snapshot of this manager's state.
 
         Returns:
             Dict with ``component``, ``state_path``, and ``initialized`` fields.
@@ -84,7 +84,7 @@ class FileStateManager:
         }
 
     def terminate(self) -> None:
-        """Mark as uninitialised; does not remove persisted state."""
+        """Mark as uninitialized; does not remove persisted state."""
         self._initialized = False
 
     # ------------------------------------------------------------------
