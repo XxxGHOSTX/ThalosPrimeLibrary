@@ -35,10 +35,55 @@ class ValidationResult:
 class SchemaValidator:
     """Validates an infrastructure schema dict against required section rules.
 
+    Implements the six-method lifecycle contract for participation in
+    lifecycle-managed pipelines.
+
     Checks that all top-level required sections exist and that their fields
     satisfy basic constraints.  No default substitution is performed — missing
     fields are reported as violations.
     """
+
+    def __init__(self) -> None:
+        """Initialize the schema validator."""
+        self._initialized: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle contract
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Mark the validator as initialized."""
+        self._initialized = True
+        logger.debug("SchemaValidator: initialized")
+
+    def operate(self) -> None:
+        """Log current operational status (idempotent)."""
+        logger.debug("SchemaValidator: operating, initialized=%s", self._initialized)
+
+    def reconcile(self) -> None:
+        """No-op reconcile; SchemaValidator holds no mutable state."""
+        logger.debug("SchemaValidator: reconciled")
+
+    def checkpoint(self) -> dict[str, Any]:
+        """Return a serializable snapshot of this validator's state.
+
+        Returns:
+            Dict with ``component`` and ``initialized`` fields.
+
+        """
+        return {
+            "component": "SchemaValidator",
+            "initialized": self._initialized,
+        }
+
+    def terminate(self) -> None:
+        """Mark the validator as uninitialized."""
+        self._initialized = False
+        logger.debug("SchemaValidator: terminated")
+
+    # ------------------------------------------------------------------
+    # Domain operations
+    # ------------------------------------------------------------------
 
     def validate(self, schema: dict[str, Any]) -> ValidationResult:
         """Validate *schema* and return a :class:`ValidationResult`.

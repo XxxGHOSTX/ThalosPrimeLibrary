@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
+from thalos_prime.agency.action_executor import ActionExecutionError, ActionExecutor, ActionResult
 
 
 def _echo_handler(params: dict[str, object]) -> ActionResult:
@@ -101,9 +101,12 @@ class TestActionExecutor:
         executor = ActionExecutor()
         executor.initialize()
         executor.register_action("boom", _raising_handler)
-        result = executor.execute("boom", {})
-        assert result.success is False
-        assert "RuntimeError" in result.error
+        with pytest.raises(ActionExecutionError) as exc_info:
+            executor.execute("boom", {})
+        err = exc_info.value
+        assert err.result.success is False
+        assert "RuntimeError" in err.result.error
+        assert isinstance(err.cause, RuntimeError)
 
     def test_execute_failure_handler(self) -> None:
         executor = ActionExecutor()

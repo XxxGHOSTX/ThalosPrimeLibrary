@@ -22,10 +22,14 @@ logger = logging.getLogger(__name__)
 class RollbackManager:
     """Manages pre-deploy snapshots and rollback operations.
 
+    Implements the six-method lifecycle contract for participation in
+    lifecycle-managed pipelines.
+
     Usage::
 
         backend = LocalStateBackend()
         manager = RollbackManager(backend)
+        manager.initialize()
         manager.pre_deploy("v1.2.3", schema)
         # ... deploy ...
         manager.rollback("v1.2.3")
@@ -36,13 +40,64 @@ class RollbackManager:
     """
 
     def __init__(self, backend: StateBackend) -> None:
-        """Initialise with *backend*.
+        """Initialize with *backend*.
 
         Args:
             backend: State backend for snapshot persistence.
 
         """
         self._snapshot_manager = SnapshotManager(backend)
+        self._initialized: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle contract
+    # ------------------------------------------------------------------
+
+    def initialize(self) -> None:
+        """Initialize the rollback manager and its snapshot manager."""
+        self._snapshot_manager.initialize()
+        self._initialized = True
+        logger.debug("RollbackManager: initialized")
+
+    def validate(self) -> bool:
+        """Return True when the manager is initialized and the snapshot manager is ready.
+
+        Returns:
+            True when initialized and the underlying snapshot manager validates.
+
+        """
+        return self._initialized and self._snapshot_manager.validate()
+
+    def operate(self) -> None:
+        """Log current operational status (idempotent)."""
+        logger.debug("RollbackManager: operating, initialized=%s", self._initialized)
+
+    def reconcile(self) -> None:
+        """Reconcile the snapshot manager to a consistent state."""
+        self._snapshot_manager.reconcile()
+        logger.debug("RollbackManager: reconciled")
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return a serializable snapshot of this manager's state.
+
+        Returns:
+            Dict with ``component`` and ``initialized`` fields.
+
+        """
+        return {
+            "component": "RollbackManager",
+            "initialized": self._initialized,
+        }
+
+    def terminate(self) -> None:
+        """Terminate the rollback manager and its snapshot manager."""
+        self._snapshot_manager.terminate()
+        self._initialized = False
+        logger.debug("RollbackManager: terminated")
+
+    # ------------------------------------------------------------------
+    # Domain operations
+    # ------------------------------------------------------------------
 
     def pre_deploy(self, deploy_key: str, schema: dict[str, Any]) -> dict[str, Any]:
         """Capture a pre-deploy snapshot of *schema*.
