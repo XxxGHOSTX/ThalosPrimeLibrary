@@ -1,5 +1,4 @@
-"""
-Deterministic ingestion and canonicalization utilities for Thalos Prime.
+"""Deterministic ingestion and canonicalization utilities for Thalos Prime.
 
 This module implements the ingestion-layer responsibilities described in the
 repository specification:
@@ -12,19 +11,18 @@ repository specification:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from hashlib import sha256
 import json
 import re
 import unicodedata
-from typing import Any, Dict, List
-
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from hashlib import sha256
+from typing import Any
 
 _WHITESPACE_RE = re.compile(r"\s+")
 
 # Curly quotes and common dash variants are collapsed to deterministic ASCII
-_CANONICAL_REPLACEMENTS: Dict[str, str] = {
+_CANONICAL_REPLACEMENTS: dict[str, str] = {
     "\u2018": "'",
     "\u2019": "'",
     "\u201c": '"',
@@ -38,8 +36,7 @@ SEMANTIC_SCHEMA_VERSION = "1.0.0"
 
 
 def canonicalize_text(text: str) -> str:
-    """
-    Deterministically normalize input text.
+    """Deterministically normalize input text.
 
     Steps:
     - Unicode NFC normalization
@@ -51,22 +48,20 @@ def canonicalize_text(text: str) -> str:
     for src, target in _CANONICAL_REPLACEMENTS.items():
         normalized = normalized.replace(src, target)
     normalized = normalized.lower()
-    normalized = _WHITESPACE_RE.sub(" ", normalized).strip()
-    return normalized
+    return _WHITESPACE_RE.sub(" ", normalized).strip()
 
 
-def _tokenize(text: str) -> List[str]:
-    """Simple deterministic tokenization that preserves ordering."""
+def _tokenize(text: str) -> list[str]:
+    """Perform simple deterministic tokenization that preserves ordering."""
     if not text:
         return []
     return text.split(" ")
 
 
 def _normalized_representation(
-    normalized_text: str, tokens: List[str], metadata: Dict[str, Any],
-) -> Dict[str, Any]:
-    """
-    Build the canonical representation that is hashed to produce a meaning hash.
+    normalized_text: str, tokens: list[str], metadata: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the canonical representation that is hashed to produce a meaning hash.
 
     The representation is intentionally small and fully serializable to ensure
     reproducible hashing across platforms.
@@ -79,9 +74,8 @@ def _normalized_representation(
     }
 
 
-def compute_meaning_hash(normalized_repr: Dict[str, Any]) -> str:
-    """
-    Compute the deterministic meaning hash for a normalized representation.
+def compute_meaning_hash(normalized_repr: dict[str, Any]) -> str:
+    """Compute the deterministic meaning hash for a normalized representation.
 
     The representation must already be normalized and free of nondeterministic
     fields; this function only performs a stable JSON serialization and SHA256.
@@ -97,9 +91,9 @@ class CanonicalArtifact:
     artifact_id: str
     raw_text: str
     normalized_text: str
-    tokens: List[str]
+    tokens: list[str]
     meaning_hash: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 def ingest_fragment(
@@ -107,10 +101,9 @@ def ingest_fragment(
     *,
     source: str,
     created_at: datetime | None = None,
-    metadata: Dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> CanonicalArtifact:
-    """
-    Ingest a raw fragment into a deterministic CanonicalArtifact.
+    """Ingest a raw fragment into a deterministic CanonicalArtifact.
 
     - Normalizes text deterministically.
     - Derives a stable artifact_id from the normalized text.
@@ -119,10 +112,10 @@ def ingest_fragment(
     - Avoids implicit nondeterminism: if `created_at` is not provided, the
       epoch is used to keep the record reproducible.
     """
-    timestamp = created_at or datetime.fromtimestamp(0, tz=timezone.utc)
+    timestamp = created_at or datetime.fromtimestamp(0, tz=UTC)
     normalized_text = canonicalize_text(raw_text)
     tokens = _tokenize(normalized_text)
-    merged_metadata: Dict[str, Any] = {
+    merged_metadata: dict[str, Any] = {
         "source": source,
         "created_at": timestamp.isoformat(),
         "normalization_version": NORMALIZATION_VERSION,

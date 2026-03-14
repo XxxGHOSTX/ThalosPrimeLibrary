@@ -1,7 +1,3 @@
-"""
-Cache package placeholder for Thalos Prime.
-Add caching adapters and policies here.
-"""
 """Thalos Prime cache subsystem.
 
 Exports the generic TTLCache for use throughout the Thalos Prime pipeline

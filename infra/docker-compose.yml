@@ -3,7 +3,7 @@ version: '3.8'
 services:
   thalos-prime:
     build:
-      context: .
+      context: ..
       dockerfile: infra/Dockerfile
     container_name: thalos-prime
     ports:
@@ -14,7 +14,7 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       # Mount local data directory for persistent storage
-      - ./data:/app/data
+      - ../data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]

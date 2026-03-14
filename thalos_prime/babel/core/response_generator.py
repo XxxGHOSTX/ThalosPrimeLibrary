@@ -1,18 +1,21 @@
-"""
-Deterministic response generation pipeline.
-"""
+"""Deterministic response generation pipeline."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import TYPE_CHECKING
 
-from .coordinate_system import Coordinate
-from .semantic_preserving_composer import SemanticPreservingComposer
-from ..linguistic.semantic_frames import FrameConstructor, SemanticFrame
-from ..linguistic.semantic_invariants import SemanticCore
-from ..linguistic.response_corpus import ResponseCorpus
-from ..linguistic.coherence_validator import LinguisticCoherenceValidator, CoherenceReport
+if TYPE_CHECKING:
+    from thalos_prime.babel.linguistic.coherence_validator import (
+        CoherenceReport,
+        LinguisticCoherenceValidator,
+    )
+    from thalos_prime.babel.linguistic.response_corpus import ResponseCorpus
+    from thalos_prime.babel.linguistic.semantic_frames import FrameConstructor, SemanticFrame
+    from thalos_prime.babel.linguistic.semantic_invariants import SemanticCore
+
+    from .coordinate_system import Coordinate
+    from .semantic_preserving_composer import SemanticPreservingComposer
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,7 @@ class GeneratedResponse:
 
     @property
     def semantic_core(self) -> SemanticCore:
+        """Return the semantic core extracted from the response frame."""
         return self.frame.semantic_core
 
 
@@ -42,16 +46,21 @@ class ResponseGenerator:
         corpus: ResponseCorpus,
         coherence_validator: LinguisticCoherenceValidator,
     ) -> None:
+        """Initialise the generator with all required linguistic pipeline components."""
         self.composer = composer
         self.frame_constructor = frame_constructor
         self.corpus = corpus
         self.coherence_validator = coherence_validator
 
-    def generate(self, user_input: str, coordinate: Coordinate, variation_degree: int) -> GeneratedResponse:
+    def generate(
+        self, user_input: str, coordinate: Coordinate, variation_degree: int
+    ) -> GeneratedResponse:
+        """Generate a response for *user_input* at the given *coordinate* and *variation_degree*."""
         frame = self.frame_constructor.construct(user_input)
-        templates: List[str] = self.corpus.get_templates_for_frame(frame.frame_type)
+        templates: list[str] = self.corpus.get_templates_for_frame(frame.frame_type)
         if not templates:
-            raise ValueError(f"No templates available for frame {frame.frame_type}")
+            msg = f"No templates available for frame {frame.frame_type}"
+            raise ValueError(msg)
         template_index = coordinate.variation_index % len(templates)
         template = templates[template_index]
         text, preserved = self.composer.compose_with_validation(frame, template, coordinate)

@@ -1,10 +1,6 @@
-"""
-Response template corpus.
-"""
+"""Response template corpus."""
 
 from __future__ import annotations
-
-from typing import Dict, List
 
 from .semantic_frames import FrameType
 
@@ -13,7 +9,8 @@ class ResponseCorpus:
     """Deterministic response templates per frame type."""
 
     def __init__(self) -> None:
-        self._templates: Dict[FrameType, List[str]] = {
+        """Initialise the corpus with built-in templates for each frame type."""
+        self._templates: dict[FrameType, list[str]] = {
             FrameType.DEFINITION: [
                 "{DEFINIENDUM} is defined by stable properties in this system.",
                 "The topic {DEFINIENDUM} follows deterministic behavior.",
@@ -32,5 +29,6 @@ class ResponseCorpus:
             ],
         }
 
-    def get_templates_for_frame(self, frame_type: FrameType) -> List[str]:
+    def get_templates_for_frame(self, frame_type: FrameType) -> list[str]:
+        """Return templates for *frame_type*, falling back to GENERIC templates."""
         return self._templates.get(frame_type, self._templates[FrameType.GENERIC])
