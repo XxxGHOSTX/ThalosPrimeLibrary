@@ -9,7 +9,7 @@ Control Plane: strategy selection and lifecycle coordination.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Protocol
 
 from thalos_prime.infra_synthesis.release.strategy import (
     BlueGreenStrategy,
@@ -19,7 +19,16 @@ from thalos_prime.infra_synthesis.release.strategy import (
 
 logger = logging.getLogger(__name__)
 
-_STRATEGIES = {
+
+class _ReleaseStrategy(Protocol):
+    """Protocol satisfied by all concrete release strategy classes."""
+
+    def execute(self, schema: dict[str, Any], deploy_key: str) -> None:
+        """Execute the release strategy."""
+        ...
+
+
+_STRATEGIES: dict[str, type[_ReleaseStrategy]] = {
     "direct": DirectStrategy,
     "blue_green": BlueGreenStrategy,
     "canary": CanaryStrategy,
