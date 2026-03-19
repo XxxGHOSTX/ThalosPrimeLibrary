@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -57,7 +57,7 @@ class AuditLogger:
 
         """
         record: dict[str, Any] = {
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "actor": actor,
             "action": action,
             "metadata": metadata or {},

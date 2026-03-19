@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +60,7 @@ class SchemaVersionRegistry:
         """
         entry: dict[str, Any] = {
             "version": version,
-            "registered_at": datetime.now(UTC).isoformat(),
+            "registered_at": datetime.now(timezone.utc).isoformat(),
             "schema": schema,
         }
         self._entries.append(entry)

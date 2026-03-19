@@ -7,7 +7,7 @@ and SynthesisResult objects with versioned schema.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ class ResponseBuilder:
             "sources": answer.sources,
             "reasoning_steps": answer.reasoning_steps,
             "generated_at": answer.generated_at.isoformat(),
-            "response_at": datetime.now(UTC).isoformat(),
+            "response_at": datetime.now(timezone.utc).isoformat(),
         }
 
     def build_error(self, query: str, message: str) -> dict[str, object]:
@@ -64,7 +64,7 @@ class ResponseBuilder:
             "schema_version": _SCHEMA_VERSION,
             "query": query,
             "error": message,
-            "response_at": datetime.now(UTC).isoformat(),
+            "response_at": datetime.now(timezone.utc).isoformat(),
         }
 
 

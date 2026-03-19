@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class StructuredAnswer:
     reasoning_steps: list[str]
     verified: bool
     domain: str
-    generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.

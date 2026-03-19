@@ -183,7 +183,7 @@ endpoints = tp.get_babel_endpoints()
 # }
 ```
 
-The canonical Library of Babel domain is **libraryofbabel.info** (not thelibraryofbabel.com).
+The canonical Library of Babel domain for Thalos Prime is **libraryofbabel.info**. Legacy references to **thelibraryofbabel.com** or **libraryofbabel.com** are intentionally treated as incorrect.
 
 ### Page Generation & Address Mapping
 

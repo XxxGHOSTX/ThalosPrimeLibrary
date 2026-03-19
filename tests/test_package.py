@@ -19,7 +19,9 @@ def test_package_author() -> None:
 
 def test_library_of_babel_base_url() -> None:
     """Ensure the canonical Library of Babel domain is correct."""
+    assert hasattr(thalos_prime, "LIBRARY_OF_BABEL_CANONICAL_DOMAIN")
     assert hasattr(thalos_prime, "LIBRARY_OF_BABEL_BASE_URL")
+    assert thalos_prime.LIBRARY_OF_BABEL_CANONICAL_DOMAIN == "libraryofbabel.info"
     assert thalos_prime.LIBRARY_OF_BABEL_BASE_URL == "https://libraryofbabel.info"
 
 
@@ -38,6 +40,7 @@ def test_library_of_babel_search_api() -> None:
 def test_get_babel_endpoints() -> None:
     """Ensure endpoint helper returns all canonical URLs."""
     endpoints = thalos_prime.get_babel_endpoints()
+    assert endpoints["domain"] == "libraryofbabel.info"
     assert endpoints["base"] == "https://libraryofbabel.info"
     assert endpoints["search_html"] == "https://libraryofbabel.info/search.html"
     assert endpoints["search_api"] == "https://libraryofbabel.info/search.cgi"

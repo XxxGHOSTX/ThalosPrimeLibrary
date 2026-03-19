@@ -16,7 +16,8 @@ LIBRARY_MOTTO = (
 )
 
 # Library of Babel endpoints
-LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
+LIBRARY_OF_BABEL_CANONICAL_DOMAIN = "libraryofbabel.info"
+LIBRARY_OF_BABEL_BASE_URL = f"https://{LIBRARY_OF_BABEL_CANONICAL_DOMAIN}"
 LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
 LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
 
@@ -39,6 +40,7 @@ if os.path.exists(LOCAL_LIBRARY_PATH) and LOCAL_LIBRARY_PATH not in sys.path:
 def get_babel_endpoints() -> dict[str, str]:
     """Return the canonical Library of Babel endpoints used by Thalos Prime."""
     return {
+        "domain": LIBRARY_OF_BABEL_CANONICAL_DOMAIN,
         "base": LIBRARY_OF_BABEL_BASE_URL,
         "search_html": LIBRARY_OF_BABEL_SEARCH_URL,
         "search_api": LIBRARY_OF_BABEL_SEARCH_API,
@@ -112,6 +114,7 @@ from thalos_prime.reasoning.engine import (
 
 __all__ = [
     # Library of Babel endpoints
+    "LIBRARY_OF_BABEL_CANONICAL_DOMAIN",
     "LIBRARY_OF_BABEL_BASE_URL",
     "LIBRARY_OF_BABEL_SEARCH_API",
     "LIBRARY_OF_BABEL_SEARCH_URL",

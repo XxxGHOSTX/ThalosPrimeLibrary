@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 from thalos_prime.lifecycle import BaseLifecycleComponent
@@ -39,7 +39,7 @@ class BeliefEntry:
     value: str
     confidence: float
     version: int = 1
-    updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     source: str = ""
 
     def to_dict(self) -> dict[str, object]:

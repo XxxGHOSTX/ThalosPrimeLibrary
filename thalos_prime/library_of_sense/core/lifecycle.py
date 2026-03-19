@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from enum import StrEnum
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class LifecycleEvent:
     from_state: LifecycleState
     to_state: LifecycleState
     seed: int
-    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     details: str = ""
 
     def to_dict(self) -> dict[str, object]:

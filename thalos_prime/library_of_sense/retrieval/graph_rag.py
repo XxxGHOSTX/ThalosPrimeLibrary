@@ -12,7 +12,7 @@ No lifecycle orchestration logic belongs here.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -225,7 +225,7 @@ class GraphRAGRetriever(BaseLifecycleComponent):
         doc_meta: dict[str, object] = {
             "document_hash": str(hash(document)),
             "triple_count": len(triples),
-            "indexed_at": datetime.now(UTC).isoformat(),
+            "indexed_at": datetime.now(timezone.utc).isoformat(),
         }
         self._indexed_documents.append(doc_meta)
         self._query_cache.clear()

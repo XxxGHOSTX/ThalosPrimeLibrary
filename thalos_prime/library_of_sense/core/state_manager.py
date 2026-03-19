@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Final
 
 from thalos_prime.library_of_sense.core.lifecycle import LifecycleState, SubsystemLifecycle
@@ -29,8 +29,8 @@ class LibrarySenseState:
     synthesis_count: int = 0
     error_count: int = 0
     active_sources: list[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize state to dictionary.
@@ -115,7 +115,7 @@ class StateManager:
         self._lifecycle.transition(LifecycleState.RECONCILING, "Reconciling state")
         self._state.error_count = max(self._state.error_count, 0)
         self._state.query_count = max(self._state.query_count, 0)
-        self._state.updated_at = datetime.now(UTC)
+        self._state.updated_at = datetime.now(timezone.utc)
         self._lifecycle.transition(LifecycleState.READY, "Reconciliation complete")
         logger.info("StateManager reconciliation complete")
 
@@ -153,22 +153,22 @@ class StateManager:
     def increment_query_count(self) -> None:
         """Increment the query counter and update timestamp."""
         self._state.query_count += 1
-        self._state.updated_at = datetime.now(UTC)
+        self._state.updated_at = datetime.now(timezone.utc)
 
     def increment_retrieval_count(self) -> None:
         """Increment the retrieval counter and update timestamp."""
         self._state.retrieval_count += 1
-        self._state.updated_at = datetime.now(UTC)
+        self._state.updated_at = datetime.now(timezone.utc)
 
     def increment_synthesis_count(self) -> None:
         """Increment the synthesis counter and update timestamp."""
         self._state.synthesis_count += 1
-        self._state.updated_at = datetime.now(UTC)
+        self._state.updated_at = datetime.now(timezone.utc)
 
     def increment_error_count(self) -> None:
         """Increment the error counter and update timestamp."""
         self._state.error_count += 1
-        self._state.updated_at = datetime.now(UTC)
+        self._state.updated_at = datetime.now(timezone.utc)
 
     def add_source(self, source_name: str) -> None:
         """Register an active retrieval source.

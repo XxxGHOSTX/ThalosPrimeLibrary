@@ -15,7 +15,7 @@ import hashlib
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 from thalos_prime.lifecycle import BaseLifecycleComponent
@@ -42,7 +42,7 @@ class ActionResult:
     success: bool
     output: dict[str, object] = field(default_factory=dict)
     error: str = ""
-    executed_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    executed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.
