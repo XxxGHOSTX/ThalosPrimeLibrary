@@ -1,0 +1,26 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  thalos_json:
+    format: '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", "message": "%(message)s", "owner": "Tony Ray Macier III"}'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: thalos_json
+    stream: ext://sys.stdout
+
+  statelog_file:
+    class: logging.handlers.RotatingFileHandler
+    formatter: thalos_json
+    filename: STATELOG/thalos.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+
+root:
+  level: INFO
+  handlers: [console, statelog_file]

@@ -1,0 +1,94 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+# Auto-labeler configuration for ThalosPrime pull requests.
+
+# Core library module changes
+thalos-prime:
+  - changed-files:
+    - any-glob-to-any-file: "thalos_prime/**"
+
+# Core module changes (platform)
+core:
+  - changed-files:
+    - any-glob-to-any-file: "core/**"
+
+# System orchestration changes
+system:
+  - changed-files:
+    - any-glob-to-any-file: "system/**"
+
+# Service changes
+services:
+  - changed-files:
+    - any-glob-to-any-file: "services/**"
+
+# Control plane
+control-plane:
+  - changed-files:
+    - any-glob-to-any-file: "services/control_plane/**"
+
+# Discovery sentinel
+discovery:
+  - changed-files:
+    - any-glob-to-any-file: "services/discovery_sentinel/**"
+
+# Artifact engine
+remediation:
+  - changed-files:
+    - any-glob-to-any-file: "services/artifact_engine/**"
+
+# Infrastructure changes
+infrastructure:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "infra/**"
+      - "infrastructure/**"
+
+# Documentation changes
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "docs/**"
+      - "**/*.md"
+
+# CI/CD workflow changes
+ci:
+  - changed-files:
+    - any-glob-to-any-file: ".github/workflows/**"
+
+# Test changes
+tests:
+  - changed-files:
+    - any-glob-to-any-file: "tests/**"
+
+# Experimental module
+experimental:
+  - changed-files:
+    - any-glob-to-any-file: "experimental/**"
+
+# Automation scripts
+automation:
+  - changed-files:
+    - any-glob-to-any-file: "automation/**"
+
+# Scaffolding templates
+templates:
+  - changed-files:
+    - any-glob-to-any-file: "templates/**"
+
+# NEXUS module
+nexus:
+  - changed-files:
+    - any-glob-to-any-file: "thalos_nexus/**"
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "requirements.txt"
+      - "pyproject.toml"
+
+# Registry
+registry:
+  - changed-files:
+    - any-glob-to-any-file: "registry/**"

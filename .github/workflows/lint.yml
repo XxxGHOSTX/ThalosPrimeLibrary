@@ -1,0 +1,21 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+name: Lint — ThalosPrime Library
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ruff:
+    name: Ruff Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check thalos_prime tests --output-format=github
+      - run: ruff format --check thalos_prime tests

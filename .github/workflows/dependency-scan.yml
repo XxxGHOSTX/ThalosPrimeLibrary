@@ -1,0 +1,22 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+name: Dependency Scan — ThalosPrime Library
+
+on:
+  push:
+    paths: ["requirements.txt", "pyproject.toml"]
+  schedule:
+    - cron: "0 3 * * *"  # Daily 03:00 UTC
+
+jobs:
+  pip-audit:
+    name: Python Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt

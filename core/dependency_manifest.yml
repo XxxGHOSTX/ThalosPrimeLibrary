@@ -1,0 +1,24 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+module: core
+version: "2.0.0"
+owner: "Tony Ray Macier III"
+stability: stable
+
+dependencies:
+  python: ">=3.12"
+  stdlib:
+    - hashlib
+    - json
+    - pathlib
+    - datetime
+    - abc
+    - dataclasses
+
+external: []  # Core has NO external dependencies
+
+rules:
+  - "No experimental module imports allowed"
+  - "No external API calls allowed in core"
+  - "All functions must be deterministic given the same inputs"

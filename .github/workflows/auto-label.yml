@@ -1,0 +1,24 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+name: Auto-Label — ThalosPrime
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label:
+    name: Apply Labels
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml

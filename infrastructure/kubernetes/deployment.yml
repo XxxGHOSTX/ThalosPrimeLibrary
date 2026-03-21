@@ -1,0 +1,47 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thalos-core
+  labels:
+    app: thalos-prime
+    owner: tony-ray-macier-iii
+    version: "2.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: thalos-core
+  template:
+    metadata:
+      labels:
+        app: thalos-core
+    spec:
+      containers:
+        - name: thalos-core
+          image: thalos-prime/core:2.0.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OWNER
+              value: "Tony Ray Macier III"
+            - name: THALOS_SEED
+              valueFrom:
+                secretKeyRef:
+                  name: thalos-secrets
+                  key: execution-seed
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30

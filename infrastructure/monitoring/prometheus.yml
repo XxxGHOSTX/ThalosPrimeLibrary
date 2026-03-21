@@ -1,0 +1,17 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "thalos-core"
+    static_configs:
+      - targets: ["thalos-core:8000"]
+    metrics_path: /metrics
+
+  - job_name: "sentinel-discovery"
+    static_configs:
+      - targets: ["sentinel-discovery:8001"]
+    metrics_path: /metrics

@@ -1,0 +1,37 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+# Thalos Prime System Configuration Example
+# Copy this file to config.yml and fill in values.
+# NEVER commit config.yml — it is in .gitignore.
+
+thalos:
+  version: "2.0.0"
+  owner: "Tony Ray Macier III"
+
+control_plane:
+  host: "0.0.0.0"
+  port: 8000
+  # Execution seed — override with --seed argument or THALOS_SEED env var
+  default_seed: null  # Must be set at runtime; never hardcode
+
+sentinel:
+  scan_interval_seconds: 86400  # 24 hours
+  statelog_path: "STATELOG/discovery.jsonl"
+  unauthorized_patterns:
+    - "api.openai.com"
+    - "api.anthropic.com"
+    - "v1/chat/completions"
+    - "bedrock-runtime"
+    - "vertexai.googleapis.com"
+
+artifact_engine:
+  output_dir: "STATELOG/artifacts"
+
+database:
+  # Use environment variable in production: DATABASE_URL
+  path: "STATELOG/state.db"
+
+security:
+  # Secrets must be stored in GitHub Secrets or environment variables
+  # NEVER commit secrets to this file
+  api_key_env: "THALOS_API_KEY"

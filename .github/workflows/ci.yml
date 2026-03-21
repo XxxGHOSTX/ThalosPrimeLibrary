@@ -1,0 +1,40 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+name: CI — ThalosPrime Library
+
+on:
+  push:
+    branches: ["main", "feature/**", "fix/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run linter (ruff)
+        run: ruff check thalos_prime tests --output-format=github
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            .pytest_cache/
+            STATELOG/

@@ -1,0 +1,22 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+version: '3.9'
+
+services:
+  thalos-core:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../STATELOG:/app/STATELOG
+    environment:
+      - OWNER=Tony Ray Macier III
+      - SEED_STRENGTH=64BIT
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

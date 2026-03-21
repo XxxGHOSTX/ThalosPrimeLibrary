@@ -1,0 +1,17 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: thalos-core-svc
+  labels:
+    app: thalos-prime
+spec:
+  selector:
+    app: thalos-core
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

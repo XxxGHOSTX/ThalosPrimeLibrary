@@ -1,0 +1,42 @@
+# PROPRIETARY AND CONFIDENTIAL
+# Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+# Hardened Sentinel Scan Workflow — Immutable execution lock
+
+name: Sentinel Scan — Autonomous Discovery
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # Daily 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Execution seed (64-bit integer)"
+        required: false
+        default: ""
+
+jobs:
+  sentinel-scan:
+    name: Shadow AI Discovery Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Sentinel Scan
+        env:
+          OWNER: "Tony Ray Macier III"
+          EXECUTION_SEED: ${{ github.event.inputs.seed }}
+        run: python -m automation.sentinel_runner --seed "$EXECUTION_SEED"
+
+      - name: Upload STATELOG
+        uses: actions/upload-artifact@v4
+        with:
+          name: statelog-${{ github.run_id }}
+          path: STATELOG/

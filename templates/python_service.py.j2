@@ -1,0 +1,30 @@
+"""
+PROPRIETARY AND CONFIDENTIAL
+Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
+This code implements the Thalos Prime Sovereign Discovery Logic.
+"""
+# Service: {{ service_name }}
+# Version: {{ version }}
+# Owner: Tony Ray Macier III
+
+
+class {{ class_name }}:
+    """{{ description }}"""
+
+    def __init__(self, seed: int) -> None:
+        """Initialize with a 64-bit execution seed."""
+        if seed <= 0:
+            raise ValueError("A valid 64-bit seed is required.")
+        self.seed = seed
+
+    def execute(self, payload: dict) -> dict:
+        """
+        Execute the service logic.
+
+        Args:
+            payload: Input data.
+
+        Returns:
+            dict with result and state_hash.
+        """
+        raise NotImplementedError("Implement execute() for {{ class_name }}")
