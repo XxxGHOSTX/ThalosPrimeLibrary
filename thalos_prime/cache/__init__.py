@@ -1,5 +1,4 @@
-"""
-Cache package placeholder for Thalos Prime.
+"""Cache package placeholder for Thalos Prime.
 Add caching adapters and policies here.
 """
 """Thalos Prime cache subsystem.
@@ -8,6 +7,6 @@ Exports the generic TTLCache for use throughout the Thalos Prime pipeline
 and API layers.
 """
 
-from thalos_prime.cache.ttl_cache import TTLCache
+from thalos_prime.cache.ttl_cache import TTLCache  # noqa: E402
 
 __all__ = ["TTLCache"]

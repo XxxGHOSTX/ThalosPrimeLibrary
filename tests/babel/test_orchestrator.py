@@ -1,13 +1,14 @@
-"""
-Orchestrator lifecycle tests.
-"""
+"""Orchestrator lifecycle tests."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
 from thalos_prime.babel.control.orchestrator import SystemPhase
+from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_status_after_initialize(temp_storage: Path) -> None:

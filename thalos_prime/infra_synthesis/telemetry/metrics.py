@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -35,7 +35,7 @@ class MetricPoint:
 
     name: str
     value: float
-    ts: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    ts: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise to a plain dict.
@@ -74,7 +74,7 @@ class MetricsRecorder:
         point = MetricPoint(
             name=name,
             value=value,
-            ts=ts if ts is not None else datetime.now(timezone.utc),
+            ts=ts if ts is not None else datetime.now(UTC),
         )
         self._points.append(point)
         logger.debug("Metric recorded: %s=%.4g at %s", name, value, point.ts.isoformat())

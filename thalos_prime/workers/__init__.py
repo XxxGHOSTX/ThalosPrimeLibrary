@@ -4,6 +4,6 @@
 Exports the BatchProcessor for deterministic background page processing.
 """
 
-from thalos_prime.workers.batch_processor import BatchProcessor
+from thalos_prime.workers.batch_processor import BatchProcessor  # noqa: E402
 
 __all__ = ["BatchProcessor"]

@@ -7,7 +7,7 @@ subsystem components, enforcing strict typing and deterministic behavior.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
@@ -32,7 +32,7 @@ class QueryContext:
     max_depth: int = 3
     timeout_seconds: float = 30.0
     seed: int = 0
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize context to dictionary.
@@ -59,7 +59,7 @@ class RetrievalResult:
     content: str
     confidence: float
     metadata: dict[str, str] = field(default_factory=dict)
-    retrieved_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    retrieved_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.

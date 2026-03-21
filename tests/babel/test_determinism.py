@@ -1,12 +1,13 @@
-"""
-Determinism tests for Babel subsystem.
-"""
+"""Determinism tests for Babel subsystem."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_identical_inputs_produce_identical_outputs(temp_storage: Path) -> None:
@@ -40,6 +41,6 @@ def test_variation_sequence_is_reproducible(temp_storage: Path) -> None:
     orch_b.initialize()
     seq_b = [orch_b.handle_semantic_input(prompt, "session") for _ in range(3)]
 
-    for a, b in zip(seq_a, seq_b):
+    for a, b in zip(seq_a, seq_b, strict=False):
         assert a.text == b.text
         assert a.coordinate.as_string() == b.coordinate.as_string()

@@ -9,7 +9,7 @@ Data Plane helper: state serialisation only.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -98,7 +98,7 @@ class SnapshotManager:
 
         """
         snapshot: dict[str, Any] = {
-            "_captured_at": datetime.now(timezone.utc).isoformat(),
+            "_captured_at": datetime.now(UTC).isoformat(),
             **schema,
         }
         self._backend.save(key, snapshot)
