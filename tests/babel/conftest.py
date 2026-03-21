@@ -1,13 +1,15 @@
-"""
-Pytest fixtures for Babel subsystem.
-"""
+"""Pytest fixtures for Babel subsystem."""
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
-from pathlib import Path
 
 from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture

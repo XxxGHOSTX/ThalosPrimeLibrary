@@ -14,14 +14,17 @@ from __future__ import annotations
 import hashlib
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
-from thalos_prime.agency.belief_tracker import BeliefEntry, BeliefTracker
 from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 from thalos_prime.lifecycle import BaseLifecycleComponent
-from thalos_prime.planning.tree_of_thoughts import TreeOfThoughtsPlanner
 from thalos_prime.simulation.world_model import WorldModel, WorldState
+
+if TYPE_CHECKING:
+    from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
+    from thalos_prime.agency.belief_tracker import BeliefEntry, BeliefTracker
+    from thalos_prime.planning.tree_of_thoughts import TreeOfThoughtsPlanner
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +48,7 @@ class AgentStepResult:
     action_result: ActionResult
     world_state: WorldState
     belief_hash: str
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict[str, object]:
         """Serialize to dictionary.

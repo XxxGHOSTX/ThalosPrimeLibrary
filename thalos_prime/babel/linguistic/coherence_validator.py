@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..core.context_hasher import ContextHasher
+from thalos_prime.babel.core.context_hasher import ContextHasher
+
+_MIN_WORD_COUNT: int = 2
 
 
 @dataclass(frozen=True)
@@ -62,7 +64,7 @@ class LinguisticCoherenceValidator:
         """
         normalized = ContextHasher.normalize_text(text)
         violations: list[str] = []
-        if len(normalized.split(" ")) < 2:
+        if len(normalized.split(" ")) < _MIN_WORD_COUNT:
             violations.append("too_short")
         if not normalized.endswith((".", "!", "?")):
             violations.append("missing_terminal_punctuation")

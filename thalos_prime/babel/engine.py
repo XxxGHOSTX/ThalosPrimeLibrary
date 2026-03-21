@@ -35,11 +35,14 @@ def basile_index_to_text(index: int, length: int) -> str:
 
     Raises:
         ValueError: If *index* is negative or *length* is negative.
+
     """
     if index < 0:
-        raise ValueError("index must be non-negative")
+        msg = "index must be non-negative"
+        raise ValueError(msg)
     if length < 0:
-        raise ValueError("length must be non-negative")
+        msg = "length must be non-negative"
+        raise ValueError(msg)
 
     base = len(ALPHABET)
     chars: list[str] = []
@@ -62,6 +65,7 @@ def text_to_basile_index(text: str) -> int:
 
     Raises:
         ValueError: If *text* contains characters outside the Babel alphabet.
+
     """
     base = len(ALPHABET)
     index = 0
@@ -69,7 +73,8 @@ def text_to_basile_index(text: str) -> int:
         try:
             digit = ALPHABET.index(char)
         except ValueError as exc:
-            raise ValueError(f"unsupported Babel character: {char!r}") from exc
+            msg = f"unsupported Babel character: {char!r}"
+            raise ValueError(msg) from exc
         index = index * base + digit
     return index
 
@@ -95,9 +100,11 @@ def deterministic_page(seed: str, length: int = DEFAULT_PAGE_LENGTH) -> str:
 
     Raises:
         ValueError: If *length* is negative.
+
     """
     if length < 0:
-        raise ValueError("length must be non-negative")
+        msg = "length must be non-negative"
+        raise ValueError(msg)
 
     seed_bytes = seed.encode("utf-8")
     base = len(ALPHABET)

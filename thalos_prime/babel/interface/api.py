@@ -1,17 +1,21 @@
-"""
-Flask API for Babel subsystem.
-"""
+"""Flask API for Babel subsystem."""
 
 from __future__ import annotations
 
-from pathlib import Path
-from flask import Flask, request, jsonify, Response
+from typing import TYPE_CHECKING
 
-from ..control.semantic_orchestrator import SemanticOrchestrator
+from flask import Flask, Response, jsonify, request
+
+from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
 from .protocol import RequestProtocol, ResponseProtocol
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def create_app(storage_path: Path) -> Flask:
+    """Create and return a configured Flask application for the Babel subsystem."""
     orchestrator = SemanticOrchestrator(storage_path)
     orchestrator.initialize()
     app = Flask(__name__)

@@ -1,21 +1,24 @@
-"""
-Base orchestrator for Babel subsystem.
-"""
+"""Base orchestrator for Babel subsystem."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from ..core.validation import SystemValidator
-from .state_manager import FileStateManager
+from thalos_prime.babel.core.validation import SystemValidator
+
 from .checkpoint import CheckpointManager
 from .reconciler import Reconciler
+from .state_manager import FileStateManager
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class SystemPhase(Enum):
+    """Lifecycle phase of the orchestration system."""
+
     INITIALIZING = auto()
     VALIDATING = auto()
     OPERATIONAL = auto()
@@ -24,9 +27,11 @@ class SystemPhase(Enum):
 
 @dataclass(frozen=True)
 class SystemStatus:
+    """Snapshot of current orchestrator state."""
+
     phase: SystemPhase
     conversations_handled: int
-    last_coordinate: Optional[str]
+    last_coordinate: str | None
     integrity_verified: bool
 
 
@@ -34,6 +39,7 @@ class ThalobalOrchestrator:
     """Control-plane orchestrator handling lifecycle and state."""
 
     def __init__(self, storage_path: Path, seed: str = "thalos-babel-seed") -> None:
+        """Initialize the orchestrator with *storage_path* and deterministic *seed*."""
         self.storage_path = storage_path
         self.seed = seed
         self.phase = SystemPhase.INITIALIZING
@@ -45,17 +51,21 @@ class ThalobalOrchestrator:
         self._ensure_storage_layout()
 
     def initialize(self) -> None:
+        """Transition to VALIDATING, run validation, then enter OPERATIONAL state."""
         self.phase = SystemPhase.VALIDATING
         self.validate()
         self.phase = SystemPhase.OPERATIONAL
 
     def validate(self) -> None:
+        """Run all system validators and raise RuntimeError on any failure."""
         results = self.validator.validate_all()
         failures = [r for r in results if not r.passed]
         if failures:
-            raise RuntimeError(f"Validation failed: {[f.message for f in failures]}")
+            msg = f"Validation failed: {[f.message for f in failures]}"
+            raise RuntimeError(msg)
 
     def get_status(self) -> SystemStatus:
+        """Return a snapshot of the current orchestrator state."""
         return SystemStatus(
             phase=self.phase,
             conversations_handled=self.state.conversations_handled,
@@ -64,6 +74,7 @@ class ThalobalOrchestrator:
         )
 
     def checkpoint(self) -> Path:
+        """Serialize current state to a versioned checkpoint file."""
         return self.checkpoint_manager.create(self.state)
 
     def operate(self) -> None:
@@ -71,10 +82,12 @@ class ThalobalOrchestrator:
         self.reconcile()
 
     def reconcile(self) -> None:
+        """Check state consistency and resolve any critical inconsistencies."""
         inconsistencies = self.reconciler.check_state(self.state.last_coordinate)
         self.reconciler.resolve(inconsistencies)
 
     def terminate(self) -> None:
+        """Transition system to HALTED state."""
         self.phase = SystemPhase.HALTED
 
     def _record_state(self, coordinate: str) -> None:

@@ -31,6 +31,7 @@ class Coordinate:
         return f"{self.seed}:{self.digest}:{self.variation_index}"
 
     def __str__(self) -> str:
+        """Return the canonical string representation of this coordinate."""
         return self.as_string()
 
 
@@ -118,5 +119,6 @@ class DeterministicCoordinateDeriver:
             variation_index=context.variation_index,
         )
         if not CoordinateValidator.validate(coordinate):
-            raise ValueError("Invalid coordinate generated")
+            msg = "Invalid coordinate generated"
+            raise ValueError(msg)
         return coordinate
