@@ -1,11 +1,11 @@
-"""
-Flask API for Babel subsystem.
+"""Flask API for Babel subsystem.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from flask import Flask, request, jsonify, Response
+
+from flask import Flask, Response, jsonify, request
 
 from ..control.semantic_orchestrator import SemanticOrchestrator
 from .protocol import RequestProtocol, ResponseProtocol

@@ -1,5 +1,4 @@
-"""
-Variation-aware coordinate derivation utilities.
+"""Variation-aware coordinate derivation utilities.
 """
 
 from __future__ import annotations

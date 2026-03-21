@@ -1,5 +1,4 @@
-"""
-Output formatting helpers.
+"""Output formatting helpers.
 """
 
 from __future__ import annotations

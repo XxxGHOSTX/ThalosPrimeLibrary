@@ -1,5 +1,4 @@
-"""
-Interactive CLI for Babel subsystem.
+"""Interactive CLI for Babel subsystem.
 """
 
 from __future__ import annotations
@@ -42,7 +41,7 @@ class SemanticCLI:
 
             try:
                 response = self.orchestrator.handle_semantic_input(user_input, self.session_id)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 self._emit_event("response.error", str(exc))
                 raise
 

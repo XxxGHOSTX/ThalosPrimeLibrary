@@ -1,5 +1,4 @@
-"""
-Command-line entry for Babel subsystem.
+"""Command-line entry for Babel subsystem.
 """
 
 from __future__ import annotations

@@ -1,4 +1,3 @@
-"""Worker subsystem for Thalos Prime."""
 """Worker subsystem for Thalos Prime.
 
 Exports the BatchProcessor for deterministic background page processing.

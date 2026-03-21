@@ -1,19 +1,18 @@
-"""
-Semantic frame construction for deterministic responses.
-"""
+"""Semantic frame construction for deterministic responses."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict
 
-from .intent_classifier import DeterministicIntentClassifier, IntentAnalysis, Intent
-from .semantic_invariants import SemanticCore
 from ..core.context_hasher import ContextHasher
+from .intent_classifier import DeterministicIntentClassifier, Intent, IntentAnalysis
+from .semantic_invariants import SemanticCore
 
 
 class FrameType(Enum):
+    """Supported semantic frame categories."""
+
     DEFINITION = auto()
     ACKNOWLEDGMENT = auto()
     DESCRIPTION = auto()
@@ -26,19 +25,22 @@ class SemanticFrame:
 
     frame_type: FrameType
     semantic_core: SemanticCore
-    variables: Dict[str, str]
+    variables: dict[str, str]
 
-    def to_variables(self) -> Dict[str, str]:
+    def to_variables(self) -> dict[str, str]:
+        """Return the slot variables for template filling."""
         return self.variables
 
 
 class FrameConstructor:
     """Deterministically construct frames from user input."""
 
-    def __init__(self, classifier: DeterministicIntentClassifier):
+    def __init__(self, classifier: DeterministicIntentClassifier) -> None:
+        """Initialize with an intent classifier."""
         self.classifier = classifier
 
     def construct(self, user_input: str) -> SemanticFrame:
+        """Construct a :class:`SemanticFrame` for *user_input*."""
         analysis: IntentAnalysis = self.classifier.classify(user_input)
         normalized = ContextHasher.normalize_text(user_input)
         topic = normalized.rstrip("?")

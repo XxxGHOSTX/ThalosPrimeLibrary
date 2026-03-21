@@ -1,5 +1,4 @@
-"""
-Semantic orchestrator for Babel subsystem.
+"""Semantic orchestrator for Babel subsystem.
 """
 
 from __future__ import annotations
@@ -7,15 +6,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..core.coordinate_system import DeterministicCoordinateDeriver
-from ..core.response_generator import ResponseGenerator, GeneratedResponse
-from ..core.semantic_preserving_composer import SemanticPreservingComposer
-from ..core.variational_coordinate_system import VariationalCoordinateDeriver, VariationalContext
+from ..core.response_generator import GeneratedResponse, ResponseGenerator
 from ..core.search_engine import DeterministicSearchEngine
+from ..core.semantic_preserving_composer import SemanticPreservingComposer
+from ..core.variational_coordinate_system import VariationalContext, VariationalCoordinateDeriver
+from ..linguistic.coherence_validator import LinguisticCoherenceValidator
 from ..linguistic.intent_classifier import DeterministicIntentClassifier
+from ..linguistic.response_corpus import ResponseCorpus
 from ..linguistic.semantic_frames import FrameConstructor
 from ..linguistic.semantic_invariants import SemanticInvariantChecker
-from ..linguistic.response_corpus import ResponseCorpus
-from ..linguistic.coherence_validator import LinguisticCoherenceValidator
 from .orchestrator import ThalobalOrchestrator
 
 

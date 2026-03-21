@@ -1,5 +1,4 @@
-"""
-Deterministic hashing helpers for Babel contexts.
+"""Deterministic hashing helpers for Babel contexts.
 """
 
 from __future__ import annotations

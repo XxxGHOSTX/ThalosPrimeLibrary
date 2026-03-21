@@ -1,6 +1,4 @@
-"""
-Deterministic intent classification.
-"""
+"""Deterministic intent classification."""
 
 from __future__ import annotations
 
@@ -8,10 +6,12 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Final
 
-from ..core.context_hasher import ContextHasher
+from thalos_prime.babel.core.context_hasher import ContextHasher
 
 
 class Intent(Enum):
+    """Supported high-level user intents."""
+
     QUESTION = auto()
     STATEMENT = auto()
     ACKNOWLEDGMENT = auto()
@@ -19,6 +19,8 @@ class Intent(Enum):
 
 @dataclass(frozen=True)
 class IntentAnalysis:
+    """Classification result with a stable topic fingerprint."""
+
     intent: Intent
     topic_fingerprint: str
 
@@ -29,6 +31,15 @@ class DeterministicIntentClassifier:
     QUESTION_MARK: Final[str] = "?"
 
     def classify(self, user_input: str) -> IntentAnalysis:
+        """Classify *user_input* into an :class:`IntentAnalysis`.
+
+        Args:
+            user_input: Raw user input.
+
+        Returns:
+            Intent classification plus a deterministic topic fingerprint.
+
+        """
         normalized = ContextHasher.normalize_text(user_input)
         if normalized.endswith(self.QUESTION_MARK):
             intent = Intent.QUESTION

@@ -118,5 +118,6 @@ class DeterministicCoordinateDeriver:
             variation_index=context.variation_index,
         )
         if not CoordinateValidator.validate(coordinate):
-            raise ValueError("Invalid coordinate generated")
+            msg = "Invalid coordinate generated"
+            raise ValueError(msg)
         return coordinate

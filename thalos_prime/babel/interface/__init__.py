@@ -1,9 +1,8 @@
-"""
-Interface layer for Babel subsystem.
+"""Interface layer for Babel subsystem.
 """
 
-from .semantic_cli import SemanticCLI
 from .api import create_app
 from .protocol import RequestProtocol, ResponseProtocol
+from .semantic_cli import SemanticCLI
 
-__all__ = ["SemanticCLI", "create_app", "RequestProtocol", "ResponseProtocol"]
+__all__ = ["RequestProtocol", "ResponseProtocol", "SemanticCLI", "create_app"]

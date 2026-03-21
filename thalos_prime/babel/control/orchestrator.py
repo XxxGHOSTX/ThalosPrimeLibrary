@@ -1,5 +1,4 @@
-"""
-Base orchestrator for Babel subsystem.
+"""Base orchestrator for Babel subsystem.
 """
 
 from __future__ import annotations
@@ -7,12 +6,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
-from typing import Optional
 
 from ..core.validation import SystemValidator
-from .state_manager import FileStateManager, SystemState
 from .checkpoint import CheckpointManager
 from .reconciler import Reconciler
+from .state_manager import FileStateManager, SystemState
 
 
 class SystemPhase(Enum):
@@ -26,7 +24,7 @@ class SystemPhase(Enum):
 class SystemStatus:
     phase: SystemPhase
     conversations_handled: int
-    last_coordinate: Optional[str]
+    last_coordinate: str | None
     integrity_verified: bool
 
 
@@ -53,7 +51,9 @@ class ThalobalOrchestrator:
         results = self.validator.validate_all()
         failures = [r for r in results if not r.passed]
         if failures:
-            raise RuntimeError(f"Validation failed: {[f.message for f in failures]}")
+            messages = [f.message for f in failures]
+            msg = f"Validation failed: {messages}"
+            raise RuntimeError(msg)
 
     def get_status(self) -> SystemStatus:
         return SystemStatus(

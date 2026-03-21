@@ -1,13 +1,12 @@
-"""
-Deterministic response composition from semantic frames.
+"""Deterministic response composition from semantic frames.
 """
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Mapping
 
-from .coordinate_system import Coordinate
 from ..linguistic.semantic_frames import SemanticFrame
+from .coordinate_system import Coordinate
 
 
 class DeterministicResponseComposer:
