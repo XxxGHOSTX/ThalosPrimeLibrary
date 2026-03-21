@@ -37,7 +37,7 @@ def _make_decoder(overall_score: float = 0.5) -> MagicMock:
 
 
 class TestValidationFailures:
-    """Tests that initialize() raises on invalid configuration."""
+    """Tests that initialize() and validate() raise on invalid configuration."""
 
     def test_invalid_seed_raises_value_error(self) -> None:
         """initialize() must raise ValueError when seed < 0."""
@@ -56,6 +56,28 @@ class TestValidationFailures:
         processor = BatchProcessor(seed=42, batch_size=-5)
         with pytest.raises(ValueError, match="batch_size must be > 0"):
             processor.initialize()
+
+    def test_validate_negative_seed_when_initialized(self) -> None:
+        """validate() must raise ValueError for seed < 0 when _initialized is True.
+
+        Lines 102-104 of validate() are only reachable when _initialized is True
+        but the seed is invalid; force that state directly to exercise the branch.
+        """
+        processor = BatchProcessor(seed=-1, batch_size=10)
+        processor._initialized = True
+        with pytest.raises(ValueError, match="seed must be >= 0"):
+            processor.validate()
+
+    def test_validate_zero_batch_size_when_initialized(self) -> None:
+        """validate() must raise ValueError for batch_size == 0 when _initialized is True.
+
+        Lines 105-107 of validate() are only reachable when _initialized is True
+        but batch_size is invalid; force that state directly to exercise the branch.
+        """
+        processor = BatchProcessor(seed=42, batch_size=0)
+        processor._initialized = True
+        with pytest.raises(ValueError, match="batch_size must be > 0"):
+            processor.validate()
 
 
 # ---------------------------------------------------------------------------
