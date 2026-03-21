@@ -65,7 +65,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["thalos_prime*", "thalos_nexus*"]
+include = ["thalos_prime*", "thalos_nexus*", "thalos_runtime*"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
