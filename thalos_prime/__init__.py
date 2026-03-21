@@ -122,7 +122,6 @@ __all__ = [
     "LOCAL_LIBRARY_PATH",
     # Decoder
     "BabelDecoder",
-    "BabelDecoder",
     # Enumerator
     "BabelEnumerator",
     # Generator
@@ -132,12 +131,10 @@ __all__ = [
     # Ingestion
     "CanonicalArtifact",
     "CoherenceScore",
-    "CoherenceScore",
     # Symbolic Constraint Engine (Z3)
     "ConstraintSet",
     # Knowledge Graph (Neo4j)
     "CypherQuery",
-    "DecodedPage",
     "DecodedPage",
     # Graph-RAG (standalone)  # noqa: ERA001
     "GraphEdge",
@@ -178,7 +175,6 @@ __all__ = [
     "canonicalize_text",
     "compute_meaning_hash",
     "decode_page",
-    "decode_page",
     # Synthesis
     "deep_synthesis",
     "enumerate_addresses",
@@ -186,7 +182,6 @@ __all__ = [
     "ingest_fragment",
     "normalize_text",
     "query_to_addresses",
-    "score_coherence",
     "score_coherence",
     "text_to_address",
 ]
