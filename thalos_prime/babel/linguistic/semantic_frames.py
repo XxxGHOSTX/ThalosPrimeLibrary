@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from ..core.context_hasher import ContextHasher
+from thalos_prime.babel.core.context_hasher import ContextHasher
+
 from .intent_classifier import DeterministicIntentClassifier, Intent, IntentAnalysis
 from .semantic_invariants import SemanticCore
 
@@ -56,4 +57,6 @@ class FrameConstructor:
             frame_type = FrameType.DESCRIPTION
             variables = {"SUBJECT": topic or "the subject", "DETAIL": "noted"}
 
-        return SemanticFrame(frame_type=frame_type, semantic_core=semantic_core, variables=variables)
+        return SemanticFrame(
+            frame_type=frame_type, semantic_core=semantic_core, variables=variables
+        )

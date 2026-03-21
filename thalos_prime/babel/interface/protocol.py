@@ -1,5 +1,4 @@
-"""Communication protocol definitions for Babel API.
-"""
+"""Communication protocol definitions for Babel API."""
 
 from __future__ import annotations
 
@@ -9,12 +8,16 @@ from pydantic import BaseModel
 
 
 class RequestProtocol(BaseModel):
+    """Pydantic model for inbound conversation requests."""
+
     session_id: str
     user_input: str
     context: dict[str, Any] | None = None
 
 
 class ResponseProtocol(BaseModel):
+    """Pydantic model for outbound conversation responses."""
+
     text: str
     coordinate: str
     template_id: str

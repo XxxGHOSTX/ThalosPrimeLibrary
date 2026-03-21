@@ -48,8 +48,7 @@ def canonicalize_text(text: str) -> str:
     for src, target in _CANONICAL_REPLACEMENTS.items():
         normalized = normalized.replace(src, target)
     normalized = normalized.lower()
-    normalized = _WHITESPACE_RE.sub(" ", normalized).strip()
-    return normalized
+    return _WHITESPACE_RE.sub(" ", normalized).strip()
 
 
 def _tokenize(text: str) -> list[str]:

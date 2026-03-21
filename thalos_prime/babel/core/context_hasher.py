@@ -1,5 +1,4 @@
-"""Deterministic hashing helpers for Babel contexts.
-"""
+"""Deterministic hashing helpers for Babel contexts."""
 
 from __future__ import annotations
 
@@ -17,8 +16,7 @@ class ContextHasher:
     def normalize_text(cls, text: str) -> str:
         """Normalize text deterministically for hashing."""
         lowered = text.strip().lower()
-        collapsed = cls._whitespace_pattern.sub(" ", lowered)
-        return collapsed
+        return cls._whitespace_pattern.sub(" ", lowered)
 
     @classmethod
     def hash_text(cls, text: str) -> str:

@@ -31,6 +31,7 @@ class Coordinate:
         return f"{self.seed}:{self.digest}:{self.variation_index}"
 
     def __str__(self) -> str:
+        """Return the canonical coordinate string."""
         return self.as_string()
 
 

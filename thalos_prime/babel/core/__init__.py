@@ -1,5 +1,4 @@
-"""Core coordinate and generation systems for Thalos Babel.
-"""
+"""Core coordinate and generation systems for Thalos Babel."""
 
 from .context_hasher import ContextHasher
 from .coordinate_system import Coordinate, CoordinateValidator, DeterministicCoordinateDeriver

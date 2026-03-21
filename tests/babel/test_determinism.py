@@ -1,6 +1,4 @@
-"""
-Determinism tests for Babel subsystem.
-"""
+"""Determinism tests for Babel subsystem."""
 
 from __future__ import annotations
 
@@ -40,6 +38,6 @@ def test_variation_sequence_is_reproducible(temp_storage: Path) -> None:
     orch_b.initialize()
     seq_b = [orch_b.handle_semantic_input(prompt, "session") for _ in range(3)]
 
-    for a, b in zip(seq_a, seq_b):
+    for a, b in zip(seq_a, seq_b, strict=True):
         assert a.text == b.text
         assert a.coordinate.as_string() == b.coordinate.as_string()

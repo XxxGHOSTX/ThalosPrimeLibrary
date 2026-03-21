@@ -1,6 +1,4 @@
-"""
-Semantic preservation tests for Babel subsystem.
-"""
+"""Semantic preservation tests for Babel subsystem."""
 
 from __future__ import annotations
 

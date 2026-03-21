@@ -1,5 +1,4 @@
-"""Flask API for Babel subsystem.
-"""
+"""Flask API for Babel subsystem."""
 
 from __future__ import annotations
 
@@ -7,11 +6,13 @@ from pathlib import Path
 
 from flask import Flask, Response, jsonify, request
 
-from ..control.semantic_orchestrator import SemanticOrchestrator
+from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
 from .protocol import RequestProtocol, ResponseProtocol
 
 
 def create_app(storage_path: Path) -> Flask:
+    """Create and configure the Flask application with all routes."""
     orchestrator = SemanticOrchestrator(storage_path)
     orchestrator.initialize()
     app = Flask(__name__)

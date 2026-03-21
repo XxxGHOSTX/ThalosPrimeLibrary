@@ -1,5 +1,4 @@
-"""Control plane for Babel subsystem.
-"""
+"""Control plane for Babel subsystem."""
 
 from .lifecycle import LifecycleManager
 from .orchestrator import SystemPhase, SystemStatus, ThalobalOrchestrator
