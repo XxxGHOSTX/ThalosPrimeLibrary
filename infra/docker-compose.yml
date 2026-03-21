@@ -3,7 +3,7 @@ version: '3.8'
 services:
   thalos-prime:
     build:
-      context: .
+      context: ..
       dockerfile: infra/Dockerfile
     container_name: thalos-prime
     ports:

@@ -1,7 +1,3 @@
-"""
-Database package placeholder for Thalos Prime.
-Define connections, repositories, and migrations here.
-"""
 """Thalos Prime database subsystem.
 
 Exports the SQLite-backed ResultStore for search result and session persistence,

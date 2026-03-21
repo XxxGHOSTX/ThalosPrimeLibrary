@@ -1,7 +1,3 @@
-"""
-Authentication package placeholder for Thalos Prime.
-Implement auth providers and policies here.
-"""
 """Thalos Prime authentication subsystem.
 
 Exports the APIKeyAuthenticator and DeterministicHalt for use throughout
