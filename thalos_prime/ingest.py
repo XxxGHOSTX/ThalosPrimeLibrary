@@ -56,7 +56,7 @@ def canonicalize_text(text: str) -> str:
 
 
 def _tokenize(text: str) -> List[str]:
-    """Simple deterministic tokenization that preserves ordering."""
+    """Tokenize text deterministically, preserving ordering."""
     if not text:
         return []
     return text.split(" ")

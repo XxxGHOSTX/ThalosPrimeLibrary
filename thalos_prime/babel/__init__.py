@@ -1,5 +1,5 @@
-"""
-Thalos Prime Babel Subsystem
+"""Thalos Prime Babel subsystem.
+
 Deterministic conversational pipeline with semantic guarantees.
 """
 
