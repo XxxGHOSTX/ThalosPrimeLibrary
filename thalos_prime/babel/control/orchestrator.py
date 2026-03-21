@@ -9,8 +9,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Optional
 
-from ..core.validation import SystemValidator, ValidationResult
-from .state_manager import FileStateManager, SystemState
+from ..core.validation import SystemValidator
+from .state_manager import FileStateManager
 from .checkpoint import CheckpointManager
 from .reconciler import Reconciler
 
