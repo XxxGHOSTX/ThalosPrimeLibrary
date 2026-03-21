@@ -9,7 +9,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Optional
 
-from ..core.validation import SystemValidator, ValidationResult
+from ..core.validation import SystemValidator
 from .state_manager import FileStateManager, SystemState
 from .checkpoint import CheckpointManager
 from .reconciler import Reconciler
@@ -41,7 +41,7 @@ class ThalobalOrchestrator:
         self.checkpoint_manager = CheckpointManager(self.storage_path)
         self.reconciler = Reconciler()
         self.validator = SystemValidator()
-        self.state = self.state_manager.load()
+        self.state: SystemState = self.state_manager.load()
         self._ensure_storage_layout()
 
     def initialize(self) -> None:
