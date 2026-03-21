@@ -12,7 +12,7 @@ import json
 class ThalosSeedManager:
     """Derives a stable 64-bit integer seed to freeze LLM behavior."""
 
-    def __init__(self, system_version: str = "2.0.0"):
+    def __init__(self, system_version: str = "2.0.0") -> None:
         """Initialize with a system version string."""
         self.version = system_version
 

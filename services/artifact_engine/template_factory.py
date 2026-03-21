@@ -4,7 +4,10 @@ Copyright © 2026 Tony Ray Macier III. All Rights Reserved.
 This code implements the Thalos Prime Sovereign Discovery Logic.
 """
 
-# Built-in template strings (Jinja2-style, rendered with simple str.format_map)
+from collections.abc import Mapping
+from typing import Any
+
+# Built-in template strings rendered via str.format_map (not Jinja2)
 TEMPLATES: dict[str, str] = {
     "firewall_rule": (
         "# Thalos Prime Auto-Generated Firewall Rule\n"
@@ -25,12 +28,12 @@ TEMPLATES: dict[str, str] = {
 class TemplateFactory:
     """Sovereign template factory for deterministic artifact generation."""
 
-    def render(self, template_name: str, context: dict) -> str:
+    def render(self, template_name: str, context: Mapping[str, Any]) -> str:
         """Render a named template with the given context.
 
         Args:
             template_name: Name of the template to render.
-            context: Context dict for variable substitution.
+            context: Mapping of variable names to values for substitution.
 
         Returns:
             The rendered template string.

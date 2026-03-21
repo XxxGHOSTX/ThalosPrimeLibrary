@@ -8,7 +8,7 @@ import sys
 import argparse
 
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .scanner import SentinelScanner
 from .risk_analyzer import RiskAnalyzer
@@ -80,7 +80,7 @@ class ToolCallRequest(BaseModel):
     """Request body for an MCP tool call."""
 
     name: str
-    arguments: dict = {}
+    arguments: dict = Field(default_factory=dict)
 
 
 @app.post("/tools/list")
@@ -97,6 +97,10 @@ def call_tool(request: ToolCallRequest) -> dict:
 
     if name == "sentinel/run-scan":
         seed = args.get("seed", 0)
+        try:
+            seed = validate_seed(seed)
+        except ValueError as exc:
+            return {"content": [{"type": "text", "text": str(exc)}], "isError": True}
         log_entries = args.get("log_entries", [])
         findings = _scanner.audit_bulk(log_entries)
         state_hash = compute_sha256({"seed": seed, "findings": findings})
@@ -116,6 +120,10 @@ def call_tool(request: ToolCallRequest) -> dict:
 
     if name == "sentinel/risk-report":
         seed = args.get("seed", 0)
+        try:
+            seed = validate_seed(seed)
+        except ValueError as exc:
+            return {"content": [{"type": "text", "text": str(exc)}], "isError": True}
         findings = args.get("findings", [])
         report = _analyzer.analyze(findings)
         return {

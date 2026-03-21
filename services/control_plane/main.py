@@ -6,12 +6,15 @@ This code implements the Thalos Prime Sovereign Discovery Logic.
 
 import sys
 import argparse
+import logging
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .session_manager import ThalosSessionManager
 from core.utilities import validate_seed
+
+log = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Thalos Prime Control Plane",
@@ -20,12 +23,13 @@ app = FastAPI(
 )
 
 _session_manager = ThalosSessionManager()
+_startup_seed: int | None = None
 
 
 class SessionRequest(BaseModel):
     """Request body for creating a new session."""
 
-    context: dict = {}
+    context: dict = Field(default_factory=dict)
 
 
 class TurnRequest(BaseModel):
@@ -43,6 +47,7 @@ def health() -> dict:
         "service": "thalos-control-plane",
         "version": "2.0.0",
         "owner": "Tony Ray Macier III",
+        "startup_seed": _startup_seed,
     }
 
 
@@ -51,6 +56,8 @@ def create_session(request: SessionRequest) -> dict:
     """Create a new session and derive its deterministic execution seed."""
     session_id = _session_manager.create_session(context=request.context)
     session = _session_manager.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=500, detail="Session creation failed")
     return {"session_id": session_id, "seed": session["seed"]}
 
 
@@ -75,6 +82,7 @@ def get_session(session_id: str) -> dict:
 
 def main() -> None:
     """CLI entry point for the control plane API server."""
+    global _startup_seed  # noqa: PLW0603
     parser = argparse.ArgumentParser(description="Thalos Prime Control Plane API")
     parser.add_argument("--seed", type=int, required=True, help="64-bit execution seed (required)")
     parser.add_argument("--host", default="0.0.0.0")
@@ -82,10 +90,12 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        validate_seed(args.seed)
+        _startup_seed = validate_seed(args.seed)
     except ValueError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
+
+    log.info("Control plane starting. startup_seed=%d", _startup_seed)
 
     import uvicorn
 

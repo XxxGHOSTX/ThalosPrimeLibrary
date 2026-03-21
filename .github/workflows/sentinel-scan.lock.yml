@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       seed:
-        description: "Execution seed (64-bit integer)"
+        description: "Execution seed (64-bit integer, leave blank for auto-derived)"
         required: false
         default: ""
 
@@ -29,13 +29,26 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -e ".[dev]"
+
+      - name: Derive execution seed
+        id: seed
+        env:
+          INPUT_SEED: ${{ github.event.inputs.seed }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -n "$INPUT_SEED" ] && [ "$INPUT_SEED" -gt 0 ] 2>/dev/null; then
+            echo "seed=$INPUT_SEED" >> "$GITHUB_OUTPUT"
+          else
+            # Derive a deterministic positive 64-bit seed from the run ID
+            DERIVED=$(python -c "import hashlib; print(int(hashlib.sha256(b'$RUN_ID').hexdigest()[:16], 16) + 1)")
+            echo "seed=$DERIVED" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Run Sentinel Scan
         env:
           OWNER: "Tony Ray Macier III"
-          EXECUTION_SEED: ${{ github.event.inputs.seed }}
-        run: python -m automation.sentinel_runner --seed "$EXECUTION_SEED"
+        run: python -m automation.sentinel_runner --seed "${{ steps.seed.outputs.seed }}"
 
       - name: Upload STATELOG
         uses: actions/upload-artifact@v4

@@ -7,7 +7,8 @@ This code implements the Thalos Prime Sovereign Discovery Logic.
 import uuid
 from hashlib import sha256
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 from .seed_manager import ThalosSeedManager
 from .state_store import ThalosStateStore
@@ -20,9 +21,9 @@ class ThalosSessionManager:
         """Initialize with seed manager and state store."""
         self.seed_manager = ThalosSeedManager()
         self.state_store = ThalosStateStore()
-        self._sessions: dict[str, dict] = {}
+        self._sessions: dict[str, dict[str, Any]] = {}
 
-    def create_session(self, context: dict | None = None) -> str:
+    def create_session(self, context: dict[str, Any] | None = None) -> str:
         """Create a new session and derive its deterministic seed.
 
         Args:
@@ -37,7 +38,7 @@ class ThalosSessionManager:
             "id": session_id,
             "seed": seed,
             "context": context or {},
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "turns": [],
         }
         state_hash = sha256(
@@ -62,16 +63,16 @@ class ThalosSessionManager:
         """
         if session_id not in self._sessions:
             raise KeyError(f"Session {session_id} not found")
-        turn = {
+        turn: dict[str, Any] = {
             "role": role,
             "content": content,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         self._sessions[session_id]["turns"].append(turn)
         state_hash = sha256(json.dumps(turn, sort_keys=True).encode()).hexdigest()
         self.state_store.write_event(session_id, "TURN_ADDED", turn, state_hash)
         return state_hash
 
-    def get_session(self, session_id: str) -> dict | None:
+    def get_session(self, session_id: str) -> dict[str, Any] | None:
         """Retrieve a session by ID, or None if not found."""
         return self._sessions.get(session_id)

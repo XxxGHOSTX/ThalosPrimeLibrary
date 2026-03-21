@@ -53,7 +53,7 @@ class ThalosOrchestrator:
             "findings_count": len(findings),
             "risk_level": report.risk_level,
             "risk_score": report.total_score,
-            "state_hash": compute_sha256({"seed": self.seed, "findings": findings}),
+            "state_hash": compute_sha256({"seed": self.seed, "findings": report.findings}),
             "timestamp": now_iso(),
         }
         append_jsonl(self.statelog_path, event)
@@ -71,7 +71,7 @@ class ThalosOrchestrator:
             "event_type": event_type,
             "seed": self.seed,
             "payload": payload,
-            "state_hash": compute_sha256(payload),
+            "state_hash": compute_sha256({"event_type": event_type, "seed": self.seed, "payload": payload}),
             "timestamp": now_iso(),
         }
         append_jsonl(self.statelog_path, record)

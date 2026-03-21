@@ -6,7 +6,7 @@ This code implements the Thalos Prime Sovereign Discovery Logic.
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -22,7 +22,7 @@ def compute_sha256(data: dict | str | bytes) -> str:
 
 
 def append_jsonl(path: str | Path, record: dict) -> None:
-    """Append a JSON record to a JSONL file atomically."""
+    """Append a JSON record to a JSONL file (best-effort, no cross-process locking)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as f:
@@ -31,7 +31,7 @@ def append_jsonl(path: str | Path, record: dict) -> None:
 
 def now_iso() -> str:
     """Return the current UTC time in ISO 8601 format."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def load_jsonl(path: str | Path) -> list[dict]:
@@ -41,29 +41,32 @@ def load_jsonl(path: str | Path) -> list[dict]:
         return []
     records = []
     with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                records.append(json.loads(line))
+        for raw_line in f:
+            stripped = raw_line.strip()
+            if stripped:
+                records.append(json.loads(stripped))
     return records
 
 
-def validate_seed(seed: int | None, min_bits: int = 64) -> int:
-    """Validate that a seed is a positive non-zero integer of at least min_bits.
+def validate_seed(seed: int | None, max_bits: int = 64) -> int:
+    """Validate that a seed is a positive integer that fits within max_bits.
 
     Args:
         seed: The seed value to validate.
-        min_bits: Minimum bit size (default 64).
+        max_bits: Maximum bit width the seed must fit within (default 64).
+            A valid seed must satisfy ``1 <= seed < 2**max_bits``.
 
     Returns:
         The validated seed as an int.
 
     Raises:
-        ValueError: If the seed is invalid.
+        ValueError: If the seed is None, non-positive, or exceeds the bit limit.
     """
     if seed is None or not isinstance(seed, int) or seed <= 0:
-        raise ValueError(f"Invalid seed: {seed}. A positive 64-bit integer is required.")
-    max_val = 2**min_bits
+        msg = f"Invalid seed: {seed}. A positive integer is required."
+        raise ValueError(msg)
+    max_val = 2**max_bits
     if seed >= max_val:
-        raise ValueError(f"Seed {seed} exceeds {min_bits}-bit maximum ({max_val}).")
+        msg = f"Seed {seed} exceeds {max_bits}-bit maximum ({max_val - 1})."
+        raise ValueError(msg)
     return seed

@@ -7,13 +7,14 @@ This code implements the Thalos Prime Sovereign Discovery Logic.
 import sqlite3
 import json
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 
 class ThalosStateStore:
     """SQLite WAL-backed state persistence for the Thalos Control Plane."""
 
-    def __init__(self, db_path: str = "STATELOG/state.db"):
+    def __init__(self, db_path: str = "STATELOG/state.db") -> None:
         """Initialize the state store and create the schema if needed."""
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
@@ -34,7 +35,13 @@ class ThalosStateStore:
         )
         self.conn.commit()
 
-    def write_event(self, session_id: str, event_type: str, payload: dict, sha256_hash: str) -> None:
+    def write_event(
+        self,
+        session_id: str,
+        event_type: str,
+        payload: dict[str, Any],
+        sha256_hash: str,
+    ) -> None:
         """Persist an event record to the state store."""
         self.conn.execute(
             "INSERT INTO events (session_id, event_type, payload, sha256_hash, created_at) VALUES (?,?,?,?,?)",
@@ -43,12 +50,12 @@ class ThalosStateStore:
                 event_type,
                 json.dumps(payload),
                 sha256_hash,
-                datetime.now(timezone.utc).isoformat(),
+                datetime.now(UTC).isoformat(),
             ),
         )
         self.conn.commit()
 
-    def get_events(self, session_id: str) -> list[dict]:
+    def get_events(self, session_id: str) -> list[dict[str, Any]]:
         """Retrieve all events for a session in order."""
         cur = self.conn.execute(
             "SELECT event_type, payload, sha256_hash, created_at FROM events WHERE session_id=? ORDER BY id",
