@@ -253,7 +253,7 @@ class MCTSPlanner(BaseLifecycleComponent):
             MCTSResult with the best action, path, and search statistics.
 
         """
-        rng = random.Random(seed)  # noqa: S311  # deterministic seeded RNG
+        rng = random.Random(seed)  # noqa: S311  # nosec B311
         root = MCTSNode(state=root_state, depth=0, seed=seed)
 
         total_simulations = 0
