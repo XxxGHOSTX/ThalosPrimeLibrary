@@ -66,7 +66,13 @@ class LocalStateBackend(StateBackend):
             with os.fdopen(tmp_fd, "w", encoding=_ENCODING) as fh:
                 json.dump(state, fh, indent=2, sort_keys=True)
             Path(tmp_path).replace(target)
-        except (OSError, TypeError, ValueError):
+        except (
+            OSError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+            UnicodeEncodeError,
+        ):
             # Remove partial temp file on any error.
             Path(tmp_path).unlink(missing_ok=True)
             raise
