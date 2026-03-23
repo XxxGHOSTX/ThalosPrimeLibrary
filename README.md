@@ -8,6 +8,29 @@ autonomous agency, and infrastructure-as-code generation. It is designed around 
 **Control Plane / Data Plane** separation, enforced lifecycle contracts, and full replay
 determinism — identical inputs always produce identical outputs.
 
+## Brief Repo Description
+
+ThalosPrimeLibrary provides deterministic Library of Babel generation/search tooling, a FastAPI
+service with an interactive UI, and an infrastructure synthesis CLI (`thalos`) for generating
+deployment artifacts from YAML schemas.
+
+## ZIP Setup Walkthrough (Deploy After Downloading ZIP)
+
+1. Download and extract the ZIP.
+2. Open a terminal in the extracted folder:
+   `ThalosPrimeLibrary`.
+3. Install dependencies:
+   `pip install -e ".[dev]"` (or `pip install .` for production-only install).
+4. Start the API/UI locally:
+   `python run_thalos.py`
+5. Open:
+   `http://localhost:8000` (UI) or `http://localhost:8000/docs` (API docs).
+
+## Ownership & Rights Notice
+
+Tony Ray Macier III (aka XxxGHOSTX) is the owner of the original works he created in this
+repository and retains associated legal rights to that original authored content.
+
 ---
 
 ## Table of Contents
