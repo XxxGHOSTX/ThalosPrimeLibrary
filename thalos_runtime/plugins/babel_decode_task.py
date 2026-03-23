@@ -61,7 +61,14 @@ class BabelDecodeTask:
         )
         normalized_text = None
         if normalize and self._request.normalization == NormalizationMode.LLM:
-            normalized_text = self._decoder._normalize_with_llm(decoded.raw_text, self._request.query)
+            normalized = self._decoder.decode_page(
+                address=decoded.address,
+                text=decoded.raw_text,
+                query=self._request.query,
+                source=decoded.source,
+                normalize=True,
+            )
+            normalized_text = normalized.normalized_text
         elif normalize and self._request.normalization == NormalizationMode.HEURISTIC:
             normalized_text = decoded.raw_text.strip()
         return DecodeResponse(

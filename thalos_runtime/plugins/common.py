@@ -11,13 +11,6 @@ if TYPE_CHECKING:
     from thalos_prime.models.api_models import ChatRequest, CoherenceInfo, PageResult
 
 
-def payload_seed(payload: dict[str, Any]) -> int:
-    """Derive a deterministic integer seed from payload content."""
-    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-    digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-    return int(digest[:16], 16)
-
-
 @dataclass(frozen=True)
 class ExecutionContext:
     """Deterministic execution context for a task invocation."""

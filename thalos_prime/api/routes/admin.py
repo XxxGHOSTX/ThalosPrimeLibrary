@@ -87,13 +87,14 @@ async def get_metrics() -> dict[str, Any]:
 
     """
     # Import here to avoid circular dependency
-    from thalos_prime.api.routes.chat import SESSIONS
+    from thalos_runtime.plugins.chat_task import get_sessions
+    sessions = get_sessions()
     from thalos_prime.api.routes.search import SEARCH_CACHE
 
     return {
         "sessions": {
-            "total": len(SESSIONS),
-            "active": sum(1 for s in SESSIONS.values()
+            "total": len(sessions),
+            "active": sum(1 for s in sessions.values()
                          if time.time() - s["last_activity"] < 3600),
         },
         "cache": {
@@ -137,24 +138,25 @@ async def cleanup_sessions(max_age_hours: int = 24) -> dict[str, Any]:
         Cleanup status
 
     """
-    from thalos_prime.api.routes.chat import SESSIONS
+    from thalos_runtime.plugins.chat_task import get_sessions
+    sessions = get_sessions()
 
     current_time = time.time()
     max_age_seconds = max_age_hours * 3600
 
     # Find and remove old sessions
     old_sessions = [
-        sid for sid, session in SESSIONS.items()
+        sid for sid, session in sessions.items()
         if current_time - session["last_activity"] > max_age_seconds
     ]
 
     for sid in old_sessions:
-        del SESSIONS[sid]
+        del sessions[sid]
 
     return {
         "message": "Session cleanup completed",
         "removed_sessions": len(old_sessions),
-        "remaining_sessions": len(SESSIONS),
+        "remaining_sessions": len(sessions),
     }
 
 

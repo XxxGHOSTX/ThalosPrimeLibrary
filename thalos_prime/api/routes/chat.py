@@ -9,7 +9,9 @@ from thalos_prime.models.api_models import ChatRequest, ChatResponse
 from thalos_runtime.core.deps import get_engine
 from thalos_runtime.core.executor import ExecutionError
 from thalos_runtime.core.registry import RegistryError
-from thalos_runtime.plugins.chat_task import SESSIONS
+from thalos_runtime.plugins.chat_task import get_sessions
+
+__all__ = ["router"]
 
 router = APIRouter()
 
@@ -54,15 +56,16 @@ async def get_chat_history(session_id: str, limit: int = 20) -> dict[str, Any]:
         Chat history
 
     """
-    if session_id not in SESSIONS:
+    sessions = get_sessions()
+    if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    history = SESSIONS[session_id]["history"][-limit:]
+    history = sessions[session_id]["history"][-limit:]
 
     return {
         "session_id": session_id,
         "history": history,
-        "total_messages": len(SESSIONS[session_id]["history"]),
+        "total_messages": len(sessions[session_id]["history"]),
     }
 
 
@@ -77,9 +80,9 @@ async def delete_session(session_id: str) -> dict[str, str]:
         Success message
 
     """
-    if session_id in SESSIONS:
-        del SESSIONS[session_id]
+    sessions = get_sessions()
+    if session_id in sessions:
+        del sessions[session_id]
         return {"message": "Session deleted successfully"}
 
     raise HTTPException(status_code=404, detail="Session not found")
-__all__ = ["SESSIONS", "router"]

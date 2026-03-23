@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from thalos_prime.lob_babel_enumerator import enumerate_addresses
@@ -24,22 +25,74 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _TASK_NAME = "chat.v1.handle_message"
-SESSIONS: dict[str, dict[str, Any]] = {}
+
+@dataclass
+class RuntimeSessionStore:
+    """Deterministic, observable chat session state store."""
+
+    version: str
+    sessions: dict[str, dict[str, Any]]
+    base_epoch: float = 1_700_000_000.0
+
+    def initialize(self) -> None:
+        """Initialize store state."""
+        if not hasattr(self, "sessions"):
+            self.sessions = {}
+
+    def _deterministic_timestamp(self, seed: int, offset: int) -> float:
+        return self.base_epoch + float(seed % 1_000_000) + (offset / 1000.0)
+
+    def _new_session_id(self, seed: int, payload_hash: str) -> str:
+        return str(uuid.uuid5(uuid.NAMESPACE_URL, f"{seed}:{payload_hash}"))
+
+    def get_or_create(self, session_id: str | None, *, seed: int, payload_hash: str) -> str:
+        """Get an existing session ID or deterministically create one."""
+        self.initialize()
+        effective_id = session_id or self._new_session_id(seed, payload_hash)
+        session = self.sessions.get(effective_id)
+        if session is None:
+            created_at = self._deterministic_timestamp(seed, 0)
+            self.sessions[effective_id] = {
+                "created_at": created_at,
+                "last_activity": created_at,
+                "sequence": 0,
+                "history": [],
+            }
+            return effective_id
+
+        sequence = int(session["sequence"]) + 1
+        session["sequence"] = sequence
+        session["last_activity"] = self._deterministic_timestamp(seed, sequence)
+        return effective_id
+
+    def append_message(self, session_id: str, *, role: str, content: str, seed: int) -> None:
+        """Append message with deterministic timestamp."""
+        session = self.sessions[session_id]
+        sequence = int(session["sequence"]) + 1
+        session["sequence"] = sequence
+        timestamp = self._deterministic_timestamp(seed, sequence)
+        session["last_activity"] = timestamp
+        session["history"].append({"role": role, "content": content, "timestamp": timestamp})
+
+    def checkpoint(self) -> dict[str, Any]:
+        """Checkpoint serializable session store state."""
+        return {
+            "version": self.version,
+            "session_count": len(self.sessions),
+            "sessions": self.sessions,
+        }
+
+    def terminate(self) -> None:
+        """Terminate store state (no-op for in-memory store)."""
 
 
-def get_or_create_session(session_id: str | None = None) -> str:
-    """Get existing session or create a new one."""
-    if session_id and session_id in SESSIONS:
-        SESSIONS[session_id]["last_activity"] = time.time()
-        return session_id
+SESSION_STORE = RuntimeSessionStore(version="1.0", sessions={})
+SESSIONS = SESSION_STORE.sessions
 
-    new_session_id = str(uuid.uuid4())
-    SESSIONS[new_session_id] = {
-        "created_at": time.time(),
-        "last_activity": time.time(),
-        "history": [],
-    }
-    return new_session_id
+
+def get_sessions() -> dict[str, dict[str, Any]]:
+    """Return session dictionary for history and admin endpoints."""
+    return SESSION_STORE.sessions
 
 
 class ChatTask:
@@ -60,12 +113,18 @@ class ChatTask:
         self._context = ExecutionContext.from_payload(self.name, payload)
         self._started_at = time.perf_counter()
         self._request = normalize_chat_payload(payload)
-        self._session_id = get_or_create_session(self._request.session_id)
-        SESSIONS[self._session_id]["history"].append({
-            "role": "user",
-            "content": self._request.message,
-            "timestamp": time.time(),
-        })
+        assert self._context is not None
+        self._session_id = SESSION_STORE.get_or_create(
+            self._request.session_id,
+            seed=self._context.seed,
+            payload_hash=self._context.payload_hash,
+        )
+        SESSION_STORE.append_message(
+            self._session_id,
+            role="user",
+            content=self._request.message,
+            seed=self._context.seed,
+        )
 
     def validate(self) -> None:
         if self._request is None:
@@ -116,11 +175,12 @@ class ChatTask:
         else:
             reply = f"No results found for '{self._request.message}'. Try a different query."
 
-        SESSIONS[self._session_id]["history"].append({
-            "role": "bot",
-            "content": reply,
-            "timestamp": time.time(),
-        })
+        SESSION_STORE.append_message(
+            self._session_id,
+            role="bot",
+            content=reply,
+            seed=self._context.seed,
+        )
         elapsed_ms = (time.perf_counter() - self._started_at) * 1000
         self._provenance = {
             "task": self.name,
@@ -149,6 +209,7 @@ class ChatTask:
             },
             "session_id": self._session_id,
             "result_count": len(self._results),
+            "session_store": SESSION_STORE.checkpoint(),
         }
 
     def terminate(self) -> None:
@@ -158,6 +219,7 @@ class ChatTask:
         self._results = []
         self._session_id = None
         self._provenance = {}
+        SESSION_STORE.terminate()
 
     def run(self, payload: dict[str, Any]) -> ChatResponse:
         self.initialize(payload)

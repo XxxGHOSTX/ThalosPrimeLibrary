@@ -72,6 +72,15 @@ class ChatHighCoherenceTask:
             return selected, True
         return response.results, False
 
+    @staticmethod
+    def _is_better_response(selected: list[Any], best_selected: list[Any]) -> bool:
+        """Return True when selected results are better than current best."""
+        if not selected:
+            return False
+        if not best_selected:
+            return True
+        return bool(selected[0].coherence.overall_score > best_selected[0].coherence.overall_score)
+
     def operate(self) -> ChatResponse:
         assert self._context is not None
         best_response: ChatResponse | None = None
@@ -85,7 +94,7 @@ class ChatHighCoherenceTask:
             if best_response is None:
                 best_response = response
                 best_selected = selected
-            elif selected and (not best_selected or selected[0].coherence.overall_score > best_selected[0].coherence.overall_score):
+            elif self._is_better_response(selected, best_selected):
                 best_response = response
                 best_selected = selected
             if attempt_satisfied:
