@@ -17,14 +17,12 @@ deployment artifacts from YAML schemas.
 ## ZIP Setup Walkthrough (Deploy After Downloading ZIP)
 
 1. Download and extract the ZIP.
-2. Open a terminal in the extracted folder:
-   `ThalosPrimeLibrary`.
+2. Open a terminal in the extracted `ThalosPrimeLibrary` folder.
 3. Install dependencies:
    `pip install -e ".[dev]"` (or `pip install .` for production-only install).
 4. Start the API/UI locally:
    `python run_thalos.py`
-5. Open:
-   `http://localhost:8000` (UI) or `http://localhost:8000/docs` (API docs).
+5. Open `http://localhost:8000` (UI) or `http://localhost:8000/docs` (API docs).
 
 ## Ownership & Rights Notice
 
