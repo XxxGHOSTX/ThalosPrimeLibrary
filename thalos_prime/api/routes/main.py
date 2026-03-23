@@ -67,6 +67,7 @@ async def api_status() -> dict[str, Any]:
         "endpoints": {
             "docs": "/docs",
             "chat": "/api/v1/chat",
+            "chat_high_coherence": "/api/v1/chat/high_coherence",
             "search": "/api/v1/search",
             "generate": "/api/v1/generate",
             "enumerate": "/api/v1/enumerate",

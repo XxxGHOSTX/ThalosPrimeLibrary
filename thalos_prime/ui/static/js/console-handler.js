@@ -62,7 +62,7 @@ class ConsoleHandler {
             const mode = document.getElementById('search-mode').value;
             
             // Send to API
-            const response = await apiClient.sendChat(message, mode);
+            const response = await apiClient.sendChat(message, mode, 5, 51);
             
             // Remove typing indicator
             this.hideTypingIndicator();
@@ -79,6 +79,15 @@ class ConsoleHandler {
             if (response.metadata && response.metadata.query_time_ms) {
                 const timeMsg = `Query processed in ${response.metadata.query_time_ms.toFixed(0)}ms`;
                 this.addMessage('system', timeMsg);
+            }
+            if (response.metadata && Object.prototype.hasOwnProperty.call(response.metadata, 'high_coherence_satisfied')) {
+                const satisfied = Boolean(response.metadata.high_coherence_satisfied);
+                const attempts = response.metadata.attempts ?? 1;
+                const minScore = response.metadata.min_score_target ?? 51;
+                const statusText = satisfied
+                    ? `High coherence satisfied (≥${minScore}) in ${attempts} attempt(s).`
+                    : `High coherence fallback used (target ≥${minScore}) after ${attempts} attempt(s).`;
+                this.addMessage(satisfied ? 'system' : 'error', statusText);
             }
         } catch (error) {
             this.hideTypingIndicator();
@@ -119,6 +128,7 @@ class ConsoleHandler {
         results.forEach((result, index) => {
             const scoreClass = result.coherence.overall_score >= 70 ? 'score-high' : 
                               result.coherence.overall_score >= 40 ? 'score-medium' : 'score-low';
+            const provenanceText = `Source: ${result.provenance.source} • Address: ${result.provenance.address}`;
             
             resultsHTML += `
                 <div class="result-card">
@@ -131,7 +141,7 @@ class ConsoleHandler {
                     </div>
                     <div class="result-metadata">
                         <span>Confidence: ${result.coherence.confidence_level}</span>
-                        <span>Source: ${result.provenance.source}</span>
+                        <span>${provenanceText}</span>
                     </div>
                 </div>
             `;

@@ -49,8 +49,8 @@ class APIClient {
     }
     
     // Chat endpoints
-    async sendChat(message, mode = 'hybrid', maxResults = 5) {
-        return this.request('/chat/', {
+    async sendChat(message, mode = 'hybrid', maxResults = 5, minScore = 51) {
+        return this.request(`/chat/high_coherence?min_score=${encodeURIComponent(minScore)}`, {
             method: 'POST',
             body: JSON.stringify({
                 message,

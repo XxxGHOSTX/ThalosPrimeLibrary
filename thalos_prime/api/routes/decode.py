@@ -8,21 +8,16 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from thalos_prime.lob_decoder import BabelDecoder, decode_page, score_coherence
-from thalos_prime.models.api_models import (
-    AddressInfo,
-    CoherenceInfo,
-    ConfidenceLevel,
-    DecodeRequest,
-    DecodeResponse,
-    NormalizationMode,
-    ProvenanceInfo,
-)
+from thalos_prime.models.api_models import DecodeRequest, DecodeResponse
+from thalos_runtime.core.deps import get_engine
+from thalos_runtime.core.executor import ExecutionError
+from thalos_runtime.core.registry import RegistryError
 
 router = APIRouter()
 decoder = BabelDecoder()
 
 
-@router.post("/")
+@router.post("")
 async def decode(request: DecodeRequest) -> DecodeResponse:
     """Decode and score a page.
 
@@ -37,66 +32,15 @@ async def decode(request: DecodeRequest) -> DecodeResponse:
 
     """
     try:
-        # Determine if normalization should be applied
-        normalize = request.normalization != NormalizationMode.NONE
-
-        # Decode page
-        decoded = decode_page(
-            address=request.address,
-            text=request.text,
-            query=request.query,
-            source="user_provided",
-        )
-
-        # Apply normalization if requested
-        normalized_text = None
-        if normalize and request.normalization == NormalizationMode.LLM:
-            # Raise 501 if LLM mode is requested but no provider is configured
-            if not decoder.llm_enabled or decoder.llm_provider is None:
-                raise HTTPException(
-                    status_code=501,
-                    detail=(
-                        "LLM normalization requested but no LLM provider is configured. "
-                        "Use 'heuristic' mode or configure an LLM provider."
-                    ),
-                )
-            normalized_text = decoder._normalize_with_llm(decoded.raw_text, request.query)
-        elif normalize and request.normalization == NormalizationMode.HEURISTIC:
-            # Heuristic normalization (basic cleaning)
-            normalized_text = decoded.raw_text.strip()
-
-        return DecodeResponse(
-            address=AddressInfo(
-                hex_address=request.address,
-                wall=None,
-                shelf=None,
-                volume=None,
-                page=None,
-                url=None,
-            ),
-            raw_text=decoded.raw_text,
-            normalized_text=normalized_text,
-            coherence=CoherenceInfo(
-                overall_score=decoded.coherence.overall_score,
-                language_score=decoded.coherence.language_score,
-                structure_score=decoded.coherence.structure_score,
-                ngram_score=decoded.coherence.ngram_score,
-                exact_match_score=decoded.coherence.exact_match_score,
-                confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
-                metrics=decoded.coherence.metrics,
-            ),
-            provenance=ProvenanceInfo(
-                address=decoded.address,
-                source=decoded.source,
-                query=request.query,
-                timestamp=decoded.timestamp,
-                normalized=normalize,
-                llm_provider=None,
-            ),
-        )
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Decode failed: {e!s}")
+        result = get_engine().execute("babel.v1.decode", request.model_dump())
+        return DecodeResponse.model_validate(result)
+    except RegistryError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ExecutionError as exc:
+        cause = exc.cause
+        if isinstance(cause, NotImplementedError):
+            raise HTTPException(status_code=501, detail=str(cause)) from exc
+        raise HTTPException(status_code=500, detail=f"Decode failed: {exc}") from exc
 
 
 @router.post("/score")

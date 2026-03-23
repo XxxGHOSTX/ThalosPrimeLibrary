@@ -1,21 +1,20 @@
-"""Generate Routes - Page generation endpoints.
+"""Generate Routes - Page generation endpoints."""
 
-Provides deterministic page generation from addresses or queries.
-"""
-
-import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from thalos_prime.lob_babel_generator import BabelGenerator, address_to_page, text_to_address
-from thalos_prime.models.api_models import AddressInfo, GenerateRequest, GenerateResponse
+from thalos_prime.lob_babel_generator import BabelGenerator, address_to_page
+from thalos_prime.models.api_models import GenerateRequest, GenerateResponse
+from thalos_runtime.core.deps import get_engine
+from thalos_runtime.core.executor import ExecutionError
+from thalos_runtime.core.registry import RegistryError
 
 router = APIRouter()
 generator = BabelGenerator()
 
 
-@router.post("/")
+@router.post("")
 async def generate_page(request: GenerateRequest) -> GenerateResponse:
     """Generate a Library of Babel page.
 
@@ -28,45 +27,13 @@ async def generate_page(request: GenerateRequest) -> GenerateResponse:
         GenerateResponse with generated page
 
     """
-    start_time = time.time()
-
     try:
-        # Determine address
-        if request.address:
-            address = request.address
-        elif request.query:
-            address = text_to_address(request.query)
-        else:
-            raise HTTPException(status_code=400, detail="Either address or query must be provided")
-
-        # Generate page
-        page_text = address_to_page(address)
-
-        # Validate if requested
-        valid = True
-        if request.validate_page:
-            is_valid, _error = generator.validate_page(page_text)
-            valid = is_valid
-
-        # Calculate generation time
-        generation_time_ms = (time.time() - start_time) * 1000
-
-        return GenerateResponse(
-            address=AddressInfo(
-                hex_address=address,
-                wall=None,
-                shelf=None,
-                volume=None,
-                page=None,
-                url=None,
-            ),
-            text=page_text,
-            valid=valid,
-            generation_time_ms=generation_time_ms,
-        )
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Page generation failed: {e!s}")
+        result = get_engine().execute("babel.v1.generate", request.model_dump())
+        return GenerateResponse.model_validate(result)
+    except RegistryError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ExecutionError as exc:
+        raise HTTPException(status_code=500, detail=f"Page generation failed: {exc}") from exc
 
 
 @router.post("/batch")

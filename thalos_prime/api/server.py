@@ -20,6 +20,9 @@ from fastapi.responses import JSONResponse, Response
 from thalos_prime import __version__
 from thalos_prime.config import get_config
 from thalos_prime.models.api_models import ErrorResponse
+from thalos_runtime.core.deps import set_engine
+from thalos_runtime.core.engine import RuntimeEngine
+from thalos_runtime.plugins.loader import PluginLoader
 
 # Configure logging
 logging.basicConfig(
@@ -30,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 # Application state
 START_TIME = time.time()
+RUNTIME_ENGINE: RuntimeEngine | None = None
 
 
 @asynccontextmanager
@@ -63,10 +67,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 async def initialize_services() -> None:
     """Initialize all application services."""
+    global RUNTIME_ENGINE
     # Ensure the library data directory exists and is writable
     library_path = get_config().get_local_library_path()
     os.makedirs(library_path, exist_ok=True)
     logger.info("Library data directory ready: %s", library_path)
+
+    runtime_engine = RuntimeEngine()
+    loader = PluginLoader()
+    loader.discover_and_register(runtime_engine)
+    runtime_engine.initialize()
+    validation = runtime_engine.validate()
+    if not validation.valid:
+        msg = f"Runtime engine validation failed: {validation.message}"
+        raise RuntimeError(msg)
+    set_engine(runtime_engine)
+    RUNTIME_ENGINE = runtime_engine
+    logger.info("Runtime engine initialized with tasks: %s", runtime_engine.task_names())
 
     # Initialize cache
     logger.info("Initializing cache service...")
@@ -85,6 +102,11 @@ async def initialize_services() -> None:
 
 async def cleanup_services() -> None:
     """Cleanup all application services."""
+    global RUNTIME_ENGINE
+    if RUNTIME_ENGINE is not None:
+        RUNTIME_ENGINE.terminate()
+        RUNTIME_ENGINE = None
+
     # Close database connections
     logger.info("Closing database connections...")
 

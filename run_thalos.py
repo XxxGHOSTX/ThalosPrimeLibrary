@@ -84,6 +84,7 @@ def main() -> None:
     print("=" * 60)
 
     from thalos_runtime.core.engine import RuntimeEngine
+    from thalos_runtime.core.deps import set_engine
     from thalos_runtime.plugins.loader import PluginLoader
 
     print("\nLoading plugins...")
@@ -96,6 +97,7 @@ def main() -> None:
     engine.initialize()
     validation = engine.validate()
     print(f"  Validation: {validation.message}")
+    set_engine(engine)
 
     print("\nRunning 'legacy' task...")
     result = engine.execute("legacy", {"query": "thalos prime runtime test"})

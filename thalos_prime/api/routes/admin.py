@@ -14,6 +14,8 @@ import psutil
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from thalos_prime import __version__
+from thalos_runtime.core.deps import get_engine
+from thalos_runtime.plugins.chat_high_coherence_task import execution_defaults
 
 router = APIRouter()
 
@@ -261,3 +263,20 @@ async def shutdown_server() -> dict[str, str]:
     loop = asyncio.get_event_loop()
     loop.call_later(1.0, lambda: os.kill(os.getpid(), signal.SIGTERM))
     return {"message": "Shutdown initiated", "status": "terminating"}
+
+
+@router.get("/tasks", dependencies=[Depends(verify_admin_key)])
+@router.post("/tasks", dependencies=[Depends(verify_admin_key)])
+async def list_runtime_tasks() -> dict[str, list[str]]:
+    """Return registered runtime task names."""
+    try:
+        tasks = get_engine().task_names()
+        return {"tasks": tasks}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/config/execution", dependencies=[Depends(verify_admin_key)])
+async def get_execution_config() -> dict[str, float | int]:
+    """Return execution defaults for high-coherence chat."""
+    return execution_defaults()
