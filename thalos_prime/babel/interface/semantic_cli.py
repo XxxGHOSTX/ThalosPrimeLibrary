@@ -1,12 +1,11 @@
-"""
-Interactive CLI for Babel subsystem.
-"""
+"""Interactive CLI for Babel subsystem."""
 
 from __future__ import annotations
 
 import uuid
 
-from ..control.semantic_orchestrator import SemanticOrchestrator
+from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
+
 from .formatter import OutputFormatter
 
 _SESSION_NAMESPACE = uuid.UUID("c2cdd8a5-0a70-4e12-b12b-309c2b8985ff")
@@ -15,12 +14,14 @@ _SESSION_NAMESPACE = uuid.UUID("c2cdd8a5-0a70-4e12-b12b-309c2b8985ff")
 class SemanticCLI:
     """Deterministic interactive CLI."""
 
-    def __init__(self, orchestrator: SemanticOrchestrator):
+    def __init__(self, orchestrator: SemanticOrchestrator) -> None:
+        """Initialize with a fully initialized *orchestrator*."""
         self.orchestrator = orchestrator
         self.session_id = self._derive_session_id()
         self.verbose = False
 
     def run(self) -> None:
+        """Start the interactive input loop until exit or EOF."""
         self._print_banner()
         while True:
             try:
@@ -42,7 +43,7 @@ class SemanticCLI:
 
             try:
                 response = self.orchestrator.handle_semantic_input(user_input, self.session_id)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 self._emit_event("response.error", str(exc))
                 raise
 

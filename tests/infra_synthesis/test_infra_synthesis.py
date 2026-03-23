@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -40,14 +39,14 @@ class TestSchemaLoader:
         assert result["project"]["name"] == "hello"
 
     def test_load_missing_file_raises(self, tmp_path: Path) -> None:
-        from thalos_prime.infra_synthesis.schema_loader import SchemaLoadError, SchemaLoader
+        from thalos_prime.infra_synthesis.schema_loader import SchemaLoader, SchemaLoadError
 
         loader = SchemaLoader()
         with pytest.raises(SchemaLoadError, match="not found"):
             loader.load(tmp_path / "nonexistent.yaml")
 
     def test_load_invalid_yaml_raises(self, tmp_path: Path) -> None:
-        from thalos_prime.infra_synthesis.schema_loader import SchemaLoadError, SchemaLoader
+        from thalos_prime.infra_synthesis.schema_loader import SchemaLoader, SchemaLoadError
 
         schema_file = tmp_path / "bad.yaml"
         schema_file.write_text("key: [unclosed", encoding="utf-8")
@@ -56,7 +55,7 @@ class TestSchemaLoader:
             loader.load(schema_file)
 
     def test_load_non_mapping_raises(self, tmp_path: Path) -> None:
-        from thalos_prime.infra_synthesis.schema_loader import SchemaLoadError, SchemaLoader
+        from thalos_prime.infra_synthesis.schema_loader import SchemaLoader, SchemaLoadError
 
         schema_file = tmp_path / "list.yaml"
         schema_file.write_text("- item1\n- item2\n", encoding="utf-8")
@@ -156,7 +155,7 @@ class TestInfraSynthesisEngine:
         assert (out_dir / "wrangler.toml").exists()
         # GitHub Actions
         assert (out_dir / "ci.yml").exists()
-        # Docker (compute.type == container)
+        # Docker (compute.type == container)  # noqa: ERA001
         assert (out_dir / "Dockerfile").exists()
 
     def test_generate_writes_manifest(self, tmp_path: Path) -> None:

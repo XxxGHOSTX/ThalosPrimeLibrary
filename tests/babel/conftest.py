@@ -1,11 +1,10 @@
-"""
-Pytest fixtures for Babel subsystem.
-"""
+"""Pytest fixtures for Babel subsystem."""
 
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from thalos_prime.babel.control.semantic_orchestrator import SemanticOrchestrator
 
