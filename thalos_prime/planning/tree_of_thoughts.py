@@ -145,7 +145,7 @@ class TreeOfThoughtsPlanner(BaseLifecycleComponent):
             Root ThoughtNode with all children populated.
 
         """
-        rng = random.Random(seed)  # noqa: S311  # nosec B311
+        rng = random.Random(seed)  # noqa: S311  # nosec B311 - deterministic seeded RNG for replayability, not cryptographic use
         root = ThoughtNode(thought=query, score=1.0, depth=0, seed=seed)
         self._expand_node(root, evaluator, breadth, depth, rng)
         self._plan_count += 1
