@@ -20,6 +20,9 @@ from fastapi.responses import JSONResponse, Response
 from thalos_prime import __version__
 from thalos_prime.config import get_config
 from thalos_prime.models.api_models import ErrorResponse
+from thalos_runtime.core.deps import get_engine, set_engine
+from thalos_runtime.core.engine import RuntimeEngine
+from thalos_runtime.plugins.loader import PluginLoader
 
 # Configure logging
 logging.basicConfig(
@@ -68,6 +71,17 @@ async def initialize_services() -> None:
     os.makedirs(library_path, exist_ok=True)
     logger.info("Library data directory ready: %s", library_path)
 
+    runtime_engine = RuntimeEngine()
+    loader = PluginLoader()
+    loader.discover_and_register(runtime_engine)
+    runtime_engine.initialize()
+    validation = runtime_engine.validate()
+    if not validation.valid:
+        msg = f"Runtime engine validation failed: {validation.message}"
+        raise RuntimeError(msg)
+    set_engine(runtime_engine)
+    logger.info("Runtime engine initialized with tasks: %s", runtime_engine.task_names())
+
     # Initialize cache
     logger.info("Initializing cache service...")
 
@@ -85,6 +99,11 @@ async def initialize_services() -> None:
 
 async def cleanup_services() -> None:
     """Cleanup all application services."""
+    try:
+        get_engine().terminate()
+    except RuntimeError:
+        logger.info("Runtime engine was not configured at shutdown")
+
     # Close database connections
     logger.info("Closing database connections...")
 

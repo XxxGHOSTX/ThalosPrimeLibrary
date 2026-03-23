@@ -9,19 +9,13 @@ from typing import Annotated, Any
 from fastapi import APIRouter, HTTPException
 from fastapi import Query as QueryParam
 
-from thalos_prime.lob_babel_enumerator import enumerate_addresses
-from thalos_prime.lob_babel_generator import address_to_page
-from thalos_prime.lob_decoder import decode_page
 from thalos_prime.models.api_models import (
-    AddressInfo,
-    CoherenceInfo,
-    ConfidenceLevel,
-    PageResult,
-    ProvenanceInfo,
-    SearchMode,
     SearchRequest,
     SearchResponse,
 )
+from thalos_runtime.core.deps import get_engine
+from thalos_runtime.core.executor import ExecutionError
+from thalos_runtime.core.registry import RegistryError
 
 router = APIRouter()
 
@@ -46,7 +40,7 @@ def cache_search(cache_key: str, data: dict[str, Any]) -> None:
     SEARCH_CACHE[cache_key] = (data, time.time())
 
 
-@router.post("/")
+@router.post("")
 async def search(request: SearchRequest) -> SearchResponse:
     """Search for pages matching the query.
 
@@ -60,114 +54,22 @@ async def search(request: SearchRequest) -> SearchResponse:
         SearchResponse with results and metadata
 
     """
-    start_time = time.time()
-
-    # Create cache key
     cache_key = f"{request.query}:{request.max_results}:{request.mode}:{request.min_score}"
-
-    # Check cache
     cached_results = get_cached_search(cache_key)
     if cached_results:
-        return SearchResponse(
-            query=request.query,
-            results=cached_results["results"],
-            total_found=cached_results["total_found"],
-            mode=request.mode,
-            cached=True,
-            metadata={
-                "query_time_ms": (time.time() - start_time) * 1000,
-                "cache_hit": True,
-            },
-        )
-
+        cached_response = SearchResponse.model_validate(cached_results)
+        metadata = dict(cached_response.metadata)
+        metadata["cache_hit"] = True
+        return cached_response.model_copy(update={"cached": True, "metadata": metadata})
     try:
-        results = []
-
-        if request.mode in [SearchMode.LOCAL, SearchMode.HYBRID]:
-            # Local generation mode
-            addresses = enumerate_addresses(
-                request.query,
-                max_results=request.max_results * 2,  # Get more to filter
-                depth=2,
-            )
-
-            for addr_info in addresses:
-                address = addr_info["address"]
-                page_text = address_to_page(address)
-
-                # Decode and score
-                decoded = decode_page(
-                    address=address,
-                    text=page_text,
-                    query=request.query,
-                    source="local",
-                )
-
-                # Filter by minimum score
-                if decoded.coherence.overall_score >= request.min_score:
-                    page_result = PageResult(
-                        address=AddressInfo(
-                            hex_address=address,
-                            wall=None,
-                            shelf=None,
-                            volume=None,
-                            page=None,
-                            url=None,
-                        ),
-                        text=decoded.raw_text,
-                        snippet=decoded.raw_text[:200] + "...",
-                        normalized_text=None,
-                        coherence=CoherenceInfo(
-                            overall_score=decoded.coherence.overall_score,
-                            language_score=decoded.coherence.language_score,
-                            structure_score=decoded.coherence.structure_score,
-                            ngram_score=decoded.coherence.ngram_score,
-                            exact_match_score=decoded.coherence.exact_match_score,
-                            confidence_level=ConfidenceLevel(decoded.coherence.confidence_level),
-                            metrics=decoded.coherence.metrics,
-                        ),
-                        provenance=ProvenanceInfo(
-                            address=decoded.address,
-                            source=decoded.source,
-                            query=request.query,
-                            timestamp=decoded.timestamp,
-                            normalized=False,
-                            llm_provider=None,
-                        ),
-                    )
-                    results.append(page_result)
-
-        # Sort by coherence score
-        results.sort(key=lambda x: x.coherence.overall_score, reverse=True)
-
-        # Limit to max_results
-        results = results[:request.max_results]
-
-        # Cache results
-        cache_data = {
-            "results": results,
-            "total_found": len(results),
-        }
-        cache_search(cache_key, cache_data)
-
-        # Calculate query time
-        query_time_ms = (time.time() - start_time) * 1000
-
-        return SearchResponse(
-            query=request.query,
-            results=results,
-            total_found=len(results),
-            mode=request.mode,
-            cached=False,
-            metadata={
-                "query_time_ms": query_time_ms,
-                "cache_hit": False,
-                "addresses_enumerated": len(addresses) if "addresses" in locals() else 0,
-            },
-        )
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Search failed: {e!s}")
+        result = get_engine().execute("search.v1.query", request.model_dump())
+        response = SearchResponse.model_validate(result)
+        cache_search(cache_key, response.model_dump())
+        return response
+    except RegistryError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ExecutionError as exc:
+        raise HTTPException(status_code=500, detail=f"Search failed: {exc}") from exc
 
 
 @router.get("/suggestions")

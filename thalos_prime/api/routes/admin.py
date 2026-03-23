@@ -14,6 +14,8 @@ import psutil
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from thalos_prime import __version__
+from thalos_runtime.core.deps import get_engine
+from thalos_runtime.plugins.chat_high_coherence_task import execution_defaults
 
 router = APIRouter()
 
@@ -85,13 +87,14 @@ async def get_metrics() -> dict[str, Any]:
 
     """
     # Import here to avoid circular dependency
-    from thalos_prime.api.routes.chat import SESSIONS
+    from thalos_runtime.plugins.chat_task import get_sessions
+    sessions = get_sessions()
     from thalos_prime.api.routes.search import SEARCH_CACHE
 
     return {
         "sessions": {
-            "total": len(SESSIONS),
-            "active": sum(1 for s in SESSIONS.values()
+            "total": len(sessions),
+            "active": sum(1 for s in sessions.values()
                          if time.time() - s["last_activity"] < 3600),
         },
         "cache": {
@@ -135,24 +138,25 @@ async def cleanup_sessions(max_age_hours: int = 24) -> dict[str, Any]:
         Cleanup status
 
     """
-    from thalos_prime.api.routes.chat import SESSIONS
+    from thalos_runtime.plugins.chat_task import get_sessions
+    sessions = get_sessions()
 
     current_time = time.time()
     max_age_seconds = max_age_hours * 3600
 
     # Find and remove old sessions
     old_sessions = [
-        sid for sid, session in SESSIONS.items()
+        sid for sid, session in sessions.items()
         if current_time - session["last_activity"] > max_age_seconds
     ]
 
     for sid in old_sessions:
-        del SESSIONS[sid]
+        del sessions[sid]
 
     return {
         "message": "Session cleanup completed",
         "removed_sessions": len(old_sessions),
-        "remaining_sessions": len(SESSIONS),
+        "remaining_sessions": len(sessions),
     }
 
 
@@ -261,3 +265,20 @@ async def shutdown_server() -> dict[str, str]:
     loop = asyncio.get_event_loop()
     loop.call_later(1.0, lambda: os.kill(os.getpid(), signal.SIGTERM))
     return {"message": "Shutdown initiated", "status": "terminating"}
+
+
+@router.get("/tasks", dependencies=[Depends(verify_admin_key)])
+@router.post("/tasks", dependencies=[Depends(verify_admin_key)])
+async def list_runtime_tasks() -> dict[str, list[str]]:
+    """Return registered runtime task names."""
+    try:
+        tasks = get_engine().task_names()
+        return {"tasks": tasks}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/config/execution", dependencies=[Depends(verify_admin_key)])
+async def get_execution_config() -> dict[str, float | int]:
+    """Return execution defaults for high-coherence chat."""
+    return execution_defaults()

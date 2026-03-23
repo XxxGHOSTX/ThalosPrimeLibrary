@@ -3,23 +3,24 @@
 Provides query-to-address mapping functionality.
 """
 
-import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from thalos_prime.lob_babel_enumerator import (
     BabelEnumerator,
-    enumerate_addresses,
     query_to_addresses,
 )
 from thalos_prime.models.api_models import EnumerateRequest, EnumerateResponse
+from thalos_runtime.core.deps import get_engine
+from thalos_runtime.core.executor import ExecutionError
+from thalos_runtime.core.registry import RegistryError
 
 router = APIRouter()
 enumerator = BabelEnumerator()
 
 
-@router.post("/")
+@router.post("")
 async def enumerate(request: EnumerateRequest) -> EnumerateResponse:
     """Enumerate addresses for a query.
 
@@ -33,32 +34,13 @@ async def enumerate(request: EnumerateRequest) -> EnumerateResponse:
         EnumerateResponse with addresses and metadata
 
     """
-    start_time = time.time()
-
     try:
-        # Enumerate addresses
-        results = enumerate_addresses(
-            request.query,
-            max_results=request.max_results,
-            depth=request.depth,
-        )
-
-        # Calculate enumeration time
-        enumeration_time_ms = (time.time() - start_time) * 1000
-
-        return EnumerateResponse(
-            query=request.query,
-            addresses=results,
-            total_found=len(results),
-            metadata={
-                "enumeration_time_ms": enumeration_time_ms,
-                "depth": request.depth,
-                "avg_score": sum(r["score"] for r in results) / len(results) if results else 0,
-            },
-        )
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Enumeration failed: {e!s}")
+        result = get_engine().execute("babel.v1.enumerate", request.model_dump())
+        return EnumerateResponse.model_validate(result)
+    except RegistryError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ExecutionError as exc:
+        raise HTTPException(status_code=500, detail=f"Enumeration failed: {exc}") from exc
 
 
 @router.get("/addresses")
