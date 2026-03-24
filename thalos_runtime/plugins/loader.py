@@ -26,6 +26,7 @@ Event log:
 from __future__ import annotations
 
 import logging
+import os
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
@@ -129,6 +130,9 @@ class PluginLoader:
             PluginLoadError: If any discovered plugin fails to load or
                 does not implement PluginInterface.
         """
+        if os.getenv("VERCEL"):
+            return []
+
         discovered: list[PluginInterface] = []
         eps = sorted(entry_points(group=_ENTRY_POINT_GROUP), key=lambda e: e.name)
         for ep in eps:

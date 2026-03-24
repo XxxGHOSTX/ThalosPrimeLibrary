@@ -18,11 +18,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from thalos_prime import __version__
-from thalos_prime.config import get_config
 from thalos_prime.models.api_models import ErrorResponse
 from thalos_runtime.core.deps import get_engine, set_engine
-from thalos_runtime.core.engine import RuntimeEngine
-from thalos_runtime.plugins.loader import PluginLoader
+from thalos_runtime.core.engine import EngineInitializationError, RuntimeEngine
+from thalos_runtime.plugins.loader import PluginLoader, PluginLoadError
 
 # Configure logging
 logging.basicConfig(
@@ -33,6 +32,13 @@ logger = logging.getLogger(__name__)
 
 # Application state
 START_TIME = time.time()
+
+
+def get_library_path() -> str:
+    """Return the local library path for the current runtime environment."""
+    if os.getenv("VERCEL"):
+        return "/tmp/thalos/library"  # noqa: S108
+    return os.path.expanduser("~/ThalosPrimeLibraryOfBabel")  # noqa: PTH111
 
 
 @asynccontextmanager
@@ -66,21 +72,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 async def initialize_services() -> None:
     """Initialize all application services."""
-    # Ensure the library data directory exists and is writable
-    library_path = get_config().get_local_library_path()
-    os.makedirs(library_path, exist_ok=True)
-    logger.info("Library data directory ready: %s", library_path)
+    try:
+        library_path = get_library_path()
+        os.makedirs(library_path, exist_ok=True)
 
-    runtime_engine = RuntimeEngine()
-    loader = PluginLoader()
-    loader.discover_and_register(runtime_engine)
-    runtime_engine.initialize()
-    validation = runtime_engine.validate()
-    if not validation.valid:
-        msg = f"Runtime engine validation failed: {validation.message}"
-        raise RuntimeError(msg)
-    set_engine(runtime_engine)
-    logger.info("Runtime engine initialized with tasks: %s", runtime_engine.task_names())
+        runtime_engine = RuntimeEngine()
+        loader = PluginLoader()
+
+        loader.discover_and_register(runtime_engine)
+        runtime_engine.initialize()
+
+        validation = runtime_engine.validate()
+
+        if not validation.valid:
+            runtime_engine.set_readonly_mode(True)
+
+        set_engine(runtime_engine)
+    except (EngineInitializationError, OSError, PluginLoadError, RuntimeError, TypeError, ValueError) as e:
+        import logging
+
+        logging.exception("Startup failure: %s", e)  # noqa: LOG015
 
     # Initialize cache
     logger.info("Initializing cache service...")

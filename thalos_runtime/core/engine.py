@@ -78,6 +78,7 @@ class RuntimeEngine(BaseLifecycleComponent):
         self._registry: TaskRegistry = TaskRegistry()
         self._executor: TaskExecutor = TaskExecutor(self._registry)
         self._memory: ExecutionMemory = ExecutionMemory()
+        self._readonly_mode: bool = False
 
     def register_module(self, name: str, handler: TaskHandler) -> None:
         """Register a task module with the engine registry.
@@ -118,6 +119,10 @@ class RuntimeEngine(BaseLifecycleComponent):
             Sorted list of registered task identifiers.
         """
         return self._registry.names()
+
+    def set_readonly_mode(self, enabled: bool) -> None:
+        """Set runtime engine read-only mode state."""
+        self._readonly_mode = enabled
 
     # ------------------------------------------------------------------ #
     # LifecycleProtocol implementation                                     #
