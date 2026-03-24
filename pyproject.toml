@@ -143,6 +143,8 @@ ignore = [
     "D104",
     # Missing docstring in public nested class - Pydantic Config pattern
     "D106",
+    # Missing blank line after last docstring section - stylistic
+    "D413",
 ]
 
 [tool.pytest.ini_options]
@@ -260,7 +262,7 @@ disable_error_code = ["no-untyped-call"]
     "TRY301", "ASYNC240", "ASYNC230", "S104", "RUF012", "D102",
     "FBT001", "FBT002", "PTH118", "PTH120", "PTH110", "PTH123", "PTH103",
     "PLW0603", "PLW0602", "FAST001", "A001", "S101", "SLF001",
-    "D106", "D205",
+    "D106", "D205", "ANN401",
 ]
 "thalos_prime/models/**/*.py" = [
     "RUF012", "D102", "BLE001", "B904", "PLC0415", "PLR2004",
@@ -327,3 +329,36 @@ disable_error_code = ["no-untyped-call"]
 "thalos_prime/babel/interface/formatter.py" = ["FBT001", "FBT002"]
 # semantic_cli: print is intentional CLI output; return count is by design
 "thalos_prime/babel/interface/semantic_cli.py" = ["T201", "PLR0911"]
+# Execution IR substrate — SHA-256 is intentional (S324), PLR2004 in enum comparisons
+"thalos_prime/execution_ir/**/*.py" = [
+    "TC001", "TC003", "PLR2004", "TRY003", "EM101", "EM102",
+    "FBT001", "FBT002", "ARG002", "C420",
+]
+# Storage — S108 for /tmp path, TC001/TC003 for TYPE_CHECKING imports
+"thalos_prime/storage/**/*.py" = [
+    "S108", "TC001", "TC003", "TRY003", "EM101", "EM102", "PLR2004",
+    "PTH123", "SIM115", "PLW2901", "PERF401", "PLC0415",
+]
+# Rewrite DSL and engine
+"thalos_prime/rewrite/**/*.py" = ["TC001", "TC003", "TRY003", "EM101", "ARG002"]
+# Replay engine and diff
+"thalos_prime/replay/**/*.py" = ["TC001", "TC003", "TRY003", "EM101", "ARG002"]
+# Provenance index and graph
+"thalos_prime/provenance/**/*.py" = [
+    "TC001", "TC003", "TRY003", "EM101", "PLR2004", "PTH123", "SIM115",
+    "PLW2901", "PERF401", "PLC0415",
+]
+# Audit ledger
+"thalos_prime/audit/**/*.py" = [
+    "TC001", "TC003", "TRY003", "EM101", "PTH123", "SIM115",
+    "PLW2901", "PERF401", "PLC0415",
+]
+# Library package
+"thalos_prime/library/**/*.py" = [
+    "TC001", "TC003", "TRY003", "EM101", "FBT001", "FBT002", "ARG002",
+    "PLR2004", "PTH123", "SIM115", "PLW2901", "PERF401",
+]
+# Runtime engine — substrate additions use Any (ANN401) internally
+"thalos_runtime/core/engine.py" = ["ANN401", "TC001", "TC003", "PLC0415"]
+# Plugin loader — get_graph_transformer uses Any return type
+"thalos_runtime/plugins/loader.py" = ["ANN401", "TC001", "TC003"]

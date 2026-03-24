@@ -53,6 +53,45 @@
         
         <!-- Main Content Area -->
         <main id="main-content">
+            <!-- Top Tab Bar -->
+            <div id="top-tabs" style="display:flex;gap:0;border-bottom:1px solid #0f0;background:#000;z-index:10;">
+                <button id="tab-substrate" class="top-tab active-tab" onclick="switchTab('substrate')" style="padding:8px 20px;background:#001a00;color:#0f0;border:none;border-right:1px solid #0f0;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;letter-spacing:1px;">⬡ SUBSTRATE &amp; LIBRARY</button>
+                <button id="tab-classic" class="top-tab" onclick="switchTab('classic')" style="padding:8px 20px;background:#000;color:#0f0;border:none;border-right:1px solid #0f0;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;letter-spacing:1px;">▶ CLASSIC</button>
+            </div>
+
+            <!-- Substrate & Library Tab -->
+            <div id="substrate-tab-content" style="display:flex;width:100%;height:calc(100vh - 90px);">
+                <div style="flex:1;overflow-y:auto;padding:20px;background:#000;color:#0f0;font-family:'Courier New',monospace;">
+                    <h2 style="color:#0f0;border-bottom:1px solid #0f0;padding-bottom:8px;">⬡ Execution Substrate</h2>
+
+                    <!-- Execute Payload -->
+                    <div style="margin-bottom:28px;">
+                        <h3 style="color:#0af;">Execute Payload</h3>
+                        <label style="display:block;margin-bottom:4px;">JSON Payload:</label>
+                        <textarea id="substrate-payload" rows="4" style="width:98%;background:#001a00;color:#0f0;border:1px solid #0f0;padding:8px;font-family:'Courier New',monospace;font-size:12px;">{"query": "hello world", "mode": "fast"}</textarea>
+                        <br><button onclick="executeSubstrate()" style="margin-top:8px;padding:8px 18px;background:#002200;color:#0f0;border:1px solid #0f0;cursor:pointer;font-family:'Courier New',monospace;">▶ Execute</button>
+                        <pre id="substrate-result" style="background:#001100;border:1px solid #0f0;padding:12px;margin-top:10px;white-space:pre-wrap;min-height:40px;font-size:12px;"></pre>
+                    </div>
+
+                    <!-- Library Reconstruct -->
+                    <div style="margin-bottom:28px;">
+                        <h3 style="color:#0af;">Library Reconstruction</h3>
+                        <label style="display:block;margin-bottom:4px;">Input Text:</label>
+                        <textarea id="library-text" rows="3" style="width:98%;background:#001a00;color:#0f0;border:1px solid #0f0;padding:8px;font-family:'Courier New',monospace;font-size:12px;">the quick brown fox jumps over the lazy dog</textarea>
+                        <br><button onclick="reconstructLibrary()" style="margin-top:8px;padding:8px 18px;background:#002200;color:#0f0;border:1px solid #0f0;cursor:pointer;font-family:'Courier New',monospace;">📚 Reconstruct</button>
+                        <pre id="library-result" style="background:#001100;border:1px solid #0f0;padding:12px;margin-top:10px;white-space:pre-wrap;min-height:40px;font-size:12px;"></pre>
+                    </div>
+
+                    <!-- Recent Graphs -->
+                    <div>
+                        <h3 style="color:#0af;">Recent Graphs <button onclick="loadRecentGraphs()" style="font-size:11px;padding:3px 8px;background:#002200;color:#0f0;border:1px solid #0f0;cursor:pointer;font-family:'Courier New',monospace;margin-left:10px;">↻ Refresh</button></h3>
+                        <ul id="recent-graphs-list" style="list-style:none;padding:0;margin:0;"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classic Tab -->
+            <div id="classic-tab-content" style="display:none;width:100%;">
             <!-- Sidebar -->
             <aside id="sidebar">
                 <nav class="nav-menu">
@@ -307,6 +346,7 @@
                     </div>
                 </div>
             </div>
+            </div> <!-- end classic-tab-content -->
         </main>
         
         <!-- Footer -->
@@ -333,5 +373,52 @@
     <script src="/static/js/ui-manager.js"></script>
     <script src="/static/js/console-handler.js"></script>
     <script src="/static/js/main.js"></script>
+    <script>
+    // Tab switching
+    function switchTab(tab) {
+        const substrateContent = document.getElementById('substrate-tab-content');
+        const classicContent = document.getElementById('classic-tab-content');
+        const tabSubstrate = document.getElementById('tab-substrate');
+        const tabClassic = document.getElementById('tab-classic');
+        if (tab === 'substrate') {
+            substrateContent.style.display = 'flex';
+            classicContent.style.display = 'none';
+            tabSubstrate.style.background = '#001a00';
+            tabClassic.style.background = '#000';
+        } else {
+            substrateContent.style.display = 'none';
+            classicContent.style.display = 'block';
+            tabSubstrate.style.background = '#000';
+            tabClassic.style.background = '#001a00';
+        }
+    }
+    // Execute substrate
+    function executeSubstrate() {
+        const payloadEl = document.getElementById('substrate-payload');
+        const resultEl = document.getElementById('substrate-result');
+        let payload;
+        try { payload = JSON.parse(payloadEl.value); } catch(e) { resultEl.textContent = 'Invalid JSON: ' + e.message; return; }
+        resultEl.textContent = 'Executing...';
+        fetch('/api/v1/graph/execute', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+            .then(function(r){ return r.json(); })
+            .then(function(d){ resultEl.textContent = JSON.stringify(d, null, 2); })
+            .catch(function(e){ resultEl.textContent = 'Error: ' + e.message; });
+    }
+    // Reconstruct library text
+    function reconstructLibrary() {
+        const textEl = document.getElementById('library-text');
+        const resultEl = document.getElementById('library-result');
+        resultEl.textContent = 'Reconstructing...';
+        fetch('/api/v1/library/reconstruct', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text: textEl.value})})
+            .then(function(r){ return r.json(); })
+            .then(function(d){ resultEl.textContent = JSON.stringify(d, null, 2); })
+            .catch(function(e){ resultEl.textContent = 'Error: ' + e.message; });
+    }
+    // Load recent graphs (placeholder - no list endpoint yet)
+    function loadRecentGraphs() {
+        const listEl = document.getElementById('recent-graphs-list');
+        listEl.innerHTML = '<li style="color:#0af;">Graph list endpoint not yet available.</li>';
+    }
+    </script>
 </body>
 </html>

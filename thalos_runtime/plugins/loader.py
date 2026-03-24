@@ -187,5 +187,34 @@ class PluginLoader:
         """
         return sorted(p.name for p in self._loaded)
 
+    def get_graph_transformer(self) -> Any:
+        """Build a GraphTransformer from plugins that expose a transform() method.
+
+        Iterates over all loaded plugins and wraps any plugin that has a
+        ``transform(graph)`` callable as a RewriteRule added to a
+        GraphTransformer.
+
+        Returns:
+            GraphTransformer containing rules derived from eligible plugins.
+        """
+        from thalos_prime.rewrite.dsl import RewriteRule
+        from thalos_prime.rewrite.engine import GraphTransformer
+
+        transformer = GraphTransformer()
+        for plugin in self._loaded:
+            transform_fn: Any = getattr(plugin, "transform", None)
+            if callable(transform_fn):
+
+                def _make_rule(fn: Any, name: str) -> RewriteRule:
+                    return RewriteRule(
+                        name=name,
+                        match_fn=lambda _g: True,
+                        transform_fn=fn,
+                        version="1.0",
+                    )
+
+                transformer.add_rule(_make_rule(transform_fn, f"{plugin.name}.transform"))
+        return transformer
+
 
 __all__ = ["PluginInterface", "PluginLoadError", "PluginLoader"]

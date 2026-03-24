@@ -78,6 +78,15 @@ class RuntimeEngine(BaseLifecycleComponent):
         self._registry: TaskRegistry = TaskRegistry()
         self._executor: TaskExecutor = TaskExecutor(self._registry)
         self._memory: ExecutionMemory = ExecutionMemory()
+        self._substrate_initialized: bool = False
+        # Substrate components (lazy-initialized by _init_substrate)
+        self._graph_builder: Any = None
+        self._graph_transformer: Any = None
+        self._det_executor: Any = None
+        self._graph_store: Any = None
+        self._event_log: Any = None
+        self._prov_index: Any = None
+        self._audit_ledger: Any = None
 
     def register_module(self, name: str, handler: TaskHandler) -> None:
         """Register a task module with the engine registry.
@@ -118,6 +127,97 @@ class RuntimeEngine(BaseLifecycleComponent):
             Sorted list of registered task identifiers.
         """
         return self._registry.names()
+
+    # ------------------------------------------------------------------ #
+    # Substrate pipeline                                                   #
+    # ------------------------------------------------------------------ #
+
+    def _init_substrate(self) -> None:
+        """Lazily initialize all substrate components on first call.
+
+        Creates GraphBuilder, GraphTransformer (with normalization rule),
+        DeterministicExecutor, LocalGraphStore, EventLog, ProvenanceIndex,
+        and AuditLedger. Safe to call multiple times; no-op after first call.
+        """
+        if self._substrate_initialized:
+            return
+
+        from thalos_prime.audit.ledger import AuditLedger
+        from thalos_prime.execution_ir.builder import GraphBuilder
+        from thalos_prime.execution_ir.executor import DeterministicExecutor
+        from thalos_prime.provenance.index import ProvenanceIndex
+        from thalos_prime.rewrite.dsl import make_normalization_rule
+        from thalos_prime.rewrite.engine import GraphTransformer
+        from thalos_prime.storage.event_log import EventLog
+        from thalos_prime.storage.graph_store import LocalGraphStore
+
+        self._graph_builder = GraphBuilder()
+        transformer = GraphTransformer()
+        transformer.add_rule(make_normalization_rule())
+        self._graph_transformer = transformer
+        self._det_executor = DeterministicExecutor()
+        self._graph_store = LocalGraphStore()
+        self._event_log = EventLog()
+        self._prov_index = ProvenanceIndex()
+        self._audit_ledger = AuditLedger()
+        self._substrate_initialized = True
+        logger.info("RuntimeEngine: substrate components initialized")
+
+    def execute_request(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Execute a payload through the graph substrate pipeline.
+
+        Pipeline steps:
+        1. Build an ExecutionGraph from the payload using GraphBuilder.
+        2. Log a ``graph_created`` event.
+        3. Apply GraphTransformer rewrites.
+        4. Log a ``graph_transformed`` event.
+        5. Plan (topological sort) and execute the graph.
+        6. Save the graph via LocalGraphStore.
+        7. Record node provenance via ProvenanceIndex.
+        8. Return a summary dict with graph_id, version, graph_hash, and outputs.
+
+        The legacy execute() path is preserved and unaffected by this method.
+
+        Args:
+            payload: Arbitrary key-value data to feed into the graph substrate.
+
+        Returns:
+            Dict containing ``graph_id``, ``version``, ``graph_hash``,
+            and ``outputs`` mapping node IDs to their output dicts.
+        """
+        self._init_substrate()
+
+        from thalos_prime.execution_ir.planner import ExecutionPlanner
+
+        graph = self._graph_builder.build_from_payload(payload)
+        self._event_log.log("graph_created", graph.id, graph.version)
+
+        graph = self._graph_transformer.transform(graph)
+        self._event_log.log("graph_transformed", graph.id, graph.version)
+
+        planner = ExecutionPlanner()
+        plan = planner.plan(graph)
+        graph = self._det_executor.execute_graph(graph, plan)
+
+        self._graph_store.save(graph)
+
+        for node in graph.nodes.values():
+            self._prov_index.record_node(graph.id, node)
+
+        self._audit_ledger.append(
+            "graph_executed",
+            graph_id=graph.id,
+            version=graph.version,
+            graph_hash=graph.graph_hash,
+        )
+
+        outputs: dict[str, Any] = {nid: n.outputs for nid, n in graph.nodes.items()}
+        return {
+            "graph_id": graph.id,
+            "version": graph.version,
+            "graph_hash": graph.graph_hash,
+            "outputs": outputs,
+        }
 
     # ------------------------------------------------------------------ #
     # LifecycleProtocol implementation                                     #
