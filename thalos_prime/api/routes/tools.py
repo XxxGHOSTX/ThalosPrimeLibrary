@@ -11,13 +11,17 @@ POST /api/v1/tools/analyze                         submit text for prime analysi
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from thalos_nexus.recipes import build_default_recipe_engine
-from thalos_nexus.solver_registry import SolverCategory, get_global_solver_registry
+from thalos_nexus.solver_registry import (
+    SolverCategory,
+    SolverDescriptor,
+    get_global_solver_registry,
+)
 from thalos_runtime.core.prime_pipeline import find_prime_aligned_candidates
 
 router = APIRouter()
@@ -28,7 +32,7 @@ _VALID_CATEGORIES: frozenset[str] = frozenset(
 )
 
 
-def _descriptor_to_dict(descriptor: Any) -> dict[str, Any]:
+def _descriptor_to_dict(descriptor: SolverDescriptor) -> dict[str, object]:
     """Serialise a ``SolverDescriptor`` to a JSON-safe dictionary.
 
     Args:
@@ -84,7 +88,7 @@ async def search_tools(
                 detail=f"Invalid category {category!r}. "
                 f"Must be one of: {sorted(_VALID_CATEGORIES)}",
             )
-        validated_category = category  # type: ignore[assignment]
+        validated_category = cast("SolverCategory", category)
 
     registry = get_global_solver_registry()
     descriptors = registry.search(query, category=validated_category)
@@ -121,7 +125,7 @@ async def list_tools(
                 detail=f"Invalid category {category!r}. "
                 f"Must be one of: {sorted(_VALID_CATEGORIES)}",
             )
-        validated_category = category  # type: ignore[assignment]
+        validated_category = cast("SolverCategory", category)
 
     registry = get_global_solver_registry()
     all_descriptors = registry.list_all()

@@ -209,14 +209,20 @@ def find_prime_aligned_candidates(
     raw_candidates = _ENUMERATOR.enumerate_addresses(query, max_results=max_candidates)
 
     pages: list[CandidatePage] = []
-    for i, raw in enumerate(raw_candidates):
+    for raw in raw_candidates:
         address = str(raw["address"])
         text = _GENERATOR.address_to_page(address)
-        prime_score = score_index(i, text)
+        # Derive a deterministic page index from the first 8 hex characters of
+        # the address (= a 32-bit integer drawn from the SHA-256 digest produced
+        # by BabelEnumerator).  This yields a stable, address-specific integer
+        # for prime-index scoring rather than the loop's enumeration counter.
+        hex_prefix = address[:8].ljust(8, "0")
+        page_index = int(hex_prefix, 16)
+        prime_score = score_index(page_index, text)
         signature = _build_signature(text, prime_score)
         pages.append(
             CandidatePage(
-                index=i,
+                index=page_index,
                 address=address,
                 text=text,
                 prime_score=prime_score,

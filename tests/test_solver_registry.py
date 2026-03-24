@@ -201,9 +201,8 @@ def test_find_by_tags_sorted_by_priority_then_name() -> None:
     reg.register(_make_descriptor("m_low", tags=frozenset({"tag"}), priority=10))
 
     results = reg.find_by_tags(frozenset({"tag"}))
-    # priority 10 comes before 50; within same priority, alphabetical
-    assert results[0].name == "m_low" or results[0].name == "z_low"
-    assert results[0].priority <= results[1].priority
+    # priority 10 comes before 50; within same priority, alphabetical (m < z)
+    assert [r.name for r in results] == ["m_low", "z_low", "a_high"]
 
 
 # ---------------------------------------------------------------------------
