@@ -43,6 +43,19 @@ def test_get_babel_endpoints() -> None:
     assert endpoints["search_api"] == "https://libraryofbabel.info/search.cgi"
 
 
+def test_canonicalize_babel_url_normalizes_legacy_domain() -> None:
+    """Legacy .com links should be rewritten to the canonical .info domain."""
+    legacy = "https://thelibraryofbabel.com/book.cgi?hex=abc&wall=1"
+    canonical = thalos_prime.canonicalize_babel_url(legacy)
+    assert canonical == "https://libraryofbabel.info/book.cgi?hex=abc&wall=1"
+
+
+def test_canonicalize_babel_url_keeps_canonical_domain() -> None:
+    """Canonical URLs should pass through unchanged."""
+    canonical = "https://libraryofbabel.info/search.cgi?find=truth"
+    assert thalos_prime.canonicalize_babel_url(canonical) == canonical
+
+
 def test_deep_synthesis_structure() -> None:
     """Deep synthesis returns semantic decomposition and nexus views."""
     from typing import Any, cast

@@ -204,7 +204,7 @@ endpoints = tp.get_babel_endpoints()
 # }
 ```
 
-The canonical Library of Babel domain is **libraryofbabel.info** (not thelibraryofbabel.com).
+The canonical Library of Babel domain is **libraryofbabel.info**.
 
 ### Page Generation & Address Mapping
 

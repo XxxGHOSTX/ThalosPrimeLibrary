@@ -19,10 +19,15 @@ LIBRARY_MOTTO = (
 LIBRARY_OF_BABEL_BASE_URL = "https://libraryofbabel.info"
 LIBRARY_OF_BABEL_SEARCH_URL = f"{LIBRARY_OF_BABEL_BASE_URL}/search.html"
 LIBRARY_OF_BABEL_SEARCH_API = f"{LIBRARY_OF_BABEL_BASE_URL}/search.cgi"
+LEGACY_LIBRARY_OF_BABEL_DOMAINS = (
+    "thelibraryofbabel.com",
+    "www.thelibraryofbabel.com",
+)
 
 # This allows importing from the local ThalosPrimeLibraryOfBabel
 import os
 import sys
+from urllib.parse import urlparse, urlunparse
 
 # Get the local library path from environment variable or use default
 # Users can set THALOS_LIBRARY_PATH environment variable to customize
@@ -43,6 +48,14 @@ def get_babel_endpoints() -> dict[str, str]:
         "search_html": LIBRARY_OF_BABEL_SEARCH_URL,
         "search_api": LIBRARY_OF_BABEL_SEARCH_API,
     }
+
+
+def canonicalize_babel_url(url: str) -> str:
+    """Normalize legacy Library of Babel domains to the canonical .info domain."""
+    parsed = urlparse(url)
+    if parsed.netloc.lower() not in LEGACY_LIBRARY_OF_BABEL_DOMAINS:
+        return url
+    return urlunparse(parsed._replace(netloc="libraryofbabel.info"))
 
 # Re-export synthesis helpers
 from thalos_prime.constraints.symbolic_engine import (
@@ -112,6 +125,7 @@ from .synthesis import deep_synthesis
 __all__ = [
     # Library of Babel endpoints
     "LIBRARY_OF_BABEL_BASE_URL",
+    "LEGACY_LIBRARY_OF_BABEL_DOMAINS",
     "LIBRARY_OF_BABEL_SEARCH_API",
     "LIBRARY_OF_BABEL_SEARCH_URL",
     "LOCAL_LIBRARY_PATH",
@@ -127,6 +141,7 @@ __all__ = [
     # Ingestion
     "CanonicalArtifact",
     "canonicalize_text",
+    "canonicalize_babel_url",
     "compute_meaning_hash",
     "ingest_fragment",
 
