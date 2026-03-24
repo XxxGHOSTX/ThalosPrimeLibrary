@@ -131,6 +131,7 @@ class PluginLoader:
                 does not implement PluginInterface.
         """
         if os.getenv("VERCEL"):
+            logger.info("PluginLoader: skipping external entrypoint discovery on Vercel")
             return []
 
         discovered: list[PluginInterface] = []

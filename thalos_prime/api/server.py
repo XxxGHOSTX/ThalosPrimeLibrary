@@ -35,7 +35,12 @@ START_TIME = time.time()
 
 
 def get_library_path() -> str:
-    """Return the local library path for the current runtime environment."""
+    """Return the local library path for the current runtime environment.
+
+    Deterministic guarantee:
+        For identical environment variables, this function returns the same path.
+        Replay environments must preserve the ``VERCEL`` variable state.
+    """
     if os.getenv("VERCEL"):
         return "/tmp/thalos/library"  # noqa: S108
     return os.path.expanduser("~/ThalosPrimeLibraryOfBabel")  # noqa: PTH111
@@ -85,13 +90,15 @@ async def initialize_services() -> None:
         validation = runtime_engine.validate()
 
         if not validation.valid:
+            logger.warning(
+                "Runtime validation failed; enabling read-only mode: %s",
+                validation.message,
+            )
             runtime_engine.set_readonly_mode(True)
 
         set_engine(runtime_engine)
     except (EngineInitializationError, OSError, PluginLoadError, RuntimeError, TypeError, ValueError) as e:
-        import logging
-
-        logging.exception("Startup failure: %s", e)  # noqa: LOG015
+        logger.exception("Startup failure: %s", e)
 
     # Initialize cache
     logger.info("Initializing cache service...")

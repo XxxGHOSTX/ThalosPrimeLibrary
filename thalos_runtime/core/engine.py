@@ -14,6 +14,7 @@ State surfaces:
 - _registry: TaskRegistry mapping task names to handlers.
 - _executor: TaskExecutor (Data Plane) invoked via execute().
 - _memory: ExecutionMemory storing all execution records.
+- _readonly_mode: Read-only state toggled by control-plane validation handling.
 - _initialized: bool flag tracked by BaseLifecycleComponent.
 - _events: LifecycleEvent log from BaseLifecycleComponent.
 
@@ -121,8 +122,13 @@ class RuntimeEngine(BaseLifecycleComponent):
         return self._registry.names()
 
     def set_readonly_mode(self, enabled: bool) -> None:
-        """Set runtime engine read-only mode state."""
+        """Set runtime engine read-only mode state.
+
+        This control-plane state transition is reversible and updates only
+        the internal read-only coordination flag.
+        """
         self._readonly_mode = enabled
+        self._emit_event("set_readonly_mode", f"enabled={enabled}")
 
     # ------------------------------------------------------------------ #
     # LifecycleProtocol implementation                                     #
