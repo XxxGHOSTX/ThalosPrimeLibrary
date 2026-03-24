@@ -20,7 +20,7 @@ def get_storage_base_path() -> Path:
 
     """
     if os.environ.get("VERCEL"):
-        return Path("/tmp/thalos_graphs")
+        return Path("/tmp/thalos_graphs")  # nosec B108 - intentional /tmp usage for serverless (Vercel) ephemeral storage
     env_path = os.environ.get("THALOS_STORAGE_PATH")
     if env_path:
         return Path(env_path)
