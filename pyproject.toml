@@ -215,6 +215,15 @@ module = [
 ]
 disable_error_code = ["misc", "untyped-decorator"]
 
+# Solver registry and recipe engine — Callable in TYPE_CHECKING with dataclass
+[[tool.mypy.overrides]]
+module = [
+    "thalos_nexus.solver_registry",
+    "thalos_nexus.recipes",
+    "thalos_nexus",
+]
+disable_error_code = ["misc", "no-untyped-def"]
+
 # Test files that call legacy src/ untyped functions
 [[tool.mypy.overrides]]
 module = [
@@ -251,9 +260,15 @@ disable_error_code = ["no-untyped-call"]
     # nested with statements in pytest.raises patterns
     "SIM117",
     # inline exception messages in tests for clarity
-    "TRY003", "EM101",
+    "TRY003", "EM101", "EM102",
     # type-only imports: tests use annotations with runtime imports
     "TC001", "TC003",
+    # private function annotations and too-many-args in test helpers
+    "ANN202", "PLR0913",
+    # blind exception in frozen-dataclass immutability tests
+    "B017",
+    # zip() without strict= in test assertion loops
+    "B905",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
@@ -261,7 +276,7 @@ disable_error_code = ["no-untyped-call"]
     "ARG001", "ARG002", "TRY003", "EM101", "TRY401", "TRY300",
     "TRY301", "ASYNC240", "ASYNC230", "S104", "RUF012", "D102",
     "FBT001", "FBT002", "PTH118", "PTH120", "PTH110", "PTH123", "PTH103",
-    "PLW0603", "PLW0602", "FAST001", "A001", "S101", "SLF001",
+    "PLW0603", "PLW0602", "FAST001", "FAST002", "A001", "S101", "SLF001",
     "D106", "D205", "ANN401",
 ]
 "thalos_prime/models/**/*.py" = [
@@ -305,6 +320,8 @@ disable_error_code = ["no-untyped-call"]
 "thalos_prime/agency/agent_loop.py" = ["TC001"]
 "thalos_nexus/cli.py" = ["T201"]
 "thalos_nexus/gates.py" = ["S603", "S607"]
+"thalos_nexus/solver_registry.py" = ["TC003"]
+"thalos_nexus/recipes.py" = ["TC001", "TC003", "PLR2004", "ARG002"]
 "thalos_prime/config.py" = ["D205", "D401"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
 "thalos_prime/lob_babel_generator.py" = ["PLC0415", "SLF001", "D205", "D401"]
@@ -324,7 +341,9 @@ disable_error_code = ["no-untyped-call"]
     "TRY401",
 ]
 # Babel subsystem: runtime imports used in annotations across all layers
-"thalos_prime/babel/**/*.py" = ["TC001", "TC003"]
+"thalos_prime/babel/**/*.py" = ["TC001", "TC003", "PLR2004"]
+# prime_filter: additional per-file ignore for standalone PLR2004 (magic numbers in scoring)
+"thalos_prime/babel/prime_filter.py" = ["PLR2004"]
 # formatter: boolean positional arg is part of the public interface contract
 "thalos_prime/babel/interface/formatter.py" = ["FBT001", "FBT002"]
 # semantic_cli: print is intentional CLI output; return count is by design
@@ -360,5 +379,7 @@ disable_error_code = ["no-untyped-call"]
 ]
 # Runtime engine — substrate additions use Any (ANN401) internally
 "thalos_runtime/core/engine.py" = ["ANN401", "TC001", "TC003", "PLC0415"]
+# Prime pipeline — orchestrator imports for type-checking and control plane coordination
+"thalos_runtime/core/prime_pipeline.py" = ["TC001", "TC003", "PLC0415"]
 # Plugin loader — get_graph_transformer uses Any return type
 "thalos_runtime/plugins/loader.py" = ["ANN401", "TC001", "TC003"]

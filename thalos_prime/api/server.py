@@ -267,6 +267,7 @@ def register_routes(app: FastAPI) -> None:
         from thalos_prime.api.routes.library import router as library_router
         from thalos_prime.api.routes.main import router as main_router
         from thalos_prime.api.routes.search import router as search_router
+        from thalos_prime.api.routes.tools import router as tools_router
 
         # Register routers with prefixes
         app.include_router(main_router, tags=["Main"])
@@ -279,6 +280,7 @@ def register_routes(app: FastAPI) -> None:
         app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"])
         app.include_router(graph_router, prefix="/api/v1", tags=["graph"])
         app.include_router(library_router, prefix="/api/v1", tags=["library"])
+        app.include_router(tools_router, prefix="/api/v1/tools", tags=["Tools"])
 
         logger.info("All routes registered successfully")
     except ImportError as e:
