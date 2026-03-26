@@ -414,10 +414,48 @@
             .then(function(d){ resultEl.textContent = JSON.stringify(d, null, 2); })
             .catch(function(e){ resultEl.textContent = 'Error: ' + e.message; });
     }
-    // Load recent graphs (placeholder - no list endpoint yet)
+    // Load recent graphs from /api/v1/graph/ list endpoint
     function loadRecentGraphs() {
         const listEl = document.getElementById('recent-graphs-list');
-        listEl.innerHTML = '<li style="color:#0af;">Graph list endpoint not yet available.</li>';
+        listEl.innerHTML = '<li style="color:#0af;">Loading...</li>';
+        fetch('/api/v1/graph/')
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if (!data.graphs || data.graphs.length === 0) {
+                    listEl.innerHTML = '<li style="color:#666;">No graphs stored yet.</li>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                data.graphs.forEach(function(gid){
+                    const li = document.createElement('li');
+                    li.style.cssText = 'padding:4px 0;border-bottom:1px solid #003300;';
+
+                    const span = document.createElement('span');
+                    span.style.cssText = 'color:#0af;font-family:\'Courier New\',monospace;font-size:12px;';
+                    span.textContent = gid;
+
+                    const btn = document.createElement('button');
+                    btn.style.cssText = 'font-size:10px;padding:2px 6px;background:#002200;color:#0f0;' +
+                        'border:1px solid #0f0;cursor:pointer;font-family:\'Courier New\',monospace;margin-left:8px;';
+                    btn.textContent = 'View';
+                    btn.addEventListener('click', function(){ loadGraphDetails(gid); });
+
+                    li.appendChild(span);
+                    li.appendChild(btn);
+                    listEl.appendChild(li);
+                });
+            })
+            .catch(function(e){
+                listEl.innerHTML = '<li style="color:#f44;">Error loading graphs: ' + e.message + '</li>';
+            });
+    }
+    function loadGraphDetails(graphId) {
+        const resultEl = document.getElementById('graph-result');
+        if (!resultEl) return;
+        fetch('/api/v1/graph/' + encodeURIComponent(graphId))
+            .then(function(r){ return r.json(); })
+            .then(function(data){ resultEl.textContent = JSON.stringify(data, null, 2); })
+            .catch(function(e){ resultEl.textContent = 'Error: ' + e.message; });
     }
     </script>
 </body>

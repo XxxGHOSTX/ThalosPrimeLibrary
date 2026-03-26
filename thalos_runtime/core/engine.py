@@ -163,6 +163,19 @@ class RuntimeEngine(BaseLifecycleComponent):
         self._substrate_initialized = True
         logger.info("RuntimeEngine: substrate components initialized")
 
+    def get_substrate_executor(self) -> Any:
+        """Return the shared DeterministicExecutor used by the substrate.
+
+        Ensures the substrate is initialized before returning.  Use this to
+        share the same handler configuration across execute and replay paths
+        so that replay semantics stay consistent with original execution.
+
+        Returns:
+            The DeterministicExecutor instance owned by this engine.
+        """
+        self._init_substrate()
+        return self._det_executor
+
     def execute_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Execute a payload through the graph substrate pipeline.
 

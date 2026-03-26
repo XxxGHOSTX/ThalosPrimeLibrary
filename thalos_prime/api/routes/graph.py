@@ -34,6 +34,25 @@ def _get_provenance_index() -> Any:
     return _provenance_index
 
 
+@router.get("/")
+async def list_graphs() -> dict[str, Any]:
+    """List all stored graph IDs.
+
+    Returns a sorted list of graph identifiers that have been persisted
+    in the local graph store.
+    """
+    try:
+        store = _get_store()
+        ids = store.list_ids()
+        return {"graphs": ids, "count": len(ids)}
+    except Exception as exc:
+        logger.exception("list_graphs failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
+
+
 @router.post("/execute")
 async def execute_graph(payload: dict[str, Any]) -> dict[str, Any]:
     """Execute a payload through the graph substrate.
@@ -85,6 +104,11 @@ async def get_graph(graph_id: str) -> dict[str, Any]:
 async def replay_graph(graph_id: str) -> dict[str, Any]:
     """Replay a stored graph and return updated outputs and a provenance summary.
 
+    Reuses the runtime engine's ``DeterministicExecutor`` (with all registered
+    operation handlers) so that replay semantics stay consistent with the
+    original execution.  Falls back to a fresh executor only when the runtime
+    engine is not yet configured.
+
     Args:
         graph_id: Unique graph identifier to replay.
 
@@ -97,7 +121,17 @@ async def replay_graph(graph_id: str) -> dict[str, Any]:
         store = _get_store()
         graph = store.load(graph_id)
 
-        executor = DeterministicExecutor()
+        # Prefer the shared executor from the runtime engine so handler
+        # configuration matches the original execution.
+        # Deferred import avoids a circular dependency at module load time
+        # (thalos_prime.api → thalos_runtime.core is only safe after package
+        # initialization completes).
+        try:
+            from thalos_runtime.core.deps import get_engine
+            executor = get_engine().get_substrate_executor()
+        except RuntimeError:
+            executor = DeterministicExecutor()
+
         event_log = EventLog()
         prov_index = _get_provenance_index()
 

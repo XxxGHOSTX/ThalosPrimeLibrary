@@ -39,7 +39,9 @@ class DeterministicExecutor:
     """Executes ExecutionGraph nodes deterministically in a given plan order.
 
     Handlers are registered per operation name. Nodes without a registered
-    handler execute as pass-through (status SUCCEEDED, outputs passthrough).
+    handler execute with their inputs echoed verbatim as outputs (status
+    SUCCEEDED).  This ensures input values flow through to downstream nodes
+    even when no explicit handler is wired.
     """
 
     def __init__(self) -> None:
@@ -63,7 +65,9 @@ class DeterministicExecutor:
         node.started_at, and node.finished_at.
 
         If no handler is registered for the node's operation, the node
-        is marked SUCCEEDED with outputs ``{"result": "passthrough"}``.
+        is marked SUCCEEDED and its inputs are echoed verbatim as outputs.
+        This preserves input values for downstream nodes that depend on
+        this node's outputs, instead of silently swallowing them.
 
         Args:
             node: ExecutionNode to execute.
@@ -76,8 +80,11 @@ class DeterministicExecutor:
         node.started_at = datetime.datetime.now(datetime.UTC).isoformat()
         try:
             handler = self._handlers.get(node.operation)
-            passthrough: dict[str, object] = {"result": "passthrough"}
-            outputs = handler.execute(node, node.inputs) if handler is not None else passthrough
+            outputs = (
+                handler.execute(node, node.inputs)
+                if handler is not None
+                else dict(node.inputs)
+            )
             node.outputs = outputs
             node.output_hash = node.compute_output_hash()
             node.status = NodeStatus.SUCCEEDED

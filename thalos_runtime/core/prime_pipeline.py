@@ -62,7 +62,10 @@ class CandidatePage:
     """A Babel page candidate produced by the prime pipeline.
 
     Attributes:
-        index: Zero-based enumeration index within this pipeline run.
+        index: Address-derived 32-bit integer used as the prime-index scoring
+            key for this page.  It is computed from the first 8 hexadecimal
+            characters of *address* and is therefore stable and reproducible
+            across pipeline runs — **not** a per-run enumeration counter.
         address: The hexadecimal Babel address used to generate the page.
         text: The 3200-character page text generated from *address*.
         prime_score: Composite prime-index scoring result from the

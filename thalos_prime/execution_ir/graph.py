@@ -46,18 +46,36 @@ class ExecutionGraph:
         self.edges.append((src, dst))
 
     def compute_graph_hash(self) -> None:
-        """Recompute and store the graph hash from current nodes and edges.
+        """Recompute and store the graph hash from stable semantic fields only.
 
-        The hash is a deterministic function of all node dicts and edge tuples.
+        The hash covers each node's ``operation``, ``kind``, ``dependencies``,
+        ``input_hash``, ``output_hash``, ``plugin_version``, and
+        ``rule_version``, plus the sorted edge list and graph version.
+
+        Volatile runtime fields — ``id``, ``status``, ``created_at``,
+        ``started_at``, ``finished_at``, ``error``, and ``tags`` — are
+        intentionally excluded so that re-running identical work produces the
+        same hash regardless of wall-clock time or execution order.
+
         Mutates self.graph_hash in-place.
         """
-        nodes_data: dict[str, object] = {nid: n.to_dict() for nid, n in sorted(self.nodes.items())}
+        nodes_data: dict[str, object] = {
+            nid: {
+                "operation": n.operation,
+                "kind": n.kind.value,
+                "dependencies": sorted(n.dependencies),
+                "input_hash": n.input_hash,
+                "output_hash": n.output_hash,
+                "plugin_version": n.plugin_version,
+                "rule_version": n.rule_version,
+            }
+            for nid, n in sorted(self.nodes.items())
+        }
         edges_list: list[list[str]] = sorted([list(e) for e in self.edges])
-        edges_data: list[object] = [list(e) for e in edges_list]
         self.graph_hash = hash_dict(
             {
                 "nodes": nodes_data,
-                "edges": edges_data,
+                "edges": edges_list,
                 "version": self.version,
             }
         )

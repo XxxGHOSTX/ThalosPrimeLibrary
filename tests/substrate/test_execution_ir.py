@@ -250,10 +250,15 @@ class TestExecutionGraph:
             graph.validate_dag()
 
     def test_graph_hash_changes_with_content(self) -> None:
-        """Graph hash changes when node content changes."""
+        """Graph hash changes when node content (input_hash) changes."""
         graph = self._make_graph_with_two_nodes()
         h1 = graph.graph_hash
-        graph.nodes["n1"].inputs = {"payload": "different"}
+        # Update inputs and recompute input_hash — callers must keep
+        # input_hash in sync with inputs (input_hash is the stable key
+        # used by compute_graph_hash; inputs alone are not hashed).
+        node = graph.nodes["n1"]
+        node.inputs = {"payload": "different"}
+        node.input_hash = node.compute_input_hash()
         graph.compute_graph_hash()
         assert graph.graph_hash != h1
 
