@@ -180,7 +180,14 @@ class PrpIndexer:
         if len(data) != _AES_BLOCK_SIZE:
             msg = f"PRP input must be exactly {_AES_BLOCK_SIZE} bytes, got {len(data)}"
             raise ValueError(msg)
-        cipher = Cipher(algorithms.AES(self._key), modes.ECB())  # noqa: S305
+        cipher = Cipher(
+            algorithms.AES(self._key),
+            # ECB mode is intentional: this is a PRP (Pseudo-Random Permutation)
+            # used as a deterministic bijection over hash space, NOT an encryption
+            # scheme for sensitive data. No plaintext/ciphertext patterns exist
+            # because each 16-byte input is an independent SHA-256 hash slice.
+            modes.ECB(),  # noqa: S305
+        )
         encryptor = cipher.encryptor()
         result: bytes = encryptor.update(data) + encryptor.finalize()
         return result
