@@ -364,13 +364,27 @@ class UIManager {
         
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <div class="toast-icon">${this.getToastIcon(type)}</div>
-            <div class="toast-content">
-                <div class="toast-title">${title}</div>
-                <div class="toast-message">${message}</div>
-            </div>
-        `;
+
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'toast-icon';
+        iconDiv.textContent = this.getToastIcon(type);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'toast-content';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'toast-title';
+        titleDiv.textContent = title;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'toast-message';
+        messageDiv.textContent = message;
+
+        contentDiv.appendChild(titleDiv);
+        contentDiv.appendChild(messageDiv);
+
+        toast.appendChild(iconDiv);
+        toast.appendChild(contentDiv);
         
         container.appendChild(toast);
         
