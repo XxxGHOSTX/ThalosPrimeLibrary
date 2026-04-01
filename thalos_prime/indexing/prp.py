@@ -1,8 +1,14 @@
-"""Deterministic PRP-based indexing for ThalosPrime Library.
+"""Deterministic PRF-based indexing for ThalosPrime Library.
 
-Data Plane module: provides content-to-coordinate mapping using an
-AES-128-ECB based keyed PRP. Coordinate tuples are deterministically
-derived from content hashes. This module has NO lifecycle orchestration.
+Data Plane module: provides content-to-coordinate mapping using a keyed
+HMAC-SHA256 based PRF (Pseudorandom Function). Coordinate tuples are
+deterministically derived from content hashes. This module has NO lifecycle
+orchestration.
+
+The PRF is implemented as HMAC-SHA256(key, sha256(content)[:16]), taking
+the first 16 bytes of the HMAC digest as the permutation output. This
+provides a keyed, deterministic, collision-resistant mapping without
+providing a keyed deterministic mapping.
 
 Coordinate scheme:
   hexagon: bytes[0:2]  -> int (0-65535)
@@ -15,28 +21,23 @@ Coordinate scheme:
 from __future__ import annotations
 
 import hashlib
+import hmac as stdlib_hmac
 import logging
 from dataclasses import dataclass
 from enum import StrEnum
 
-from cryptography.hazmat.primitives.ciphers import (
-    Cipher,
-    algorithms,
-    modes,
-)
-
 logger = logging.getLogger(__name__)
 
-# AES-128 requires exactly 16-byte keys and 16-byte input blocks
-_AES_KEY_SIZE: int = 16
-_AES_BLOCK_SIZE: int = 16
+# Minimum key size and PRF output block size
+_MIN_KEY_SIZE: int = 16
+_BLOCK_SIZE: int = 16
 
 
 @dataclass(frozen=True)
 class Coordinate:
     """An immutable 5-tuple address within the Library of Babel coordinate space.
 
-    Each dimension maps to a specific byte range of an AES-128-ECB PRP output
+    Each dimension maps to a specific byte range of an HMAC-SHA256 PRF output
     over a SHA-256 content hash (first 8 bytes used).
 
     Attributes:
@@ -127,28 +128,29 @@ class ArtifactCoordinates:
 
 
 class PrpIndexer:
-    """Deterministic PRP-based content indexer using AES-128-ECB.
+    """Deterministic PRF-based content indexer using HMAC-SHA256.
 
     Maps arbitrary string content to :class:`Coordinate` tuples through a
-    two-step pipeline: SHA-256 content hash (first 16 bytes) → AES-128-ECB
-    encryption → coordinate extraction from the first 8 bytes of ciphertext.
+    two-step pipeline: SHA-256 content hash (first 16 bytes) →
+    HMAC-SHA256 PRF → coordinate extraction from the first 8 bytes of the
+    PRF output.
 
-    Because the PRP is keyed, two indexers with different keys produce
+    Because the PRF is keyed, two indexers with different keys produce
     independent, unrelated address spaces.
     """
 
     def __init__(self, key: bytes) -> None:
-        """Initialise the PRP indexer with an AES-128 key.
+        """Initialise the PRF indexer with an HMAC key.
 
         Args:
-            key: Exactly 16-byte AES-128 key for the PRP permutation.
+            key: At least 16-byte HMAC key for the PRF.
 
         Raises:
-            ValueError: When *key* is not exactly 16 bytes.
+            ValueError: When *key* is shorter than 16 bytes.
 
         """
-        if len(key) != _AES_KEY_SIZE:
-            msg = f"key must be exactly {_AES_KEY_SIZE} bytes, got {len(key)}"
+        if len(key) < _MIN_KEY_SIZE:
+            msg = f"key must be at least {_MIN_KEY_SIZE} bytes, got {len(key)}"
             raise ValueError(msg)
         self._key = key
 
@@ -162,34 +164,26 @@ class PrpIndexer:
             First 16 bytes of the SHA-256 digest.
 
         """
-        return hashlib.sha256(content.encode("utf-8")).digest()[:_AES_BLOCK_SIZE]
+        return hashlib.sha256(content.encode("utf-8")).digest()[:_BLOCK_SIZE]
 
     def _prp_transform(self, data: bytes) -> bytes:
-        """Apply AES-128-ECB encryption to *data* as the PRP permutation.
+        """Apply HMAC-SHA256 as the keyed PRF over *data*.
 
         Args:
-            data: Exactly 16 bytes of input (one AES block).
+            data: Exactly 16 bytes of input (SHA-256 hash slice).
 
         Returns:
-            16 bytes of AES-128-ECB ciphertext.
+            First 16 bytes of the HMAC-SHA256 digest, used as the PRF output.
 
         Raises:
             ValueError: When *data* is not exactly 16 bytes.
 
         """
-        if len(data) != _AES_BLOCK_SIZE:
-            msg = f"PRP input must be exactly {_AES_BLOCK_SIZE} bytes, got {len(data)}"
+        if len(data) != _BLOCK_SIZE:
+            msg = f"PRF input must be exactly {_BLOCK_SIZE} bytes, got {len(data)}"
             raise ValueError(msg)
-        cipher = Cipher(
-            algorithms.AES(self._key),
-            # ECB mode is intentional: this is a PRP (Pseudo-Random Permutation)
-            # used as a deterministic bijection over hash space, NOT an encryption
-            # scheme for sensitive data. No plaintext/ciphertext patterns exist
-            # because each 16-byte input is an independent SHA-256 hash slice.
-            modes.ECB(),  # noqa: S305
-        )
-        encryptor = cipher.encryptor()
-        result: bytes = encryptor.update(data) + encryptor.finalize()
+        h = stdlib_hmac.new(self._key, data, hashlib.sha256)
+        result: bytes = h.digest()[:_BLOCK_SIZE]
         return result
 
     def _bytes_to_coordinate(self, data: bytes) -> Coordinate:
@@ -224,7 +218,7 @@ class PrpIndexer:
         """Map *content* to a deterministic :class:`Coordinate`.
 
         Full pipeline: ``content`` → SHA-256 hash (first 16 B) →
-        AES-128-ECB PRP → coordinate extraction (first 8 B).
+        HMAC-SHA256 PRF → coordinate extraction (first 8 B).
 
         Args:
             content: UTF-8 string to index.

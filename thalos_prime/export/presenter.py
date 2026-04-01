@@ -37,6 +37,7 @@ class ProofTrace(BaseModel):
         lineage: Ordered ancestor artifact IDs (oldest first).
         timestamp_ns: Nanosecond-precision creation timestamp.
         schema_version: Schema version for forward compatibility.
+
     """
 
     trace_id: str
@@ -58,6 +59,7 @@ class LineageGraph(BaseModel):
         nodes: Graph nodes — each has artifact_id, state, confidence.
         edges: Directed parent→child edges.
         timestamp_ns: Nanosecond-precision creation timestamp.
+
     """
 
     graph_id: str
@@ -77,6 +79,7 @@ class ExportPresenter:
 
     Attributes:
         presenter_id: Deterministic identifier for this presenter instance.
+
     """
 
     def __init__(self, presenter_id: str) -> None:
@@ -84,6 +87,7 @@ class ExportPresenter:
 
         Args:
             presenter_id: Deterministic identifier for this instance.
+
         """
         self._presenter_id = presenter_id
 
@@ -100,8 +104,9 @@ class ExportPresenter:
 
         Returns:
             Dict representation of the artifact (model_dump()).
+
         """
-        return artifact.model_dump()  # type: ignore[return-value]
+        return artifact.model_dump()
 
     def build_proof_trace(
         self,
@@ -120,22 +125,25 @@ class ExportPresenter:
 
         Returns:
             A fully populated :class:`ProofTrace`.
+
         """
         trace_id_raw = (artifact.artifact_id + str(verdict.timestamp_ns)).encode(
             "utf-8"
         )
         trace_id = hashlib.sha256(trace_id_raw).hexdigest()
 
-        derivation_steps: list[dict[str, str]] = []
-        if artifact.provenance:
-            for step in artifact.provenance.derivation_steps:
-                derivation_steps.append(
-                    {
-                        "step_id": step.step_id,
-                        "operation": step.operation,
-                        "output_id": step.output_id,
-                    }
-                )
+        derivation_steps: list[dict[str, str]] = (
+            [
+                {
+                    "step_id": step.step_id,
+                    "operation": step.operation,
+                    "output_id": step.output_id,
+                }
+                for step in artifact.provenance.derivation_steps
+            ]
+            if artifact.provenance
+            else []
+        )
 
         validation_stages: list[dict[str, object]] = [
             {
@@ -183,6 +191,7 @@ class ExportPresenter:
 
         Returns:
             A :class:`LineageGraph` with nodes and directed edges.
+
         """
         graph_id_raw = (artifact_id + "lineage").encode("utf-8")
         graph_id = hashlib.sha256(graph_id_raw).hexdigest()
@@ -198,15 +207,14 @@ class ExportPresenter:
             for r in lineage_records
         ]
 
-        edges: list[dict[str, str]] = []
-        for i in range(len(lineage_records) - 1):
-            edges.append(
-                {
-                    "from": lineage_records[i].artifact_id,
-                    "to": lineage_records[i + 1].artifact_id,
-                    "relation": "parent",
-                }
-            )
+        edges: list[dict[str, str]] = [
+            {
+                "from": lineage_records[i].artifact_id,
+                "to": lineage_records[i + 1].artifact_id,
+                "relation": "parent",
+            }
+            for i in range(len(lineage_records) - 1)
+        ]
 
         return LineageGraph(
             graph_id=graph_id,
@@ -227,6 +235,7 @@ class ExportPresenter:
 
         Returns:
             JSON string with sorted keys and 2-space indentation.
+
         """
         if isinstance(data, (ProofTrace, LineageGraph)):
             raw: Any = data.model_dump()

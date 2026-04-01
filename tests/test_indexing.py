@@ -18,7 +18,7 @@ from thalos_prime.indexing.prp import (
 # ---------------------------------------------------------------------------
 # Fixed test constants
 # ---------------------------------------------------------------------------
-_KEY = b"\xab\xcd\xef\x01" * 4  # 16-byte AES-128 key (deterministic)
+_KEY = b"\xab\xcd\xef\x01" * 4  # 16-byte HMAC key (deterministic)
 _KEY_ZEROS = b"\x00" * 16
 _KEY_ONES = b"\xff" * 16
 
@@ -128,9 +128,10 @@ class TestPrpIndexer:
         with pytest.raises(ValueError, match="16 bytes"):
             PrpIndexer(key=b"")
 
-    def test_init_long_key_raises(self) -> None:
-        with pytest.raises(ValueError, match="16 bytes"):
-            PrpIndexer(key=b"\x00" * 32)
+    def test_init_long_key_accepted(self) -> None:
+        # HMAC accepts keys of any length >= _MIN_KEY_SIZE (16 bytes)
+        indexer = PrpIndexer(key=b"\x00" * 32)
+        assert indexer is not None
 
     def test_index_returns_coordinate(self) -> None:
         indexer = PrpIndexer(key=_KEY)

@@ -20,6 +20,9 @@ from typing import TYPE_CHECKING, ClassVar
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from thalos_prime.artifacts.schema import Artifact as ArtifactType
     from thalos_prime.audit.trail import AuditTrail
     from thalos_prime.belief.ledger import BeliefLedger
     from thalos_prime.validation.pipeline import ValidationPipeline, ValidationVerdict
@@ -57,6 +60,7 @@ class CandidateClaim(BaseModel):
         timestamp_ns: Nanosecond-precision creation timestamp.
         approved: Always False; set only after external validation accepts.
         schema_version: Schema version for forward compatibility.
+
     """
 
     claim_id: str
@@ -81,6 +85,7 @@ class TplReasoningLayer:
 
     Attributes:
         schema_version: Schema version for checkpoint/restore.
+
     """
 
     schema_version: ClassVar[int] = 1
@@ -100,6 +105,7 @@ class TplReasoningLayer:
                 and to admit newly derived artifacts into.
             validation_pipeline: Pipeline used to validate all derived claims.
             audit_trail: Append-only audit log to record derivation steps.
+
         """
         self._layer_id = layer_id
         self._belief_ledger = belief_ledger
@@ -118,7 +124,7 @@ class TplReasoningLayer:
 
     def _derive_claim(
         self,
-        artifacts: list[object],  # list[Artifact] — avoid circular import at runtime
+        artifacts: Sequence[ArtifactType],
         operation: DeriveOperation,
         timestamp_ns: int,
     ) -> CandidateClaim:
@@ -131,23 +137,19 @@ class TplReasoningLayer:
 
         Returns:
             A new :class:`CandidateClaim` with ``approved=False``.
+
         """
-        from thalos_prime.artifacts.schema import Artifact  # noqa: PLC0415
+        typed_artifacts = list(artifacts)
 
-        typed_artifacts: list[Artifact] = [
-            a for a in artifacts if isinstance(a, Artifact)
+        derivation_log: list[dict[str, str]] = [
+            {
+                "step": "input",
+                "input": art.artifact_id,
+                "output": art.content[:100],
+                "timestamp_ns": str(timestamp_ns),
+            }
+            for art in typed_artifacts
         ]
-
-        derivation_log: list[dict[str, str]] = []
-        for art in typed_artifacts:
-            derivation_log.append(
-                {
-                    "step": "input",
-                    "input": art.artifact_id,
-                    "output": art.content[:100],
-                    "timestamp_ns": str(timestamp_ns),
-                }
-            )
 
         if operation is DeriveOperation.SUMMARIZE:
             content = typed_artifacts[0].content[:200] if typed_artifacts else ""
@@ -212,6 +214,7 @@ class TplReasoningLayer:
 
         Raises:
             ValueError: If any artifact_id is not found or not ACCEPTED.
+
         """
         from thalos_prime.artifacts.schema import Artifact  # noqa: PLC0415
         from thalos_prime.audit.trail import AuditEventType  # noqa: PLC0415
@@ -270,7 +273,7 @@ class TplReasoningLayer:
         from thalos_prime.artifacts.schema import ValidationStatus  # noqa: PLC0415
 
         if verdict.final_status is ValidationStatus.ACCEPTED:
-            _prp_key = b"thalos-prime-prp-key-16-bytes!!"  # 16 bytes exactly  # noqa: S105
+            _prp_key = b"thalos-prime-prp-key-16-bytes!!"  # 16 bytes exactly
             _indexer = PrpIndexer(key=_prp_key)
             coord = _indexer.index(derived_artifact.content)
             try:
@@ -304,13 +307,9 @@ class TplReasoningLayer:
 
         Returns:
             True when the layer is initialized and its dependencies are present.
+
         """
-        return (
-            self._initialized
-            and self._belief_ledger is not None
-            and self._validation_pipeline is not None
-            and self._audit_trail is not None
-        )
+        return self._initialized
 
     def operate(
         self,
@@ -327,6 +326,7 @@ class TplReasoningLayer:
 
         Returns:
             Tuple of (CandidateClaim, ValidationVerdict).
+
         """
         return self.derive(artifact_ids, operation, timestamp_ns)
 
@@ -338,6 +338,7 @@ class TplReasoningLayer:
 
         Returns:
             Dict with layer_id, initialized flag, and schema_version.
+
         """
         return {
             "layer_id": self._layer_id,

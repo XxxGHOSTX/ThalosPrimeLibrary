@@ -72,5 +72,11 @@ async def api_status() -> dict[str, Any]:
             "generate": "/api/v1/generate",
             "enumerate": "/api/v1/enumerate",
             "decode": "/api/v1/decode",
+            "ingest": "/api/v1/artifacts/ingest",
+            "artifact": "/api/v1/artifacts/artifact/{artifact_id}",
+            "derive": "/api/v1/artifacts/derive",
+            "export": "/api/v1/artifacts/export/{artifact_id}",
+            "graph": "/api/v1/artifacts/graph/{artifact_id}",
+            "consensus": "/api/v1/artifacts/consensus",
         },
     }
