@@ -323,6 +323,10 @@ disable_error_code = ["no-untyped-call"]
 ]
 # Babel subsystem: runtime imports used in annotations across all layers
 "thalos_prime/babel/**/*.py" = ["TC001", "TC003"]
+# Indexing: TRY003 (ValueError in __init__ and _prp_transform use built-in exception types by design)
+"thalos_prime/indexing/**/*.py" = ["TRY003"]
+# Belief: TRY003 (KeyError/ValueError with messages use built-in exception types by design)
+"thalos_prime/belief/**/*.py" = ["TRY003"]
 # formatter: boolean positional arg is part of the public interface contract
 "thalos_prime/babel/interface/formatter.py" = ["FBT001", "FBT002"]
 # semantic_cli: print is intentional CLI output; return count is by design
