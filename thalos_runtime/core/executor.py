@@ -24,6 +24,7 @@ class ExecutionError(Exception):
     Attributes:
         task: The task name that failed.
         cause: The underlying exception that triggered this error.
+
     """
 
     def __init__(self, task: str, cause: Exception) -> None:
@@ -32,6 +33,7 @@ class ExecutionError(Exception):
         Args:
             task: Task name that failed.
             cause: Underlying exception raised by the handler.
+
         """
         super().__init__(f"Execution of task '{task}' failed: {cause}")
         self.task = task
@@ -50,6 +52,7 @@ class TaskExecutor:
 
         Args:
             registry: Registry providing handler lookup.
+
         """
         self._registry = registry
         logger.debug("TaskExecutor initialized")
@@ -67,6 +70,7 @@ class TaskExecutor:
         Raises:
             RegistryError: If the task is not registered.
             ExecutionError: If the handler raises any exception.
+
         """
         handler = self._registry.get(task)
         logger.info("TaskExecutor: executing task '%s'", task)

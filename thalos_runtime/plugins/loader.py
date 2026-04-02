@@ -56,6 +56,7 @@ class PluginInterface(Protocol):
 
         Args:
             engine: RuntimeEngine to wire task handlers into.
+
         """
         ...
 
@@ -66,6 +67,7 @@ class PluginLoadError(Exception):
     Attributes:
         plugin_ref: String reference to the plugin that failed.
         cause: Underlying exception that triggered this error.
+
     """
 
     def __init__(self, plugin_ref: str, cause: Exception) -> None:
@@ -74,6 +76,7 @@ class PluginLoadError(Exception):
         Args:
             plugin_ref: Plugin name or entry-point reference string.
             cause: Underlying exception.
+
         """
         super().__init__(f"Failed to load plugin '{plugin_ref}': {cause}")
         self.plugin_ref = plugin_ref
@@ -99,6 +102,7 @@ class PluginLoader:
 
         Returns:
             List of built-in runtime task plugins.
+
         """
         from thalos_runtime.plugins.babel_decode_task import BabelDecodeTaskPlugin
         from thalos_runtime.plugins.babel_enumerate_task import BabelEnumerateTaskPlugin
@@ -128,6 +132,7 @@ class PluginLoader:
         Raises:
             PluginLoadError: If any discovered plugin fails to load or
                 does not implement PluginInterface.
+
         """
         discovered: list[PluginInterface] = []
         eps = sorted(entry_points(group=_ENTRY_POINT_GROUP), key=lambda e: e.name)
@@ -161,6 +166,7 @@ class PluginLoader:
 
         Raises:
             PluginLoadError: If any external plugin fails to load.
+
         """
         all_plugins = sorted(
             self._load_builtin_plugins() + self._load_entrypoint_plugins(),
@@ -184,6 +190,7 @@ class PluginLoader:
 
         Returns:
             Sorted list of loaded plugin names.
+
         """
         return sorted(p.name for p in self._loaded)
 

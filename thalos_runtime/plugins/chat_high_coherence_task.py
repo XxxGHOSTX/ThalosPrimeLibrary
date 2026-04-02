@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from thalos_prime.errors import CoherenceThresholdError
 from thalos_prime.models.api_models import ChatResponse
 from thalos_runtime.plugins.chat_task import ChatTask
 from thalos_runtime.plugins.common import ExecutionContext, normalize_chat_payload
@@ -16,8 +18,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _TASK_NAME = "chat.v1.handle_message_high_coherence"
-_DEFAULT_MIN_SCORE = 51.0
-_DEFAULT_MAX_ATTEMPTS = 3
+_DEFAULT_MIN_SCORE = 80.0
+_DEFAULT_MAX_ATTEMPTS = 5
+_DEFAULT_MAX_TIME_BUDGET_S = 1800.0  # 30 minutes upper bound
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class HighCoherenceConfig:
 
     default_min_score: float = _DEFAULT_MIN_SCORE
     max_attempts: int = _DEFAULT_MAX_ATTEMPTS
+    max_time_budget_s: float = _DEFAULT_MAX_TIME_BUDGET_S
 
 
 class ChatHighCoherenceTask:
@@ -86,15 +90,24 @@ class ChatHighCoherenceTask:
         best_response: ChatResponse | None = None
         best_selected: list[Any] = []
         satisfied = False
+        start_time = time.perf_counter()
+
         for attempt in range(1, self.config.max_attempts + 1):
             self._attempts = attempt
+            elapsed = time.perf_counter() - start_time
+            if elapsed > self.config.max_time_budget_s:
+                logger.warning(
+                    "%s: time budget %.1fs exhausted after %d attempt(s)",
+                    self.name,
+                    elapsed,
+                    attempt - 1,
+                )
+                break
+
             payload = self._attempt_payload(attempt)
             response = ChatTask().run(payload)
             selected, attempt_satisfied = self._select_high_coherence(response)
-            if best_response is None:
-                best_response = response
-                best_selected = selected
-            elif self._is_better_response(selected, best_selected):
+            if best_response is None or self._is_better_response(selected, best_selected):
                 best_response = response
                 best_selected = selected
             if attempt_satisfied:
@@ -103,12 +116,39 @@ class ChatHighCoherenceTask:
                 best_selected = selected
                 break
 
+            logger.info(
+                "%s: attempt %d/%d — best score %.1f < min %.1f; retrying",
+                self.name,
+                attempt,
+                self.config.max_attempts,
+                best_selected[0].coherence.overall_score if best_selected else 0.0,
+                self._min_score,
+            )
+
+        # Per determinism rules: do NOT silently return below-threshold results.
+        # Raise a typed CoherenceThresholdError with full state capture.
+        if not satisfied:
+            best_score = (
+                best_selected[0].coherence.overall_score if best_selected else 0.0
+            )
+            elapsed_s = time.perf_counter() - start_time
+            checkpoint = self.checkpoint()
+            assert self._payload is not None
+            mode = str(self._payload.get("mode", "hybrid"))
+            raise CoherenceThresholdError(
+                min_score=self._min_score,
+                best_score=best_score,
+                attempts=self._attempts,
+                time_budget_s=elapsed_s,
+                checkpoint=checkpoint,
+                mode=mode,
+            )
+
         assert best_response is not None
         metadata = dict(best_response.metadata)
         metadata.update({
             "min_score_target": self._min_score,
             "high_coherence_satisfied": satisfied,
-            "fallback_used": not satisfied,
             "attempts": self._attempts,
             "task": self.name,
             "seed": self._context.seed,
@@ -130,6 +170,7 @@ class ChatHighCoherenceTask:
             "min_score": self._min_score,
             "attempts": self._attempts,
             "max_attempts": self.config.max_attempts,
+            "max_time_budget_s": self.config.max_time_budget_s,
         }
 
     def terminate(self) -> None:
@@ -165,4 +206,5 @@ def execution_defaults() -> dict[str, float | int]:
     return {
         "default_min_score": _DEFAULT_MIN_SCORE,
         "max_attempts": _DEFAULT_MAX_ATTEMPTS,
+        "max_time_budget_s": _DEFAULT_MAX_TIME_BUDGET_S,
     }

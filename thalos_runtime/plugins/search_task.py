@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from thalos_prime.lob_babel_enumerator import enumerate_addresses
 from thalos_prime.lob_babel_generator import address_to_page
 from thalos_prime.lob_decoder import decode_page
-from thalos_prime.models.api_models import SearchRequest, SearchResponse
+from thalos_prime.models.api_models import PageResult, SearchRequest, SearchResponse
 from thalos_runtime.plugins.common import ExecutionContext, build_coherence_info, build_page_result
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class SearchTask:
     def operate(self) -> SearchResponse:
         assert self._request is not None
         assert self._context is not None
-        results = []
+        results: list[PageResult] = []
         addresses_enumerated = 0
         if self._request.mode.value in {"local", "hybrid"}:
             addresses = enumerate_addresses(

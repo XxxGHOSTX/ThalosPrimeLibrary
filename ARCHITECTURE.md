@@ -378,3 +378,55 @@ The following are **architectural non-conformance** conditions that must be trea
 5. **Lifecycle method in Data Plane** — `PrpIndexer`, `EdgeExecutor`, and `ExportPresenter` must not implement `initialize / operate / reconcile / checkpoint / terminate`.
 6. **Weak cryptography** — AES-ECB must not be used. The PRP indexer uses HMAC-SHA256.
 7. **Non-deterministic operations** — any use of `time.time()`, `random.random()`, or filesystem scans without explicit seeding and logging.
+
+---
+
+## Greenfield Formal Design
+
+> **Scope reframe: audit → greenfield design.**
+> This section proposes the novel formal system for Thalos Prime first (as the
+> authoritative design target), then maps it onto the current repository as the
+> implementation architecture.  It does not analyze uploaded whitepapers or exports;
+> it defines the formal model and treats the repo as the convergence target.
+
+### Epistemic Premise
+
+The global information environment is defined by a structural imbalance: exponential
+data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
+Thalos Prime resolves this asymmetry by making verification (κ) computable and
+deterministic, filtering the effectively infinite information universe (Ω) down to
+artifacts that provably satisfy the user's coherence threshold.
+
+### Formal System T
+
+The novel formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
+See [`docs/FORMAL_MODEL.md`](docs/FORMAL_MODEL.md) for the complete authoritative
+Formal Specification v1.0 definition, including:
+
+- All seven formal elements with precise types (e.g. I: X\* → ℤⁿ, R: (ℤⁿ × B_t) → H, V: H → {A,P,D,R}).
+- Canonical artifact schema ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ and coordinate hierarchy ⟨h_i, w_i, s_i, v_i, p_i⟩.
+- Two-tier architecture (Core Production + Advanced Research Modules).
+- B_t four-state machine (Accepted/Pending/Disputed/Rejected) with update rule B_{t+1} = V(R(I(D_t), B_t)).
+- 4-round Feistel PRP construction with HMAC-SHA256.
+- R-Matrix YBE in braided form; Persistent Homology (β₀/β₁/β₂); POTSA multilingual ingestion.
+- FACS Bundle (Flags, Annotations, Contradiction maps, Suspension logs) with 238ms latency target.
+- Genesis Lock TrustRoot = KDF(HW_ID ‖ Sign_Auctor(IEPL)) and Aegis governance.
+- Machine-checkable invariants I-Tr through I-9; failure mode analysis.
+- Math-to-code mappings; 8 design principles.
+
+### Architecture as Target
+
+Every module in this architecture document is the **implementation convergence target**
+for one or more elements of T.  The control-plane / data-plane boundary maps exactly
+to the T decomposition: I, R, and E live in the data plane; V, P, B_t, and the
+lifecycle contract are enforced by the control plane.
+
+| Formal Element | Plane | Key Module |
+|----------------|-------|------------|
+| D (Artifact Corpus / X\*) | Both | `thalos_prime/belief/ledger.py` (ctrl), `lob_babel_generator.py` (data) |
+| I (PRP Feistel Bijection / X\*→ℤⁿ) | Data | `thalos_prime/indexing/prp.py`, `lob_babel_enumerator.py` |
+| R (Reasoning Operator / (ℤⁿ×B_t)→H) | Data | `thalos_prime/lob_decoder.py` |
+| V (Validation / H→{A,P,D,R} + Genesis Lock) | Control | `thalos_prime/audit/trail.py`, `thalos_nexus/nucleus.py` |
+| E (Edge Execution / Ω_edge) | Data | `lob_babel_generator.py`, `lob_decoder.py` |
+| P (Presentation / FACS Bundle / B_t→Γ) | Control | `thalos_prime/audit/trail.py`, `belief/ledger.py` |
+| B_t (Belief Base / A\* four-state) | Control | `thalos_prime/belief/ledger.py`, `thalos_nexus/spine.py` |

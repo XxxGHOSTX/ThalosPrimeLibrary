@@ -79,3 +79,40 @@ Scope: Build and integrate deterministic generator + enumerator + storage (Phase
 - Phase 2: Supports hybrid heuristic/LLM claims, recursive stabilization with scoring and provenance.
 - Roadmap (later): embeddings/semantic search (Phase 3) for continuation; SBI/wetware (Phase 5) for CIP.
 
+
+---
+
+## Greenfield Formal Design — Execution Reframe
+
+> **Scope reframe: audit → greenfield design.**
+> The Phase 1 and Phase 2 execution plan below is not derived from analyzing uploaded
+> whitepapers or exports.  Instead, it is derived from the novel formal system T
+> (defined in [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md)) and maps each phase to
+> one or more elements of T that must be implemented.
+
+### Formal Traceability
+
+The formal system T = ⟨D, I, R, V, E, P, B_t⟩ maps onto the phased execution plan
+as follows.  Each phase implements one or more formal elements (see
+[`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for full definitions):
+
+| Phase | Formal Elements Implemented | Deliverable |
+|-------|-----------------------------|-------------|
+| Phase 1 | I (PRP indexer), E (generator) | `lob_babel_generator.py`, `lob_babel_enumerator.py`, storage |
+| Phase 2 | R (coherence scoring / FACS filter), P (provenance) | `lob_decoder.py`, FACS suspension, coherence threshold enforcement |
+| Phase 3 | D + I extended (geometric hashing) | Semantic indexing + invariant manifold hashing |
+| Phase 4 | R full (R-Matrix / YBE) | Commutative reasoning invariance engine |
+| Phase 5 | V full (DeScAI + ZK-SNARKs), E variant (wetware) | Distributed veridiction, ZK-verifiable chains |
+
+### Epistemic Premise
+
+The global information environment is defined by a structural imbalance where
+exponential data production has outpaced the capacity for verifiable reasoning and
+deterministic retrieval.  Every execution phase reduces this imbalance by implementing
+more elements of T, progressively converging the system toward sovereign epistemic
+operating system status.
+
+### Phase Completion Criterion
+
+A phase is complete when the formal invariants I-1 through I-9 (see
+`docs/FORMAL_MODEL.md §6`) pass for all elements of T introduced in that phase.

@@ -33,6 +33,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     Returns:
         Configured ArgumentParser with --task, --data, and --log-level.
+
     """
     parser = argparse.ArgumentParser(
         prog="thalos_runtime",
@@ -65,6 +66,7 @@ def main(argv: list[str] | None = None) -> int:
 
     Returns:
         Exit code: 0 on success, 1 on any error.
+
     """
     parser = _build_parser()
     args = parser.parse_args(argv)

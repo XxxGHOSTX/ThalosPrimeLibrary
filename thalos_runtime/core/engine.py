@@ -45,6 +45,7 @@ class EngineInitializationError(Exception):
 
     Attributes:
         reason: Human-readable description of the initialization failure.
+
     """
 
     def __init__(self, reason: str) -> None:
@@ -52,6 +53,7 @@ class EngineInitializationError(Exception):
 
         Args:
             reason: Human-readable description of the failure.
+
         """
         super().__init__(f"Engine initialization failed: {reason}")
         self.reason = reason
@@ -88,6 +90,7 @@ class RuntimeEngine(BaseLifecycleComponent):
 
         Raises:
             RegistryError: If the name is already registered.
+
         """
         self._registry.register(name, handler)
         self._emit_event("register_module", f"task={name}")
@@ -105,6 +108,7 @@ class RuntimeEngine(BaseLifecycleComponent):
         Raises:
             RegistryError: If the task is not registered.
             ExecutionError: If the handler raises an exception.
+
         """
         self._emit_event("execute", f"task={task}")
         result = self._executor.execute(task, payload)
@@ -116,6 +120,7 @@ class RuntimeEngine(BaseLifecycleComponent):
 
         Returns:
             Sorted list of registered task identifiers.
+
         """
         return self._registry.names()
 
@@ -128,6 +133,7 @@ class RuntimeEngine(BaseLifecycleComponent):
 
         Raises:
             EngineInitializationError: If initialization fails.
+
         """
         self._emit_event("initialize")
         self._initialized = True
@@ -142,6 +148,7 @@ class RuntimeEngine(BaseLifecycleComponent):
 
         Returns:
             ValidationResult indicating whether the engine is operational.
+
         """
         from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 
@@ -188,6 +195,7 @@ class RuntimeEngine(BaseLifecycleComponent):
 
         Returns:
             Versioned dict with registry, memory, and lifecycle event log.
+
         """
         self._emit_event("checkpoint")
         return {

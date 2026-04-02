@@ -319,3 +319,51 @@ For issues or questions:
 - Check the integration example: `integration_example.py`
 - Run the test suite to verify installation
 - Review module docstrings for API details
+
+---
+
+## Greenfield Formal Design
+
+> **Scope reframe: audit → greenfield design.**
+> This guide is derived from the novel formal system T, not from analyzing uploaded
+> whitepapers or implementation exports.  The formal model is defined first
+> (authoritative); the code described in this guide is the target implementation that
+> converges toward T.
+
+### Formal System T = ⟨D, I, R, V, E, P, B_t⟩
+
+See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
+
+### Guide-to-Formal Mapping
+
+| Guide Section | Formal Element | Module |
+|---------------|----------------|--------|
+| Deterministic Page Generation | E (execution engine) + I (PRP indexer) | `lob_babel_generator.py`, `indexing/prp.py` |
+| Query to Address Enumeration | I — keyed invertible transform | `lob_babel_enumerator.py` |
+| Coherence Scoring | R (reasoning / FACS filter) | `lob_decoder.py`, `belief/ledger.py` |
+| Provenance Tracking | P (FACS Bundle) + D artifact schema | `audit/trail.py` |
+| Full Pipeline | I → E → R → P → B_t | `api/routes/` pipeline |
+
+### Epistemic Premise
+
+The global information environment is defined by a structural imbalance where
+exponential data production has outpaced the capacity for verifiable reasoning and
+deterministic retrieval.  Phase 1 implements I and E (making the information space
+navigable); Phase 2 implements R and P (making results verifiable and provenance-
+tracked).  Together they deliver the production core of T.
+
+### FACS Suspension and Coherence
+
+The FACS suspension log (element P) replaces the simple threshold filter.  A result
+below κ_min is **suspended** (not silently discarded) until the FACS bundle is
+cleared.  Only then is it returned or escalated to `CoherenceThresholdError`.
+
+| Confidence Level | Score Range | FACS Status |
+|------------------|-------------|-------------|
+| High | 80–100 | FACS cleared — B_t accepts; returned to user |
+| Medium | 60–79 | FACS flagged at κ_min=80; accepted at κ_min=60 |
+| Sparse | 40–59 | FACS suspended at κ_min=60 |
+| Minimal | 0–39 | FACS suspended at any production threshold |
+
+The default κ_min = 80.0 corresponds to "High" confidence, enforced by
+`CoherenceThresholdError` in the API layer.

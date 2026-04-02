@@ -11,7 +11,7 @@ No lifecycle coordination or control-plane logic belongs here.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -32,6 +32,7 @@ class ExecutionRecord:
         result: Result produced by the task handler.
         timestamp: UTC timestamp of execution.
         version: Schema version for serialization compatibility.
+
     """
 
     id: UUID
@@ -46,6 +47,7 @@ class ExecutionRecord:
 
         Returns:
             Dictionary representation with all fields serialized to JSON-safe types.
+
         """
         return {
             "id": str(self.id),
@@ -80,6 +82,7 @@ class ExecutionMemory:
 
         Returns:
             Newly created, immutable ExecutionRecord with a unique UUID.
+
         """
         record = ExecutionRecord(
             id=uuid4(),
@@ -101,6 +104,7 @@ class ExecutionMemory:
 
         Returns:
             Shallow copy of the full record list.
+
         """
         return list(self._records)
 
@@ -112,6 +116,7 @@ class ExecutionMemory:
 
         Returns:
             Filtered list of matching records in chronological order.
+
         """
         return [r for r in self._records if r.task == task]
 
@@ -120,6 +125,7 @@ class ExecutionMemory:
 
         Returns:
             Versioned dict containing all stored records as plain dicts.
+
         """
         return {
             "version": _MEMORY_VERSION,

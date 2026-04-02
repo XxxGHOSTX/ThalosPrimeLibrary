@@ -142,6 +142,20 @@ See [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) for the ful
 
 **Python 3.12 or later is required.**
 
+**Windows (PowerShell) — fully automated:**
+
+```powershell
+.\setup.ps1        # creates .venv, installs deps, starts server
+```
+
+**Unix / macOS — fully automated:**
+
+```bash
+bash setup.sh      # creates .venv, installs deps, starts server
+```
+
+**Cross-platform (manual):**
+
 ```bash
 # Development install (includes type checkers, linters, and test tools)
 pip install -e ".[dev]"
@@ -343,8 +357,55 @@ decoding, chat, and administration.
 
 ### Start the Server
 
+**Windows (PowerShell) — recommended for Windows users:**
+
+```powershell
+# One-shot: setup + launch API server
+.\setup.ps1
+
+# Other actions:
+.\setup.ps1 -Action test       # run tests
+.\setup.ps1 -Action validate   # run validators
+.\setup.ps1 -Action clean      # clean build artifacts
+.\setup.ps1 -Action none       # setup only, no server
+.\setup.ps1 -Port 9000         # custom port
+```
+
+**Unix / macOS:**
+
 ```bash
-python run_thalos.py   # or tools/run_thalos.sh on Linux/macOS
+bash setup.sh                          # setup + start server
+bash setup.sh --action test            # run tests
+bash setup.sh --action clean           # clean artifacts
+bash setup.sh --port 9000              # custom port
+```
+
+**Cross-platform (any OS with Python 3.12+):**
+
+```bash
+python launch.py                       # setup + start server
+python launch.py --action test         # run tests
+python launch.py --action validate     # run validators
+python launch.py --action check        # full quality check
+python launch.py --action clean        # clean artifacts
+python launch.py --host 0.0.0.0 --port 9000
+```
+
+**Make targets (Unix only):**
+
+```bash
+make launch      # setup + start server (cross-platform Python)
+make serve       # python -m thalos_prime (deps already installed)
+make setup-unix  # bash setup.sh
+make test        # run tests
+make check       # full quality check
+```
+
+**Direct launch (deps already installed):**
+
+```bash
+python run_thalos.py --serve           # legacy launcher
+python -m thalos_prime                 # module entry point
 ```
 
 The server starts on **http://localhost:8000** by default.

@@ -190,15 +190,26 @@ def create_app() -> FastAPI:
     # Custom exception handlers
     @app.exception_handler(HTTPException)
     async def custom_http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-        """Handle HTTP exceptions with custom error response."""
+        """Handle HTTP exceptions with custom error response.
+
+        When ``exc.detail`` is a dict (e.g. CoherenceThresholdError state snapshot),
+        the dict is returned as-is under the ``detail`` key.  When it is a plain
+        string it is wrapped in the standard ErrorResponse schema.
+        """
+        if isinstance(exc.detail, dict):
+            # Structured error — return dict detail directly without wrapping.
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"detail": exc.detail, "path": str(request.url.path)},
+            )
         error_response = ErrorResponse(
             error=f"HTTP{exc.status_code}",
-            message=exc.detail,
+            message=str(exc.detail),
             details={"path": str(request.url.path)},
         )
         return JSONResponse(
             status_code=exc.status_code,
-            content=error_response.dict(),
+            content=error_response.model_dump(),
         )
 
     @app.exception_handler(RequestValidationError)

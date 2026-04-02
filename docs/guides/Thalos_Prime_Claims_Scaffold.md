@@ -58,3 +58,44 @@
 
 python run_thalos.py
 # browse http://127.0.0.1:8000/
+---
+
+## Greenfield Formal Design (Novel System — Formal Model Reference)
+
+> **Scope reframe: audit → greenfield design.**
+> The formal system T is defined first (authoritative), independently of any existing
+> code.  Every claim in this scaffold maps to one or more elements of T.  The current
+> repository is the target architecture that converges toward T.
+
+### Formal System T = ⟨D, I, R, V, E, P, B_t⟩
+
+See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete Formal Specification v1.0 definition.
+
+### Claim-to-Formal-Element Mapping
+
+| Claim | Formal Element(s) |
+|-------|-------------------|
+| Sovereign epistemic OS over deterministic infinite data | T (full seven-tuple) |
+| Stateful belief management — four-state machine, not stateless generation | B_t — B_{t+1} = V(R(I(D_t), B_t)) |
+| No confidence laundering — circuit-breaker suspension | P (FACS Bundle: Flags, Annotations, Contradiction maps, Suspension logs) |
+| Deterministic zero-storage indexing (4-round Feistel PRP bijection) | I — coord_i = ⟨h_i, w_i, s_i, v_i, p_i⟩ |
+| Commutative reasoning invariance (YBE braided form) | R (R-Matrix Net: (R⊗id)∘(id⊗R)∘(R⊗id) = (id⊗R)∘(R⊗id)∘(id⊗R)) |
+| Tamper-evident audit trail + ZK-verified reasoning | V (Genesis Lock TrustRoot + Groth16 ZK-SNARKs) |
+| Edge-native execution (MNN / Mojo / MLIR; 238ms FACS) | E |
+| Canonical provenance schema with lineage and address | D — ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ |
+| Persistence of rejection (prevents re-hallucination) | B_t four-state: Rejected claims archived permanently |
+| Distributed peer validation (DeScAI consensus) | V (Phase 5) |
+| Topological noise suppression (Betti signatures β₀/β₁/β₂) | R extension (Phase 3/4) |
+| Optional biological / wetware substrate | E variant (Phase 5) |
+
+### Novel Claim Strengthening
+
+The Formal Specification v1.0 moves well beyond "stateless generator" architectures.
+Every independent claim is grounded in a named formal element of T with precise types
+and machine-checkable invariants (I-Tr through I-9):
+
+- B_t's four-state machine with permanent rejection archival is novel over all LLM systems.
+- P's FACS suspension log is novel over all coherence-scoring systems.
+- R's YBE braided-form constraint is novel over all multi-step AI reasoning systems.
+- I's 4-round Feistel PRP bijection is novel over all retrieval index architectures.
+- The update rule B_{t+1} = V(R(I(D_t), B_t)) is a novel epistemic state transition semantics.

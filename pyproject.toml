@@ -17,11 +17,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "pydantic>=2.0.0",
@@ -340,3 +336,25 @@ disable_error_code = ["no-untyped-call"]
 "thalos_prime/babel/interface/formatter.py" = ["FBT001", "FBT002"]
 # semantic_cli: print is intentional CLI output; return count is by design
 "thalos_prime/babel/interface/semantic_cli.py" = ["T201", "PLR0911"]
+# __main__: T201 (print for startup banner), PLC0415 (lazy imports to avoid heavy startup cost),
+# BLE001 (broad except in _execute_worker_safely re-raised immediately as BackgroundTaskError),
+# UP012 (utf-8 encode explicit for clarity), UP032/UP012 (minor style),
+# TRY003/EM102 (BackgroundTaskError message includes dynamic task name/step context)
+"thalos_prime/__main__.py" = ["T201", "PLC0415", "BLE001", "UP012", "UP032", "TRY003", "EM102"]
+# errors.py: PLR0913 (CoherenceThresholdError.__init__ needs all error context fields)
+"thalos_prime/errors.py" = ["PLR0913"]
+# generative_engine.py: ARG002 (seed kept for API symmetry), PLR2004 (magic 60/80 are readable constants)
+# UP012 (utf-8 encode explicit), D401 (convenience function docstrings match style)
+"thalos_prime/generative_engine.py" = ["ARG002", "PLR2004", "UP012", "D401"]
+# thalos_runtime core modules: ANN401 (Any is required for plugin dispatch),
+# PLC0415 (lazy imports to avoid circular dependencies at module load),
+# TRY003/EM101/EM102/TRY301/TRY400/TC001/TC003 (typed exceptions by design)
+"thalos_runtime/**/*.py" = [
+    "ANN401", "PLC0415",
+    "TRY003", "EM101", "EM102", "TRY301", "TRY400",
+    "TC001", "TC003",
+]
+# thalos_runtime plugins: D102/D107 (method/nested docstrings follow internal convention),
+# S101 (assert used in task validate() lifecycle methods by design),
+# E501 (long lines in structured log messages are acceptable), PLR0913 (>5 params in common helpers)
+"thalos_runtime/plugins/**/*.py" = ["D102", "D107", "S101", "E501", "PLR0913"]

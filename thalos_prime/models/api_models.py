@@ -10,11 +10,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class SearchMode(StrEnum):
-    """Search mode: local generation or remote fetch."""
+    """Search mode: local generation, remote fetch, hybrid, or generative."""
 
     LOCAL = "local"
     REMOTE = "remote"
     HYBRID = "hybrid"
+    GENERATIVE = "generative"
 
 
 class NormalizationMode(StrEnum):
@@ -188,8 +189,17 @@ class ChatRequest(BaseModel):
 
     message: str = Field(..., min_length=1, description="User message")
     session_id: str | None = Field(None, description="Existing session ID (optional)")
-    mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode: local, remote, or hybrid")
+    mode: SearchMode = Field(
+        default=SearchMode.HYBRID,
+        description="Search mode: local, remote, hybrid, or generative",
+    )
     max_results: int = Field(default=5, ge=1, le=20, description="Maximum results to include")
+    min_score: float = Field(
+        default=80.0,
+        ge=0.0,
+        le=100.0,
+        description="Minimum coherence score (0-100). Default 80. System halts with state capture when unmet.",
+    )
 
 
 class ChatResponse(BaseModel):

@@ -231,3 +231,46 @@ In dry-run mode:
 
 Dry-run mode is used by the CI test suite so that all 64+ pipeline tests run
 without external dependencies.
+
+---
+
+## 8. Greenfield Formal Design
+
+> **Scope reframe: audit → greenfield design.**
+> Rather than analyzing existing whitepapers or exports, this section proposes the
+> novel formal system for Thalos Prime first (as the authoritative design target),
+> then maps it onto the current repository as the implementation architecture.
+
+### 8.1 Epistemic Premise
+
+The global information environment is defined by a structural imbalance where
+exponential data production has outpaced the capacity for verifiable reasoning and
+deterministic retrieval.  Contemporary architectures depend on stochastic pattern
+matching, which is insufficient for the rigorous demands of professional
+accountability and data sovereignty.  Thalos Prime is proposed as a sovereign
+epistemic operating system that resolves this asymmetry.
+
+### 8.2 Formal System T
+
+The authoritative formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
+See [`docs/FORMAL_MODEL.md`](FORMAL_MODEL.md) for the complete definition,
+two-tier architecture, FACS bundle specification, and invariant table.
+
+### 8.3 Mapping T onto This Blueprint
+
+| Formal Element | Blueprint Section | Implementation |
+|----------------|-------------------|----------------|
+| D (Artifact Corpus) | §4 — Stage 1 Normalization + Stage 7 Output | `lob_babel_generator.py`, `belief/ledger.py` |
+| I (PRP Indexer) | §4 — Stage 3 Index Mapping | `lob_babel_enumerator.py`, `indexing/prp.py` |
+| R (Reasoning / FACS) | §4 — Stage 5 Analysis & Filtering | `lob_decoder.py`, `belief/ledger.py` |
+| V (Genesis Lock) | §4 — Stage 7, audit trail | `audit/trail.py`, `thalos_nexus/nucleus.py` |
+| E (Execution Engine) | §4 — Stage 4 Sequence Generation | `lob_babel_generator.py` |
+| P (Provenance / FACS) | §4 — Stage 5, provenance tracking | `audit/trail.py`, FACS Bundle |
+| B_t (Belief Base) | §4 — Stages 5-7, stateful epistemic ledger | `belief/ledger.py` |
+
+### 8.4 Design Goal (Not Audit)
+
+The 7-stage MNN pipeline described in §2 is the **target architecture** that T
+demands.  Every stage must be fully deterministic (I-1 through I-9 in
+`docs/FORMAL_MODEL.md`), and no stage may be bypassed.  This blueprint is the
+formal design authority; CI gates enforce convergence toward it.
