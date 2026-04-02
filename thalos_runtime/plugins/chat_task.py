@@ -155,112 +155,14 @@ class ChatTask:
         # ----------------------------------------------------------------
         # GENERATIVE mode — corpus-based, always produces coherence >= 80
         # ----------------------------------------------------------------
-        if mode is SearchMode.GENERATIVE:
-            gen_results = generate_coherent_batch(
-                query=self._request.message,
-                seed=self._context.seed,
-                count=self._request.max_results,
-            )
-            for gr in gen_results:
-                decoded = decode_page(
-                    address=gr.address,
-                    text=gr.text,
-                    query=self._request.message,
-                    source="generative",
-                )
-                coherence_info = build_coherence_info(decoded)
-                page_result = build_page_result(
-                    address=gr.address,
-                    raw_text=decoded.raw_text,
-                    query=self._request.message,
-                    source="generative",
-                    timestamp=decoded.timestamp,
-                    coherence=coherence_info,
-                )
-                results.append(page_result)
+        if mode == SearchMode.GENERATIVE:
+            results = self._operate_generative()
 
         # ----------------------------------------------------------------
         # LOCAL / HYBRID mode — babel page generation with retry loop
         # ----------------------------------------------------------------
         elif mode.value in {"local", "hybrid"}:
-            best_score = 0.0
-            attempt = 0
-            start_time = time.perf_counter()
-
-            while attempt < _MAX_ATTEMPTS:
-                elapsed = time.perf_counter() - start_time
-                if elapsed > _MAX_TIME_BUDGET_S:
-                    logger.warning(
-                        "%s: time budget %.1fs exhausted after %d attempt(s)",
-                        self.name,
-                        elapsed,
-                        attempt,
-                    )
-                    break
-
-                attempt += 1
-                multiplier = attempt  # oversample on each retry
-                addresses = enumerate_addresses(
-                    self._request.message,
-                    max_results=self._request.max_results * multiplier,
-                )
-                attempt_results: list[PageResult] = []
-                for addr_info in addresses:
-                    address = str(addr_info["address"])
-                    page_text = address_to_page(address)
-                    decoded = decode_page(
-                        address=address,
-                        text=page_text,
-                        query=self._request.message,
-                        source="local",
-                    )
-                    coherence_info = build_coherence_info(decoded)
-                    page_result = build_page_result(
-                        address=address,
-                        raw_text=decoded.raw_text,
-                        query=self._request.message,
-                        source=decoded.source,
-                        timestamp=decoded.timestamp,
-                        coherence=coherence_info,
-                    )
-                    attempt_results.append(page_result)
-
-                attempt_results.sort(
-                    key=lambda item: item.coherence.overall_score, reverse=True
-                )
-                if attempt_results:
-                    candidate_score = attempt_results[0].coherence.overall_score
-                    if candidate_score > best_score:
-                        best_score = candidate_score
-                        results = attempt_results
-
-                if results and results[0].coherence.overall_score >= min_score:
-                    break
-
-                logger.info(
-                    "%s: attempt %d/%d — best score %.1f < min %.1f; retrying",
-                    self.name,
-                    attempt,
-                    _MAX_ATTEMPTS,
-                    best_score,
-                    min_score,
-                )
-
-            # Enforce threshold — halt with state capture if not met
-            if min_score > 0 and (
-                not results or results[0].coherence.overall_score < min_score
-            ):
-                achieved = results[0].coherence.overall_score if results else 0.0
-                elapsed_s = time.perf_counter() - self._started_at
-                checkpoint = self.checkpoint()
-                raise CoherenceThresholdError(
-                    min_score=min_score,
-                    best_score=achieved,
-                    attempts=attempt,
-                    time_budget_s=elapsed_s,
-                    checkpoint=checkpoint,
-                    mode=mode.value,
-                )
+            results = self._operate_local_hybrid(min_score)
 
         # ----------------------------------------------------------------
         # REMOTE mode — not implemented; raise explicit typed error
@@ -320,6 +222,120 @@ class ChatTask:
 
     def reconcile(self, response: ChatResponse) -> ChatResponse:
         return response
+
+    def _operate_generative(self) -> list[PageResult]:
+        """Generate coherent results using the corpus-based generative engine."""
+        assert self._request is not None
+        assert self._context is not None
+        gen_results = generate_coherent_batch(
+            query=self._request.message,
+            seed=self._context.seed,
+            count=self._request.max_results,
+        )
+        results: list[PageResult] = []
+        for gr in gen_results:
+            decoded = decode_page(
+                address=gr.address,
+                text=gr.text,
+                query=self._request.message,
+                source="generative",
+            )
+            coherence_info = build_coherence_info(decoded)
+            page_result = build_page_result(
+                address=gr.address,
+                raw_text=decoded.raw_text,
+                query=self._request.message,
+                source="generative",
+                timestamp=decoded.timestamp,
+                coherence=coherence_info,
+            )
+            results.append(page_result)
+        return results
+
+    def _operate_local_hybrid(self, min_score: float) -> list[PageResult]:
+        """Attempt babel page retrieval with retry loop, enforcing min_score."""
+        assert self._request is not None
+        best_score = 0.0
+        attempt = 0
+        start_time = time.perf_counter()
+        results: list[PageResult] = []
+
+        while attempt < _MAX_ATTEMPTS:
+            elapsed = time.perf_counter() - start_time
+            if elapsed > _MAX_TIME_BUDGET_S:
+                logger.warning(
+                    "%s: time budget %.1fs exhausted after %d attempt(s)",
+                    self.name,
+                    elapsed,
+                    attempt,
+                )
+                break
+
+            attempt += 1
+            multiplier = attempt  # oversample on each retry
+            addresses = enumerate_addresses(
+                self._request.message,
+                max_results=self._request.max_results * multiplier,
+            )
+            attempt_results: list[PageResult] = []
+            for addr_info in addresses:
+                address = str(addr_info["address"])
+                page_text = address_to_page(address)
+                decoded = decode_page(
+                    address=address,
+                    text=page_text,
+                    query=self._request.message,
+                    source="local",
+                )
+                coherence_info = build_coherence_info(decoded)
+                page_result = build_page_result(
+                    address=address,
+                    raw_text=decoded.raw_text,
+                    query=self._request.message,
+                    source=decoded.source,
+                    timestamp=decoded.timestamp,
+                    coherence=coherence_info,
+                )
+                attempt_results.append(page_result)
+
+            attempt_results.sort(
+                key=lambda item: item.coherence.overall_score, reverse=True
+            )
+            if attempt_results:
+                candidate_score = attempt_results[0].coherence.overall_score
+                if candidate_score > best_score:
+                    best_score = candidate_score
+                    results = attempt_results
+
+            if results and results[0].coherence.overall_score >= min_score:
+                break
+
+            logger.info(
+                "%s: attempt %d/%d — best score %.1f < min %.1f; retrying",
+                self.name,
+                attempt,
+                _MAX_ATTEMPTS,
+                best_score,
+                min_score,
+            )
+
+        # Enforce threshold — halt with full state capture if not met.
+        # Per determinism rules: no silent degradation; either meet the threshold
+        # or raise a typed error with a full state snapshot.
+        if min_score > 0 and (not results or results[0].coherence.overall_score < min_score):
+            achieved = results[0].coherence.overall_score if results else 0.0
+            elapsed_time_s = time.perf_counter() - self._started_at
+            checkpoint = self.checkpoint()
+            raise CoherenceThresholdError(
+                min_score=min_score,
+                best_score=achieved,
+                attempts=attempt,
+                time_budget_s=elapsed_time_s,
+                checkpoint=checkpoint,
+                mode=self._request.mode.value,
+            )
+
+        return results
 
     def checkpoint(self) -> dict[str, Any]:
         return {

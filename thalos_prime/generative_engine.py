@@ -444,24 +444,6 @@ class GenerativeEngine:
 
         return f"{preamble}  {body}  {conclusion}"
 
-    def _build_header(self, query: str, seed: int) -> str:
-        """Build a query-aligned header sentence for exact-match scoring.
-
-        The header is deterministically derived from the query text.
-        """
-        # Deterministically select a header template
-        templates = [
-            "Regarding '{query}': ThalosPrimeLibrary provides the following information.",
-            "ThalosPrimeLibrary response for query '{query}':",
-            "The following addresses the query '{query}' within ThalosPrimeLibrary.",
-            "Query '{query}' is handled by ThalosPrimeLibrary as follows.",
-        ]
-        state = seed ^ 0xDEADBEEF
-        template = templates[state % len(templates)]
-        # Truncate query to 80 chars for readability
-        short_query = query[:80] if len(query) > 80 else query
-        return template.format(query=short_query)
-
     @staticmethod
     def _derive_address(query: str, seed: int) -> str:
         """Derive a deterministic hex address from query and seed."""

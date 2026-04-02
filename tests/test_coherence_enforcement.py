@@ -23,7 +23,6 @@ from thalos_prime.generative_engine import (
 from thalos_prime.lob_decoder import BabelDecoder
 from thalos_prime.models.api_models import SearchMode
 
-
 # ---------------------------------------------------------------------------
 # GenerativeEngine unit tests
 # ---------------------------------------------------------------------------

@@ -53,6 +53,11 @@ _DEFAULT_PORT = 8000
 _WORKER_QUEUE_MAX: int = 64  # bounded queue for background tasks
 _CONFIG_HASH_ENV_VAR = "THALOS_CONFIG_HASH"
 
+# Background worker intervals (seconds)
+_INDEX_REFRESH_INTERVAL_S: float = 300.0   # every 5 minutes
+_CACHE_WARM_INTERVAL_S: float = 600.0      # every 10 minutes
+_SESSION_MAINT_INTERVAL_S: float = 900.0   # every 15 minutes
+
 
 # ---------------------------------------------------------------------------
 # Environment validation (Control Plane)
@@ -294,9 +299,9 @@ def main() -> None:
         scheduler = BackgroundScheduler(config_hash=config_hash)
         # Seed each worker deterministically from config_hash + task name
         for task_name, interval_s in [
-            ("index_refresh", 300.0),       # every 5 minutes
-            ("cache_warm", 600.0),          # every 10 minutes
-            ("session_maintenance", 900.0), # every 15 minutes
+            ("index_refresh", _INDEX_REFRESH_INTERVAL_S),
+            ("cache_warm", _CACHE_WARM_INTERVAL_S),
+            ("session_maintenance", _SESSION_MAINT_INTERVAL_S),
         ]:
             seed_input = f"{config_hash}:{task_name}".encode("utf-8")
             seed = int(hashlib.sha256(seed_input).hexdigest()[:8], 16)
@@ -305,8 +310,8 @@ def main() -> None:
 
     # Step 4: Start the API server (blocks until shutdown)
     print(f"\nStarting API server on http://{args.host}:{args.port}")
-    print("  Docs: http://{host}:{port}/docs".format(host=args.host, port=args.port))
-    print("  Status: http://{host}:{port}/api/v1/status".format(host=args.host, port=args.port))
+    print(f"  Docs: http://{args.host}:{args.port}/docs")
+    print(f"  Status: http://{args.host}:{args.port}/api/v1/status")
     print("\nPress Ctrl+C to stop.\n")
 
     try:
