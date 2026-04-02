@@ -319,3 +319,46 @@ For issues or questions:
 - Check the integration example: `integration_example.py`
 - Run the test suite to verify installation
 - Review module docstrings for API details
+
+---
+
+## Greenfield Formal Design
+
+> **Scope reframe: audit → greenfield design.**
+> This guide is derived from the novel formal system T, not from analyzing uploaded
+> whitepapers or implementation exports.  The formal model is defined first
+> (authoritative); the code described in this guide is the target implementation that
+> converges toward T.
+
+### Formal System T = (Ω, Σ, G, E, κ, δ, Φ)
+
+See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
+
+### Guide-to-Formal Mapping
+
+| Guide Section | Formal Element | Module |
+|---------------|----------------|--------|
+| Deterministic Page Generation | G: H → Σ^3200 | `lob_babel_generator.py` |
+| Query to Address Enumeration | E: Q × ℕ × ℕ → H\* | `lob_babel_enumerator.py` |
+| Coherence Scoring | κ: Σ\* → [0, 100] | `lob_decoder.py` |
+| Full Pipeline | G ∘ E → κ → δ → Φ | `api/routes/` pipeline |
+
+### Epistemic Premise
+
+The global information environment is defined by a structural imbalance: exponential
+data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
+Phase 1 implements G and E (making Ω navigable); Phase 2 implements κ and δ (making
+results verifiable).  Together they resolve the structural imbalance for any query
+within the 29-character Babel alphabet.
+
+### Confidence Level Mapping to κ
+
+| Confidence Level | κ Range | Formal Status |
+|------------------|---------|---------------|
+| High | 80–100 | δ(x) = True — passes epistemic filter |
+| Medium | 60–79 | δ(x) = False at κ_min=80; usable at κ_min=60 |
+| Sparse | 40–59 | δ(x) = False at κ_min=60 |
+| Minimal | 0–39 | δ(x) = False at any production threshold |
+
+The default κ_min = 80.0 corresponds to "High" confidence, enforced by
+`CoherenceThresholdError` in the API layer.

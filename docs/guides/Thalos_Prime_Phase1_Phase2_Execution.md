@@ -79,3 +79,35 @@ Scope: Build and integrate deterministic generator + enumerator + storage (Phase
 - Phase 2: Supports hybrid heuristic/LLM claims, recursive stabilization with scoring and provenance.
 - Roadmap (later): embeddings/semantic search (Phase 3) for continuation; SBI/wetware (Phase 5) for CIP.
 
+
+---
+
+## Greenfield Formal Design — Execution Reframe
+
+> **Scope reframe: audit → greenfield design.**
+> The Phase 1 and Phase 2 execution plan below is not derived from analyzing uploaded
+> whitepapers or exports.  Instead, it is derived from the novel formal system T
+> (defined in [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md)) and maps each phase to
+> one or more elements of T that must be implemented.
+
+### Formal Traceability
+
+| Phase | Formal Elements Implemented | Deliverable |
+|-------|-----------------------------|-------------|
+| Phase 1 | G (Generator), E (Enumerator) | `lob_babel_generator.py`, `lob_babel_enumerator.py`, storage |
+| Phase 2 | κ (Coherence Measure), δ (Epistemic Filter) | `lob_decoder.py`, coherence threshold enforcement |
+| Phase 3 | Extend E with vector space V: Σ\* → ℝ^n | Semantic indexing + embedding search |
+| Phase 4 | Φ distributed | Distributed assembly, scaling, observability |
+| Phase 5 | δ_bio (wetware variant) | SBI / wetware substrate integration |
+
+### Epistemic Premise
+
+The global information environment is defined by a structural imbalance: exponential
+data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
+Every execution phase directly reduces Δ(t) = P(t) − V(t) for the Thalos Prime
+deployment context by extending the reach and precision of κ and δ.
+
+### Phase Completion Criterion
+
+A phase is complete when the formal invariants I-1 through I-7 (see
+`docs/FORMAL_MODEL.md §5`) pass for all elements T introduced in that phase.

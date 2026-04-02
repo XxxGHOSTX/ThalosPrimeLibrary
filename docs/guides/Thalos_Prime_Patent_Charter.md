@@ -91,3 +91,54 @@ Thalos Prime is a Human-Directed, AI-Executed Discovery Operating System (HD-AED
 ## 13. Summary Statement
 Thalos Prime is a patentable symbiotic intelligence platform that operationalizes coherence-driven discovery over deterministic or effectively infinite information spaces (e.g., Library of Babel). It unifies deterministic generation, heuristic/LLM refinement, recursive stabilization, cross-domain translation, and optional biological computation under a single human-directed, machine-executed operating system.
 
+
+---
+
+## 14. Greenfield Formal Design (Novel System Definition)
+
+> **Scope reframe: audit → greenfield design.**
+> This section proposes the novel formal system for Thalos Prime first (authoritative),
+> then maps it onto the current repository as the target architecture for patent
+> enablement.  It supersedes any prior language about "analyzing uploaded whitepapers
+> or exports" — the formal model is designed first, independently, and the repository
+> is the implementation that converges toward it.
+
+### 14.1 Epistemic Premise (Formal Axiom)
+
+The global information environment is defined by a structural imbalance: exponential
+data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
+At any moment, the volume of potentially true, useful, or actionable information vastly
+exceeds what any human or unguided machine can verify.
+
+This axiom is the motivating condition for every novel element claimed by Thalos Prime.
+The system exists to make verification computable, deterministic, and reproducible at
+the scale of an effectively infinite information space.
+
+### 14.2 Formal System T = (Ω, Σ, G, E, κ, δ, Φ)
+
+See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
+Briefly:
+
+- **Ω** — Information universe (Library of Babel, ≈ 29^3200 pages).
+- **Σ** — 29-character Babel alphabet.
+- **G** — Deterministic page generator G: H → Σ^3200.
+- **E** — Deterministic enumerator E: Q × ℕ × ℕ → H\*.
+- **κ** — Coherence measure κ: Σ\* → [0, 100].
+- **δ** — Epistemic filter δ(x) ≡ (κ(x) ≥ κ_min).
+- **Φ** — Assembler Φ: H\* → Σ^1 312 000.
+
+### 14.3 Strengthened Patent Foundation
+
+The formal system T provides a rigorous basis for each claim category:
+
+| Claim Category | Formal Grounding |
+|----------------|-----------------|
+| Coherence-first discovery | κ is a first-class computable function, not a heuristic afterthought |
+| Deterministic infinite data | G is a total, computable bijection over Ω |
+| Recursive stabilization | δ gates every retrieval cycle; retries are bounded and seeded |
+| Cross-domain translation | Φ assembles artifacts with provenance from any sub-space of Ω |
+| Human-directed exploration | E is parameterized by user query q and constraint seed s |
+| Epistemic filter novelty | δ resolves the structural imbalance Δ(t) = P(t) − V(t) → ∞ |
+
+The formal model is independent of any specific implementation language or platform,
+supporting broad claim scope (digital, wetware, quantum substrate variants).

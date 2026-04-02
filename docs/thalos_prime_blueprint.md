@@ -231,3 +231,43 @@ In dry-run mode:
 
 Dry-run mode is used by the CI test suite so that all 64+ pipeline tests run
 without external dependencies.
+
+---
+
+## 8. Greenfield Formal Design
+
+> **Scope reframe: audit → greenfield design.**
+> Rather than analyzing existing whitepapers or exports, this section proposes the
+> novel formal system for Thalos Prime first (as the authoritative design target),
+> then maps it onto the current repository as the implementation architecture.
+
+### 8.1 Epistemic Premise
+
+The global information environment is defined by a structural imbalance: exponential
+data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
+Thalos Prime exists to resolve this asymmetry — not by producing more data, but by
+making verification computable and deterministic.
+
+### 8.2 Formal System T
+
+The authoritative formal system is **T = (Ω, Σ, G, E, κ, δ, Φ)**.
+See [`docs/FORMAL_MODEL.md`](FORMAL_MODEL.md) for the complete definition,
+formal properties, and invariant table.
+
+### 8.3 Mapping T onto This Blueprint
+
+| Formal Element | Blueprint Section | Implementation |
+|----------------|-------------------|----------------|
+| Ω (Universe) | §4 — Stage 1 Normalization filters Ω by Σ | 29-char charset |
+| G (Generator) | §4 — Stage 4 Sequence Generation | `lob_babel_generator.py` |
+| E (Enumerator) | §4 — Stage 3 Index Mapping | `lob_babel_enumerator.py` |
+| κ (Coherence) | §4 — Stage 5 Analysis & Filtering | `lob_decoder.py` |
+| δ (Filter) | §4 — Stage 5, coherence threshold | `CoherenceThresholdError` |
+| Φ (Assembler) | §4 — Stage 7 Output Handling | `VolumeAssembler` |
+
+### 8.4 Design Goal (Not Audit)
+
+The 7-stage MNN pipeline described in §2 is the **target architecture** that T
+demands.  Every stage must be fully deterministic (I-1 through I-7 in
+`docs/FORMAL_MODEL.md`), and no stage may be bypassed.  This blueprint is the
+formal design authority; CI gates enforce convergence toward it.

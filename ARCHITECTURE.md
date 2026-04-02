@@ -378,3 +378,50 @@ The following are **architectural non-conformance** conditions that must be trea
 5. **Lifecycle method in Data Plane** — `PrpIndexer`, `EdgeExecutor`, and `ExportPresenter` must not implement `initialize / operate / reconcile / checkpoint / terminate`.
 6. **Weak cryptography** — AES-ECB must not be used. The PRP indexer uses HMAC-SHA256.
 7. **Non-deterministic operations** — any use of `time.time()`, `random.random()`, or filesystem scans without explicit seeding and logging.
+
+---
+
+## Greenfield Formal Design
+
+> **Scope reframe: audit → greenfield design.**
+> This section proposes the novel formal system for Thalos Prime first (as the
+> authoritative design target), then maps it onto the current repository as the
+> implementation architecture.  It does not analyze uploaded whitepapers or exports;
+> it defines the formal model and treats the repo as the convergence target.
+
+### Epistemic Premise
+
+The global information environment is defined by a structural imbalance: exponential
+data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
+Thalos Prime resolves this asymmetry by making verification (κ) computable and
+deterministic, filtering the effectively infinite information universe (Ω) down to
+artifacts that provably satisfy the user's coherence threshold.
+
+### Formal System T
+
+The novel formal system is **T = (Ω, Σ, G, E, κ, δ, Φ)**.
+See [`docs/FORMAL_MODEL.md`](docs/FORMAL_MODEL.md) for the complete authoritative
+definition, including:
+
+- All seven formal elements and their types.
+- Formal properties (determinism, totality, coherence-first, volume invariant).
+- Sub-metric decomposition of κ.
+- Mapping of T onto repository modules.
+- Machine-checkable invariants I-1 through I-7.
+
+### Architecture as Target
+
+Every module in this architecture document is the **implementation convergence target**
+for one or more elements of T.  The control-plane / data-plane boundary maps exactly
+to the T decomposition: G, E, κ, and Φ live in the data plane; δ and the lifecycle
+contract are enforced by the control plane.
+
+| Formal Element | Plane | Key Module |
+|----------------|-------|------------|
+| G (Generator) | Data | `thalos_prime/lob_babel_generator.py` |
+| E (Enumerator) | Data | `thalos_prime/lob_babel_enumerator.py` |
+| κ (Coherence) | Data | `thalos_prime/lob_decoder.py` |
+| δ (Filter) | Control | `thalos_prime/errors.py`, `api/routes/chat.py` |
+| Φ (Assembler) | Data | Pipeline assembly in `api/routes/` |
+| Lifecycle | Control | `thalos_prime/lifecycle.py`, `thalos_nexus/` |
+| Provenance | Control | `thalos_prime/audit/trail.py` |

@@ -58,3 +58,35 @@
 
 python run_thalos.py
 # browse http://127.0.0.1:8000/
+---
+
+## Greenfield Formal Design (Novel System — Formal Model Reference)
+
+> **Scope reframe: audit → greenfield design.**
+> The formal system T is defined first (authoritative), independently of any existing
+> code.  Every claim in this scaffold maps to one or more elements of T.  The current
+> repository is the target architecture that converges toward T.
+
+### Formal System T = (Ω, Σ, G, E, κ, δ, Φ)
+
+See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
+
+### Claim-to-Formal-Element Mapping
+
+| Claim | Formal Element(s) |
+|-------|-------------------|
+| Coherence-first discovery over deterministic infinite data | κ, δ, Ω |
+| Deterministic corpus + fragment enumerator | G, E |
+| Recursive stabilization with threshold | δ (bounded retry loop) |
+| Cross-domain translation with provenance | Φ + provenance metadata |
+| Human-directed constraint steering | E parameterized by q, s |
+| Optional biological / wetware substrate | δ_bio variant of δ |
+| Hybrid heuristic + LLM normalization | κ sub-metrics (λ, σ, η, μ) + optional LLM layer |
+
+### Novel Claim Strengthening
+
+The formal definition of T resolves the structural imbalance axiom
+(Δ(t) = P(t) − V(t) → ∞) in a mathematically rigorous way.  Every independent
+claim is grounded in a named formal element of T, providing clear scope boundaries
+and defensible novelty arguments against prior art (generative AI, search engines,
+databases).
