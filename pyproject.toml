@@ -340,3 +340,12 @@ disable_error_code = ["no-untyped-call"]
 "thalos_prime/babel/interface/formatter.py" = ["FBT001", "FBT002"]
 # semantic_cli: print is intentional CLI output; return count is by design
 "thalos_prime/babel/interface/semantic_cli.py" = ["T201", "PLR0911"]
+# __main__: T201 (print for startup banner), PLC0415 (lazy imports to avoid heavy startup cost),
+# BLE001 (broad except in background worker loop to prevent scheduler crash),
+# UP012 (utf-8 encode explicit for clarity), UP032/UP012 (minor style)
+"thalos_prime/__main__.py" = ["T201", "PLC0415", "BLE001", "UP012", "UP032"]
+# errors.py: PLR0913 (CoherenceThresholdError.__init__ needs all error context fields)
+"thalos_prime/errors.py" = ["PLR0913"]
+# generative_engine.py: ARG002 (seed kept for API symmetry), PLR2004 (magic 60/80 are readable constants)
+# UP012 (utf-8 encode explicit), D401 (convenience function docstrings match style)
+"thalos_prime/generative_engine.py" = ["ARG002", "PLR2004", "UP012", "D401"]

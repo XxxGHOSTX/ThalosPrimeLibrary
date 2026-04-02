@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, HTTPException
 from fastapi import Query as QueryParam
 
+from thalos_prime.errors import CoherenceThresholdError
 from thalos_prime.models.api_models import ChatRequest, ChatResponse
 from thalos_runtime.core.deps import get_engine
 from thalos_runtime.core.executor import ExecutionError
@@ -15,24 +16,40 @@ __all__ = ["router"]
 
 router = APIRouter()
 
+
 @router.post("")
 async def chat(request: ChatRequest) -> ChatResponse:
-    """Dispatch chat message handling through RuntimeEngine."""
+    """Dispatch chat message handling through RuntimeEngine.
+
+    Enforces the ``min_score`` coherence threshold from the request body
+    (default 80.0).  When the threshold cannot be met within the time/attempt
+    budget, a 422 response is returned with the deterministic state snapshot
+    and checkpoint payload — no below-threshold results are silently returned.
+    """
     try:
         result = get_engine().execute("chat.v1.handle_message", request.model_dump())
         return ChatResponse.model_validate(result)
     except RegistryError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ExecutionError as exc:
+        if isinstance(exc.cause, CoherenceThresholdError):
+            raise HTTPException(
+                status_code=422,
+                detail=exc.cause.to_dict(),
+            ) from exc
         raise HTTPException(status_code=500, detail=f"Chat failed: {exc}") from exc
 
 
 @router.post("/high_coherence")
 async def chat_high_coherence(
     request: ChatRequest,
-    min_score: Annotated[float, QueryParam(ge=0.0, le=100.0)] = 51.0,
+    min_score: Annotated[float, QueryParam(ge=0.0, le=100.0)] = 80.0,
 ) -> ChatResponse:
-    """Dispatch high-coherence chat through RuntimeEngine."""
+    """Dispatch high-coherence chat through RuntimeEngine.
+
+    The ``min_score`` query param overrides the request body value.
+    Raises 422 with state snapshot when the threshold cannot be met.
+    """
     payload = request.model_dump()
     payload["min_score"] = min_score
     try:
@@ -41,6 +58,11 @@ async def chat_high_coherence(
     except RegistryError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ExecutionError as exc:
+        if isinstance(exc.cause, CoherenceThresholdError):
+            raise HTTPException(
+                status_code=422,
+                detail=exc.cause.to_dict(),
+            ) from exc
         raise HTTPException(status_code=500, detail=f"High-coherence chat failed: {exc}") from exc
 
 

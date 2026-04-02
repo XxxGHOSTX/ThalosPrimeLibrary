@@ -1,18 +1,36 @@
-"""Deterministic page generator for Library of Babel
-Based on the Basile algorithm from libraryofbabel.info.
+"""Deterministic page generator for the Library of Babel.
 
-The Library of Babel uses a deterministic algorithm where:
-- Each page is exactly 3200 characters
-- The charset is: space, comma, period, lowercase a-z (29 characters total)
-- Pages are generated from hexadecimal addresses using a seeded pseudo-random algorithm
-- The algorithm is reversible: text can be found at a specific address
+Implements a Linear Congruential Generator (LCG)-based algorithm for fast,
+deterministic page generation from hexadecimal addresses.  This is the
+canonical page generator; the older SHA-256-per-character approach has been
+removed.
+
+Algorithm properties:
+- Each page is exactly 3200 characters.
+- Charset: space, comma, period, lowercase a-z (29 characters total).
+- LCG constants: a=1103515245, c=12345, m=2**31 (identical to those in
+  src/lob_babel_generator.py, making results reproducible across modules).
+- The page is seeded from SHA-256(hex_address), so the same address always
+  produces the same page and different addresses produce different pages.
 """
 
 import hashlib
 
+# ---------------------------------------------------------------------------
+# Module-level LCG constants (matching src/lob_babel_generator.py exactly)
+# ---------------------------------------------------------------------------
+_LCG_A: int = 1103515245
+_LCG_C: int = 12345
+_LCG_M: int = 2**31
+
+
+def _lcg(state: int) -> int:
+    """Advance the LCG state by one step."""
+    return (_LCG_A * state + _LCG_C) % _LCG_M
+
 
 class BabelGenerator:
-    """Deterministic generator for Library of Babel pages.
+    """Deterministic generator for Library of Babel pages using LCG.
 
     The Library of Babel contains every possible combination of characters
     on a 3200-character page using a 29-character alphabet.
@@ -35,40 +53,33 @@ class BabelGenerator:
         self._reverse_map = dict(enumerate(self.CHARSET))
 
     def address_to_page(self, hex_address: str) -> str:
-        """Generate a page from a hexadecimal address.
+        """Generate a page from a hexadecimal address using the LCG algorithm.
 
-        This uses a deterministic algorithm based on the hex address as a seed.
-        The algorithm ensures that the same address always generates the same page.
+        The address is hashed with SHA-256 to derive a 32-bit integer seed,
+        then the LCG advances once per character to select from CHARSET.
+        The same address always produces the same page.
 
         Args:
-            hex_address: Hexadecimal string (typically 3260 chars for full address)
+            hex_address: Hexadecimal string (any length).
 
         Returns:
-            A 3200-character page string
+            A 3200-character page string using the 29-character Library charset.
 
         """
-        # Normalize the hex address
         hex_address = hex_address.lower().strip()
-
-        # Use the hex address as a seed for deterministic generation
-        # We'll use SHA-256 to create a deterministic sequence
-        seed = hex_address.encode("utf-8")
-
-        # Generate the page character by character
-        page_chars = []
-        for position in range(self.PAGE_LENGTH):
-            # Create a unique hash for each position using the seed and position
-            position_seed = seed + str(position).encode("utf-8")
-            hash_digest = hashlib.sha256(position_seed).digest()
-
-            # Convert first 4 bytes to an integer
-            hash_int = int.from_bytes(hash_digest[:4], byteorder="big")
-
-            # Map to character index (0-28)
-            char_index = hash_int % self.CHARSET_SIZE
-            page_chars.append(self.CHARSET[char_index])
-
+        seed = self._seed_from_hex(hex_address)
+        state = seed
+        page_chars: list[str] = []
+        for _ in range(self.PAGE_LENGTH):
+            state = _lcg(state)
+            page_chars.append(self.CHARSET[state % self.CHARSET_SIZE])
         return "".join(page_chars)
+
+    @staticmethod
+    def _seed_from_hex(hex_address: str) -> int:
+        """Derive a deterministic 32-bit seed from a hex address string."""
+        digest = hashlib.sha256(hex_address.encode("utf-8")).digest()
+        return int.from_bytes(digest[:4], "big")
 
     def text_to_address(self, text: str) -> str:
         """Convert text to its canonical address in the Library.
@@ -84,19 +95,15 @@ class BabelGenerator:
             Hexadecimal address string
 
         """
-        # Normalize text (pad or truncate to 3200 chars)
         normalized = self._normalize_text(text)
 
-        # Convert to base-29 representation
         address_value = 0
-        for _i, char in enumerate(normalized):
+        for char in normalized:
             if char in self._charset_map:
                 char_index = self._charset_map[char]
                 address_value = address_value * self.CHARSET_SIZE + char_index
 
-        # Convert to hexadecimal
         return f"{address_value:x}"
-
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text to the Library of Babel format.
@@ -112,10 +119,8 @@ class BabelGenerator:
             Normalized text of exactly PAGE_LENGTH characters
 
         """
-        # Convert to lowercase
         text = text.lower()
 
-        # Replace unsupported characters with space
         normalized_chars = []
         for char in text:
             if char in self._charset_map:
@@ -125,11 +130,10 @@ class BabelGenerator:
 
         normalized = "".join(normalized_chars)
 
-        # Pad or truncate to PAGE_LENGTH
         if len(normalized) < self.PAGE_LENGTH:
             normalized = normalized + " " * (self.PAGE_LENGTH - len(normalized))
         else:
-            normalized = normalized[:self.PAGE_LENGTH]
+            normalized = normalized[: self.PAGE_LENGTH]
 
         return normalized
 
@@ -153,21 +157,20 @@ class BabelGenerator:
         return True, ""
 
     def generate_random_address(self, seed: str | None = None) -> str:
-        """Generate a pseudo-random hex address.
+        """Generate a deterministic hex address from an optional seed.
+
+        When seed is None a fixed default is used so the method remains
+        deterministic (non-deterministic time-based seeding has been removed).
 
         Args:
-            seed: Optional seed string for reproducible randomness
+            seed: Optional seed string for reproducible generation.
 
         Returns:
-            Hexadecimal address string
+            Hexadecimal address string (80 hex characters).
 
         """
-        if seed is None:
-            import time
-            seed = str(time.time())
-
-        # Generate a deterministic "random" address from seed
-        hash_digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+        effective_seed = seed if seed is not None else "thalos-prime-default-seed"
+        hash_digest = hashlib.sha256(effective_seed.encode("utf-8")).hexdigest()
         return hash_digest[:80]  # Use first 80 hex chars as address
 
 

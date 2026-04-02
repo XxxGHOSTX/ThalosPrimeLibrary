@@ -1,9 +1,19 @@
 // API Client - Handles all API communications
 
+// Supported search/chat modes.
+const SEARCH_MODES = Object.freeze({
+    LOCAL: 'local',
+    REMOTE: 'remote',
+    HYBRID: 'hybrid',
+    GENERATIVE: 'generative',
+});
+
 class APIClient {
     constructor(baseURL = '/api/v1') {
         this.baseURL = baseURL;
         this.sessionId = this.loadSessionId();
+        // Expose mode constants on the instance for UI convenience.
+        this.MODES = SEARCH_MODES;
     }
     
     loadSessionId() {
@@ -49,14 +59,16 @@ class APIClient {
     }
     
     // Chat endpoints
-    async sendChat(message, mode = 'hybrid', maxResults = 5, minScore = 51) {
-        return this.request(`/chat/high_coherence?min_score=${encodeURIComponent(minScore)}`, {
+    // Default mode is 'generative' for coherent responses; default min_score is 80.
+    async sendChat(message, mode = SEARCH_MODES.GENERATIVE, maxResults = 5, minScore = 80) {
+        return this.request(`/chat`, {
             method: 'POST',
             body: JSON.stringify({
                 message,
                 session_id: this.sessionId,
                 max_results: maxResults,
-                mode
+                mode,
+                min_score: minScore,
             })
         });
     }
@@ -66,7 +78,7 @@ class APIClient {
     }
     
     // Search endpoints
-    async search(query, maxResults = 10, mode = 'hybrid', minScore = 0) {
+    async search(query, maxResults = 10, mode = SEARCH_MODES.HYBRID, minScore = 0) {
         return this.request('/search/', {
             method: 'POST',
             body: JSON.stringify({
