@@ -401,14 +401,18 @@ artifacts that provably satisfy the user's coherence threshold.
 
 The novel formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
 See [`docs/FORMAL_MODEL.md`](docs/FORMAL_MODEL.md) for the complete authoritative
-definition, including:
+Formal Specification v1.0 definition, including:
 
-- All seven formal elements and their types.
-- Canonical artifact schema ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩.
+- All seven formal elements with precise types (e.g. I: X\* → ℤⁿ, R: (ℤⁿ × B_t) → H, V: H → {A,P,D,R}).
+- Canonical artifact schema ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ and coordinate hierarchy ⟨h_i, w_i, s_i, v_i, p_i⟩.
 - Two-tier architecture (Core Production + Advanced Research Modules).
-- Formal properties (determinism, commutative reasoning, no confidence laundering).
-- FACS Bundle (Flags, Annotations, Contradiction maps, Suspension logs).
-- Machine-checkable invariants I-1 through I-9.
+- B_t four-state machine (Accepted/Pending/Disputed/Rejected) with update rule B_{t+1} = V(R(I(D_t), B_t)).
+- 4-round Feistel PRP construction with HMAC-SHA256.
+- R-Matrix YBE in braided form; Persistent Homology (β₀/β₁/β₂); POTSA multilingual ingestion.
+- FACS Bundle (Flags, Annotations, Contradiction maps, Suspension logs) with 238ms latency target.
+- Genesis Lock TrustRoot = KDF(HW_ID ‖ Sign_Auctor(IEPL)) and Aegis governance.
+- Machine-checkable invariants I-Tr through I-9; failure mode analysis.
+- Math-to-code mappings; 8 design principles.
 
 ### Architecture as Target
 
@@ -419,10 +423,10 @@ lifecycle contract are enforced by the control plane.
 
 | Formal Element | Plane | Key Module |
 |----------------|-------|------------|
-| D (Artifact Corpus) | Both | `thalos_prime/belief/ledger.py` (ctrl), `lob_babel_generator.py` (data) |
-| I (PRP Indexer) | Data | `thalos_prime/indexing/prp.py`, `lob_babel_enumerator.py` |
-| R (Reasoning) | Data | `thalos_prime/lob_decoder.py` |
-| V (Verification / Genesis Lock) | Control | `thalos_prime/audit/trail.py`, `thalos_nexus/nucleus.py` |
-| E (Execution Engine) | Data | `lob_babel_generator.py`, `lob_decoder.py` |
-| P (Provenance / FACS) | Control | `thalos_prime/audit/trail.py`, `belief/ledger.py` |
-| B_t (Belief Base) | Control | `thalos_prime/belief/ledger.py`, `thalos_nexus/spine.py` |
+| D (Artifact Corpus / X\*) | Both | `thalos_prime/belief/ledger.py` (ctrl), `lob_babel_generator.py` (data) |
+| I (PRP Feistel Bijection / X\*→ℤⁿ) | Data | `thalos_prime/indexing/prp.py`, `lob_babel_enumerator.py` |
+| R (Reasoning Operator / (ℤⁿ×B_t)→H) | Data | `thalos_prime/lob_decoder.py` |
+| V (Validation / H→{A,P,D,R} + Genesis Lock) | Control | `thalos_prime/audit/trail.py`, `thalos_nexus/nucleus.py` |
+| E (Edge Execution / Ω_edge) | Data | `lob_babel_generator.py`, `lob_decoder.py` |
+| P (Presentation / FACS Bundle / B_t→Γ) | Control | `thalos_prime/audit/trail.py`, `belief/ledger.py` |
+| B_t (Belief Base / A\* four-state) | Control | `thalos_prime/belief/ledger.py`, `thalos_nexus/spine.py` |

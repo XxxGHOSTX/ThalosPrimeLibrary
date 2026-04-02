@@ -116,19 +116,18 @@ the scale of an effectively infinite information space.
 
 ### 14.2 Formal System T = ⟨D, I, R, V, E, P, B_t⟩
 
-See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
-Briefly:
+See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete Formal Specification v1.0 definition.
+Briefly, with formal types:
 
-- **D** — Artifact corpus; each artifact carries ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩.
-- **I** — Deterministic PRP indexer (keyed invertible transform; zero-storage).
-- **R** — Reasoning engine satisfying the Yang-Baxter Equation (commutative
-  reasoning invariance).
-- **V** — Verification layer: Genesis Lock (signed audit trail) + ZK-SNARK proofs
-  (Groth16).
-- **E** — Edge-native execution engine (MNN / Mojo / MLIR).
-- **P** — Provenance / FACS Bundle (Flags, Annotations, Contradiction maps,
-  Suspension logs).
-- **B_t** — Time-indexed belief base; stateful epistemic ledger.
+| Symbol | Formal Type | Role |
+|--------|-------------|------|
+| **D** | X\* | Distributed Data Corpus; each artifact carries ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ |
+| **I** | X\* → ℤⁿ | Deterministic PRP bijection (4-round Feistel + HMAC-SHA256); coord_i = ⟨h_i, w_i, s_i, v_i, p_i⟩ |
+| **R** | (ℤⁿ × B_t) → H | Reasoning operator satisfying the Yang-Baxter Equation (commutative reasoning invariance) |
+| **V** | H → {A, P, D, R} | Adversarial validation: maps hypotheses to Accepted/Pending/Disputed/Rejected states |
+| **E** | Ω_edge | Edge-native execution engine (MNN / Mojo / MLIR); ~238ms FACS latency target |
+| **P** | B_t → Γ | Dual-channel presentation: narrative + proof-trace (JSON-LD / Merkle); FACS Bundle |
+| **B_t** | A\* | Time-indexed belief base; evolves via B_{t+1} = V(R(I(D_t), B_t)) |
 
 ### 14.3 Strengthened Patent Foundation
 
@@ -137,12 +136,14 @@ The formal system T provides a rigorous basis for each claim category:
 | Claim Category | Formal Grounding |
 |----------------|-----------------|
 | Sovereign epistemic OS | T = ⟨D, I, R, V, E, P, B_t⟩ — complete seven-tuple architecture |
-| Stateful belief management | B_t — living ledger of claims, hypotheses, and confidence scores |
-| No confidence laundering | P's suspension log circuit-breaker, enforced before any output |
-| Deterministic zero-storage indexing | I — PRP bijection; library exists as function, not storage |
-| Commutative reasoning invariance | R — Yang-Baxter Equation guarantees path-independent convergence |
-| Tamper-evident verification | V — Genesis Lock hash-chain + ZK-SNARK proofs |
-| Canonical provenance | ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ schema on every artifact |
+| Stateful belief management | B_t — four-state machine (Accepted/Pending/Disputed/Rejected); archived rejections prevent re-hallucination |
+| No confidence laundering | P's FACS suspension log circuit-breaker, enforced before any output |
+| Deterministic zero-storage indexing | I — 4-round Feistel PRP bijection; library exists as function, not storage |
+| Commutative reasoning invariance | R — YBE braided form: (R⊗id)∘(id⊗R)∘(R⊗id) = (id⊗R)∘(R⊗id)∘(id⊗R) |
+| Tamper-evident verification | V — Genesis Lock TrustRoot = KDF(HW_ID ‖ Sign_Auctor(IEPL)) + ZK-SNARK proofs |
+| Canonical provenance | ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ schema; coord_i = ⟨h_i, w_i, s_i, v_i, p_i⟩ |
+| Persistence of rejection | B_t^rejected is permanently archived — claims cannot recur as accepted facts |
+| 238ms invisible validation | FACS pipeline optimized for sub-250ms on edge hardware |
 
 The formal model is independent of any specific implementation language or platform,
 supporting broad claim scope (digital, wetware, quantum substrate variants).
