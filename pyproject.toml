@@ -323,6 +323,19 @@ disable_error_code = ["no-untyped-call"]
 ]
 # Babel subsystem: runtime imports used in annotations across all layers
 "thalos_prime/babel/**/*.py" = ["TC001", "TC003"]
+# Indexing: TRY003 (ValueError in __init__ and _prp_transform use built-in exception types by design)
+"thalos_prime/indexing/**/*.py" = ["TRY003"]
+# Belief: TRY003 (KeyError/ValueError with messages use built-in exception types by design)
+"thalos_prime/belief/**/*.py" = ["TRY003"]
+# Validation pipeline: TRY003/EM101/EM102 (ValueError/OverflowError with messages by design)
+# ARG002: artifact reserved param in _stage_admission for future use
+"thalos_prime/validation/**/*.py" = ["TRY003", "EM101", "EM102", "ARG002"]
+# Audit trail: TRY003/EM101/EM102 (ValueError/TypeError with messages by design)
+# PLR0913: append() intentionally takes 6 parameters to mirror the operate() lifecycle alias
+"thalos_prime/audit/**/*.py" = ["TRY003", "EM101", "EM102", "PLR0913"]
+# Edge executor: TRY003/EM101/EM102 (ValueError/OverflowError with messages by design)
+# BLE001: catching ValueError in execute_queued to capture failures as results
+"thalos_prime/edge/**/*.py" = ["TRY003", "EM101", "EM102", "BLE001"]
 # formatter: boolean positional arg is part of the public interface contract
 "thalos_prime/babel/interface/formatter.py" = ["FBT001", "FBT002"]
 # semantic_cli: print is intentional CLI output; return count is by design

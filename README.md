@@ -357,6 +357,36 @@ The server starts on **http://localhost:8000** by default.
 | http://localhost:8000/redoc | ReDoc (read-only) |
 | http://localhost:8000 | Matrix-style browser UI |
 
+### Artifact Epistemic Endpoints
+
+The TPL epistemic pipeline is exposed under `/api/v1/artifacts/`:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/artifacts/ingest` | Ingest raw data → validate → admit to belief base |
+| `GET`  | `/api/v1/artifacts/artifact/{id}` | Retrieve BeliefRecord for an artifact |
+| `POST` | `/api/v1/artifacts/derive` | Derive a claim from ACCEPTED artifacts |
+| `GET`  | `/api/v1/artifacts/export/{id}` | Export artifact + ProofTrace bundle |
+| `GET`  | `/api/v1/artifacts/graph/{id}` | Lineage graph for an artifact |
+| `POST` | `/api/v1/artifacts/consensus` | Find the highest-confidence accepted artifact |
+
+**Example: ingest an artifact**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/artifacts/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Gravitational waves carry energy away from binary stars.",
+       "source_uris": ["https://arxiv.org/example"]}'
+```
+
+**Example: derive a claim from accepted artifacts**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/artifacts/derive \
+  -H "Content-Type: application/json" \
+  -d '{"artifact_ids": ["<accepted-artifact-id>"], "operation": "summarize"}'
+```
+
 ### ASGI / Vercel Deployment
 
 The root `app.py` is the ASGI entrypoint compatible with Vercel and any ASGI host:
@@ -465,7 +495,7 @@ ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`
 
 | Package | Description |
 |---------|-------------|
-| `api/` | FastAPI REST server — search, generation, enumeration, decoding, chat, admin |
+| `api/` | FastAPI REST server — search, generation, enumeration, decoding, chat, admin, artifacts |
 | `ui/` | Matrix-style HTML5 browser interface |
 | `cli/` | Command-line interface with lazy heavy-dependency imports |
 | `library_of_sense/` | Multi-source query orchestration and knowledge synthesis |
@@ -488,8 +518,27 @@ ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`
 | `utils/` | Shared utility helpers |
 | `config.py` | `LibraryConfig` and `setup_local_imports()` |
 
-For the complete architectural specification see [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) and
-[docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md).
+### TPL Epistemic Subsystems (Control Plane)
+
+These subsystems implement the deterministic epistemic pipeline:
+
+| Package | Role |
+|---------|------|
+| `artifacts/` | Canonical `Artifact` schema, `GenesisLock` signing, `FacsBundle` |
+| `belief/` | `BeliefLedger` — epistemic state machine (`B_t`) |
+| `validation/` | `ValidationPipeline` — 6-stage deterministic admission control |
+| `reasoning_tpl/` | `TplReasoningLayer` — derive claims from ACCEPTED artifacts |
+| `audit/` | `AuditTrail` — SHA-256 chained tamper-evident event log |
+
+### TPL Data Plane Subsystems
+
+| Package | Role |
+|---------|------|
+| `indexing/` | `PrpIndexer` — HMAC-SHA256 PRF → 5-tuple `Coordinate` |
+| `edge/` | `EdgeExecutor` — bounded `deque`-backed deterministic executor |
+| `export/` | `ExportPresenter` — `ProofTrace`, `LineageGraph`, JSON export |
+
+For the complete architectural specification see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
