@@ -42,7 +42,7 @@ class BabelGenerateTask:
 
     def operate(self) -> GenerateResponse:
         assert self._request is not None
-        address = self._request.address if self._request.address else text_to_address(self._request.query or "")
+        address = self._request.address or text_to_address(self._request.query or "")
         page_text = address_to_page(address)
         valid = True
         if self._request.validate_page:

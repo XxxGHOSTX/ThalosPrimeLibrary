@@ -50,6 +50,7 @@ class LegacyAdapter:
         Returns:
             Structured synthesis result from
             ``thalos_prime.synthesis.deep_synthesis()``.
+
         """
         query: str = str(payload.get("query", "thalos runtime legacy task"))
         logger.info("LegacyAdapter.run(): query=%r", query)
@@ -71,6 +72,7 @@ class LegacyPlugin:
 
         Returns:
             The string ``"legacy"``.
+
         """
         return _PLUGIN_NAME
 
@@ -79,6 +81,7 @@ class LegacyPlugin:
 
         Args:
             engine: RuntimeEngine instance to register the handler into.
+
         """
         adapter = LegacyAdapter()
         engine.register_module(_PLUGIN_NAME, adapter)

@@ -143,7 +143,7 @@ class ChatTask:
             msg = "ChatTask validation failed: session not initialized"
             raise RuntimeError(msg)
 
-    def operate(self) -> ChatResponse:  # noqa: C901
+    def operate(self) -> ChatResponse:
         assert self._request is not None
         assert self._context is not None
         assert self._session_id is not None
@@ -176,7 +176,7 @@ class ChatTask:
 
         # Keep only results that meet the min_score filter (if any passed)
         qualified = [r for r in results if r.coherence.overall_score >= min_score]
-        final_results = qualified if qualified else results
+        final_results = qualified or results
         final_results = final_results[: self._request.max_results]
         final_results.sort(key=lambda item: item.coherence.overall_score, reverse=True)
         self._results = final_results

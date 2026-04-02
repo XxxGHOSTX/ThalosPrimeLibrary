@@ -22,7 +22,7 @@ from thalos_runtime.core.engine import EngineInitializationError, RuntimeEngine
 from thalos_runtime.core.executor import ExecutionError, TaskExecutor
 from thalos_runtime.core.memory import ExecutionMemory, ExecutionRecord
 from thalos_runtime.core.registry import RegistryError, TaskHandler, TaskRegistry
-from thalos_runtime.plugins.loader import PluginInterface, PluginLoadError, PluginLoader
+from thalos_runtime.plugins.loader import PluginInterface, PluginLoader, PluginLoadError
 
 __all__ = [
     "EngineInitializationError",

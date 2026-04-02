@@ -17,11 +17,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "pydantic>=2.0.0",
@@ -350,3 +346,15 @@ disable_error_code = ["no-untyped-call"]
 # generative_engine.py: ARG002 (seed kept for API symmetry), PLR2004 (magic 60/80 are readable constants)
 # UP012 (utf-8 encode explicit), D401 (convenience function docstrings match style)
 "thalos_prime/generative_engine.py" = ["ARG002", "PLR2004", "UP012", "D401"]
+# thalos_runtime core modules: ANN401 (Any is required for plugin dispatch),
+# PLC0415 (lazy imports to avoid circular dependencies at module load),
+# TRY003/EM101/EM102/TRY301/TRY400/TC001/TC003 (typed exceptions by design)
+"thalos_runtime/**/*.py" = [
+    "ANN401", "PLC0415",
+    "TRY003", "EM101", "EM102", "TRY301", "TRY400",
+    "TC001", "TC003",
+]
+# thalos_runtime plugins: D102/D107 (method/nested docstrings follow internal convention),
+# S101 (assert used in task validate() lifecycle methods by design),
+# E501 (long lines in structured log messages are acceptable), PLR0913 (>5 params in common helpers)
+"thalos_runtime/plugins/**/*.py" = ["D102", "D107", "S101", "E501", "PLR0913"]

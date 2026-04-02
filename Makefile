@@ -30,13 +30,13 @@ install:
 
 typecheck:
 	@echo "Running mypy..."
-	mypy thalos_prime tests --strict --show-error-codes --no-implicit-optional
+	mypy thalos_prime thalos_runtime tests --strict --show-error-codes --no-implicit-optional
 	@echo "Running pyright..."
-	pyright thalos_prime tests
+	pyright thalos_prime thalos_runtime tests
 
 lint:
 	@echo "Running ruff..."
-	ruff check thalos_prime tests --select ALL --ignore COM812,ISC001,ANN101,ANN102,D203,D213
+	ruff check thalos_prime thalos_runtime tests --select ALL --ignore COM812,ISC001,ANN101,ANN102,D203,D213
 
 test:
 	@echo "Running pytest with coverage..."

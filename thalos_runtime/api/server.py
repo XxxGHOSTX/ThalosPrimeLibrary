@@ -19,8 +19,9 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -43,6 +44,7 @@ def _get_engine() -> RuntimeEngine:
 
     Raises:
         RuntimeError: If the engine has not been initialized yet.
+
     """
     if _engine is None:
         raise RuntimeError(
@@ -57,6 +59,7 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
 
     Args:
         app: FastAPI application instance (unused, required by signature).
+
     """
     global _engine  # noqa: PLW0603
     logger.info("Thalos Runtime API: startup")
@@ -89,6 +92,7 @@ class ExecuteRequest(BaseModel):
     Attributes:
         task: Name of the task to execute.
         payload: Arbitrary JSON payload passed to the task handler.
+
     """
 
     task: str
@@ -101,6 +105,7 @@ class ExecuteResponse(BaseModel):
     Attributes:
         task: Name of the task that was executed.
         result: Value returned by the task handler.
+
     """
 
     task: str
@@ -113,6 +118,7 @@ class HealthResponse(BaseModel):
     Attributes:
         status: Operational status string.
         tasks: List of registered task names.
+
     """
 
     status: str
@@ -132,6 +138,7 @@ def execute(request: ExecuteRequest) -> ExecuteResponse:
     Raises:
         HTTPException: 404 if the task is not registered.
         HTTPException: 500 if the handler raises an exception.
+
     """
     engine = _get_engine()
     try:
@@ -149,6 +156,7 @@ def health() -> HealthResponse:
 
     Returns:
         HealthResponse with status and registered task names.
+
     """
     engine = _get_engine()
     return HealthResponse(status="ok", tasks=engine.task_names())

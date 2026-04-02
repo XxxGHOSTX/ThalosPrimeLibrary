@@ -31,6 +31,9 @@ ENV/
 env/
 .venv
 
+# Secrets / local environment overrides — use .env.example as a template
+.env
+
 # IDEs
 .vscode/
 .idea/

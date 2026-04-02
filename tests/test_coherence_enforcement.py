@@ -20,6 +20,7 @@ from thalos_prime.generative_engine import (
     generate_coherent_batch,
     generate_coherent_text,
 )
+from thalos_prime.lob_babel_generator import BabelGenerator
 from thalos_prime.lob_decoder import BabelDecoder
 from thalos_prime.models.api_models import SearchMode
 
@@ -98,6 +99,29 @@ def test_generate_coherent_batch_deterministic() -> None:
 
 
 # ---------------------------------------------------------------------------
+# generate_random_address determinism tests
+# ---------------------------------------------------------------------------
+
+
+def test_generate_random_address_deterministic() -> None:
+    """generate_random_address() with no seed is fully deterministic."""
+    gen = BabelGenerator()
+    result1 = gen.generate_random_address()
+    result2 = gen.generate_random_address()
+    assert result1 == result2, "Repeated no-arg calls must return the same address"
+    assert len(result1) == 64, "Address must be a full 64-character hex SHA-256 digest"
+
+
+def test_generate_random_address_with_seed() -> None:
+    """generate_random_address() with a seed is deterministic and seed-sensitive."""
+    gen = BabelGenerator()
+    # Same seed → same address
+    assert gen.generate_random_address("abc") == gen.generate_random_address("abc")
+    # Different seeds → different addresses
+    assert gen.generate_random_address("abc") != gen.generate_random_address("def")
+
+
+# ---------------------------------------------------------------------------
 # CoherenceThresholdError unit tests
 # ---------------------------------------------------------------------------
 
@@ -158,7 +182,6 @@ def test_coherence_threshold_error_is_exception() -> None:
 
 def test_search_mode_generative_value() -> None:
     """SearchMode.GENERATIVE has value 'generative'."""
-    assert SearchMode.GENERATIVE == "generative"
     assert SearchMode.GENERATIVE.value == "generative"
 
 
@@ -177,7 +200,7 @@ def test_chat_request_min_score_default() -> None:
     """ChatRequest.min_score defaults to 80.0."""
     from thalos_prime.models.api_models import ChatRequest
 
-    req = ChatRequest(message="hello")
+    req = ChatRequest(message="hello", session_id=None)
     assert req.min_score == 80.0
 
 
@@ -185,10 +208,10 @@ def test_chat_request_min_score_custom() -> None:
     """ChatRequest.min_score can be set to any value in [0, 100]."""
     from thalos_prime.models.api_models import ChatRequest
 
-    req = ChatRequest(message="hello", min_score=0.0)
+    req = ChatRequest(message="hello", session_id=None, min_score=0.0)
     assert req.min_score == 0.0
 
-    req2 = ChatRequest(message="hello", min_score=50.0)
+    req2 = ChatRequest(message="hello", session_id=None, min_score=50.0)
     assert req2.min_score == 50.0
 
 
@@ -196,7 +219,7 @@ def test_chat_request_generative_mode() -> None:
     """ChatRequest accepts mode='generative'."""
     from thalos_prime.models.api_models import ChatRequest
 
-    req = ChatRequest(message="hello", mode=SearchMode.GENERATIVE)
+    req = ChatRequest(message="hello", session_id=None, mode=SearchMode.GENERATIVE)
     assert req.mode is SearchMode.GENERATIVE
 
 

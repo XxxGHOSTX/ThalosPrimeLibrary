@@ -130,32 +130,105 @@ class BackgroundTaskError(Exception):
 
 
 def _run_index_refresh(task: WorkerTask) -> None:
-    """Perform a single index refresh step for the given worker task."""
-    logger.debug(
-        "index_refresh: step=%d seed=%d interval=%.1fs",
+    """Evict stale SEARCH_CACHE entries (index reconciliation step).
+
+    Removes entries whose wall-clock timestamp exceeds the 1-hour cache TTL.
+    The SEARCH_CACHE itself uses ``time.time()`` for expiry tracking, so
+    wall-clock comparison here is the correct and intended approach.
+    Logs entry counts before/after with step, seed, and config hash.
+    """
+    from thalos_prime.api.routes.search import CACHE_TTL, SEARCH_CACHE
+
+    cutoff = time.time() - float(CACHE_TTL)
+    before_count = len(SEARCH_CACHE)
+    stale_keys = [k for k, (_, ts) in SEARCH_CACHE.items() if ts < cutoff]
+    for k in stale_keys:
+        del SEARCH_CACHE[k]
+    after_count = len(SEARCH_CACHE)
+    logger.info(
+        "index_refresh: step=%d seed=%d — evicted %d stale entries (%d → %d)",
         task.step,
         task.seed,
-        task.interval_s,
+        len(stale_keys),
+        before_count,
+        after_count,
     )
 
 
 def _run_cache_warm(task: WorkerTask) -> None:
-    """Perform a single cache warming step for the given worker task."""
-    logger.debug(
-        "cache_warm: step=%d seed=%d interval=%.1fs",
+    """Pre-warm SEARCH_CACHE with Babel pages for recent session queries.
+
+    Collects the most-recently-used user queries from the session store
+    (up to 5) and pre-generates their Babel address mappings, storing the
+    results in SEARCH_CACHE so subsequent requests are served instantly.
+    All address derivation is fully deterministic given the query text.
+    """
+    from thalos_prime.api.routes.search import SEARCH_CACHE
+    from thalos_prime.lob_babel_enumerator import enumerate_addresses
+    from thalos_prime.lob_babel_generator import address_to_page
+    from thalos_runtime.plugins.chat_task import SESSION_STORE
+
+    # Collect unique user queries from all active sessions (ordered by insertion)
+    queries: list[str] = []
+    seen_queries: set[str] = set()
+    for session in SESSION_STORE.sessions.values():
+        for msg in session.get("history", []):
+            if msg.get("role") == "user":
+                content = str(msg["content"])
+                if content not in seen_queries:
+                    seen_queries.add(content)
+                    queries.append(content)
+
+    # Warm at most 5 unique queries to keep the warm set bounded
+    warm_candidates = queries[:5]
+    warmed = 0
+    for query in warm_candidates:
+        cache_key = f"warm:{query}"
+        if cache_key not in SEARCH_CACHE:
+            addresses = enumerate_addresses(query, max_results=1)
+            if addresses:
+                addr = str(addresses[0]["address"])
+                page = address_to_page(addr)
+                SEARCH_CACHE[cache_key] = ({"address": addr, "page": page}, time.time())
+                warmed += 1
+    logger.info(
+        "cache_warm: step=%d seed=%d — warmed %d new entries from %d session queries",
         task.step,
         task.seed,
-        task.interval_s,
+        warmed,
+        len(warm_candidates),
     )
 
 
 def _run_session_maintenance(task: WorkerTask) -> None:
-    """Perform a single session maintenance step for the given worker task."""
-    logger.debug(
-        "session_maintenance: step=%d seed=%d interval=%.1fs",
+    """Prune empty/abandoned sessions from SESSION_STORE.
+
+    Removes sessions that were created but never used (history is empty
+    and sequence counter is 0).  These ghost sessions accumulate when
+    clients open connections but never send messages.  No wall-clock
+    comparison is needed — the pruning criterion is purely structural
+    and therefore fully deterministic.
+    """
+    from thalos_runtime.plugins.chat_task import SESSION_STORE
+
+    sessions = SESSION_STORE.sessions
+    before_count = len(sessions)
+    # Abandon criterion: no message history and sequence never advanced
+    abandoned = [
+        sid
+        for sid, s in sessions.items()
+        if not s.get("history") and int(s.get("sequence", 0)) == 0
+    ]
+    for sid in abandoned:
+        del sessions[sid]
+    after_count = len(sessions)
+    logger.info(
+        "session_maintenance: step=%d seed=%d — pruned %d abandoned sessions (%d → %d)",
         task.step,
         task.seed,
-        task.interval_s,
+        len(abandoned),
+        before_count,
+        after_count,
     )
 
 

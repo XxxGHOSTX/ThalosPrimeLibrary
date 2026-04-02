@@ -32,6 +32,7 @@ class TaskHandler(Protocol):
 
         Returns:
             Task result (any serializable value).
+
         """
         ...
 
@@ -42,6 +43,7 @@ class RegistryError(Exception):
     Attributes:
         task: The task name that caused the error.
         reason: Human-readable explanation of the violation.
+
     """
 
     def __init__(self, task: str, reason: str) -> None:
@@ -50,6 +52,7 @@ class RegistryError(Exception):
         Args:
             task: Task name that caused the error.
             reason: Human-readable explanation of the violation.
+
         """
         super().__init__(f"Registry error for task '{task}': {reason}")
         self.task = task
@@ -77,6 +80,7 @@ class TaskRegistry:
 
         Raises:
             RegistryError: If the name is already registered.
+
         """
         if name in self._handlers:
             raise RegistryError(name, "task already registered")
@@ -94,6 +98,7 @@ class TaskRegistry:
 
         Raises:
             RegistryError: If no handler is registered for the task.
+
         """
         handler = self._handlers.get(name)
         if handler is None:
@@ -105,6 +110,7 @@ class TaskRegistry:
 
         Returns:
             Sorted list of registered task identifiers.
+
         """
         return sorted(self._handlers)
 
@@ -113,6 +119,7 @@ class TaskRegistry:
 
         Returns:
             Dict with the list of registered task names.
+
         """
         return {"registered_tasks": self.names()}
 

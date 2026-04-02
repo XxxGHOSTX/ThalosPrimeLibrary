@@ -107,10 +107,7 @@ class ChatHighCoherenceTask:
             payload = self._attempt_payload(attempt)
             response = ChatTask().run(payload)
             selected, attempt_satisfied = self._select_high_coherence(response)
-            if best_response is None:
-                best_response = response
-                best_selected = selected
-            elif self._is_better_response(selected, best_selected):
+            if best_response is None or self._is_better_response(selected, best_selected):
                 best_response = response
                 best_selected = selected
             if attempt_satisfied:
