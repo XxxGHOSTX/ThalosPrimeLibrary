@@ -92,22 +92,27 @@ Scope: Build and integrate deterministic generator + enumerator + storage (Phase
 
 ### Formal Traceability
 
+The formal system T = ⟨D, I, R, V, E, P, B_t⟩ maps onto the phased execution plan
+as follows.  Each phase implements one or more formal elements (see
+[`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for full definitions):
+
 | Phase | Formal Elements Implemented | Deliverable |
 |-------|-----------------------------|-------------|
-| Phase 1 | G (Generator), E (Enumerator) | `lob_babel_generator.py`, `lob_babel_enumerator.py`, storage |
-| Phase 2 | κ (Coherence Measure), δ (Epistemic Filter) | `lob_decoder.py`, coherence threshold enforcement |
-| Phase 3 | Extend E with vector space V: Σ\* → ℝ^n | Semantic indexing + embedding search |
-| Phase 4 | Φ distributed | Distributed assembly, scaling, observability |
-| Phase 5 | δ_bio (wetware variant) | SBI / wetware substrate integration |
+| Phase 1 | I (PRP indexer), E (generator) | `lob_babel_generator.py`, `lob_babel_enumerator.py`, storage |
+| Phase 2 | R (coherence scoring / FACS filter), P (provenance) | `lob_decoder.py`, FACS suspension, coherence threshold enforcement |
+| Phase 3 | D + I extended (geometric hashing) | Semantic indexing + invariant manifold hashing |
+| Phase 4 | R full (R-Matrix / YBE) | Commutative reasoning invariance engine |
+| Phase 5 | V full (DeScAI + ZK-SNARKs), E variant (wetware) | Distributed veridiction, ZK-verifiable chains |
 
 ### Epistemic Premise
 
-The global information environment is defined by a structural imbalance: exponential
-data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
-Every execution phase directly reduces Δ(t) = P(t) − V(t) for the Thalos Prime
-deployment context by extending the reach and precision of κ and δ.
+The global information environment is defined by a structural imbalance where
+exponential data production has outpaced the capacity for verifiable reasoning and
+deterministic retrieval.  Every execution phase reduces this imbalance by implementing
+more elements of T, progressively converging the system toward sovereign epistemic
+operating system status.
 
 ### Phase Completion Criterion
 
-A phase is complete when the formal invariants I-1 through I-7 (see
-`docs/FORMAL_MODEL.md §5`) pass for all elements T introduced in that phase.
+A phase is complete when the formal invariants I-1 through I-9 (see
+`docs/FORMAL_MODEL.md §6`) pass for all elements of T introduced in that phase.

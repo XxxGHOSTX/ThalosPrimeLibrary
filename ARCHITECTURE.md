@@ -399,29 +399,30 @@ artifacts that provably satisfy the user's coherence threshold.
 
 ### Formal System T
 
-The novel formal system is **T = (Ω, Σ, G, E, κ, δ, Φ)**.
+The novel formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
 See [`docs/FORMAL_MODEL.md`](docs/FORMAL_MODEL.md) for the complete authoritative
 definition, including:
 
 - All seven formal elements and their types.
-- Formal properties (determinism, totality, coherence-first, volume invariant).
-- Sub-metric decomposition of κ.
-- Mapping of T onto repository modules.
-- Machine-checkable invariants I-1 through I-7.
+- Canonical artifact schema ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩.
+- Two-tier architecture (Core Production + Advanced Research Modules).
+- Formal properties (determinism, commutative reasoning, no confidence laundering).
+- FACS Bundle (Flags, Annotations, Contradiction maps, Suspension logs).
+- Machine-checkable invariants I-1 through I-9.
 
 ### Architecture as Target
 
 Every module in this architecture document is the **implementation convergence target**
 for one or more elements of T.  The control-plane / data-plane boundary maps exactly
-to the T decomposition: G, E, κ, and Φ live in the data plane; δ and the lifecycle
-contract are enforced by the control plane.
+to the T decomposition: I, R, and E live in the data plane; V, P, B_t, and the
+lifecycle contract are enforced by the control plane.
 
 | Formal Element | Plane | Key Module |
 |----------------|-------|------------|
-| G (Generator) | Data | `thalos_prime/lob_babel_generator.py` |
-| E (Enumerator) | Data | `thalos_prime/lob_babel_enumerator.py` |
-| κ (Coherence) | Data | `thalos_prime/lob_decoder.py` |
-| δ (Filter) | Control | `thalos_prime/errors.py`, `api/routes/chat.py` |
-| Φ (Assembler) | Data | Pipeline assembly in `api/routes/` |
-| Lifecycle | Control | `thalos_prime/lifecycle.py`, `thalos_nexus/` |
-| Provenance | Control | `thalos_prime/audit/trail.py` |
+| D (Artifact Corpus) | Both | `thalos_prime/belief/ledger.py` (ctrl), `lob_babel_generator.py` (data) |
+| I (PRP Indexer) | Data | `thalos_prime/indexing/prp.py`, `lob_babel_enumerator.py` |
+| R (Reasoning) | Data | `thalos_prime/lob_decoder.py` |
+| V (Verification / Genesis Lock) | Control | `thalos_prime/audit/trail.py`, `thalos_nexus/nucleus.py` |
+| E (Execution Engine) | Data | `lob_babel_generator.py`, `lob_decoder.py` |
+| P (Provenance / FACS) | Control | `thalos_prime/audit/trail.py`, `belief/ledger.py` |
+| B_t (Belief Base) | Control | `thalos_prime/belief/ledger.py`, `thalos_nexus/spine.py` |

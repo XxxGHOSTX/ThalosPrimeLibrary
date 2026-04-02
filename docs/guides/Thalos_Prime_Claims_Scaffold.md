@@ -67,7 +67,7 @@ python run_thalos.py
 > code.  Every claim in this scaffold maps to one or more elements of T.  The current
 > repository is the target architecture that converges toward T.
 
-### Formal System T = (Ω, Σ, G, E, κ, δ, Φ)
+### Formal System T = ⟨D, I, R, V, E, P, B_t⟩
 
 See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
 
@@ -75,18 +75,25 @@ See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
 
 | Claim | Formal Element(s) |
 |-------|-------------------|
-| Coherence-first discovery over deterministic infinite data | κ, δ, Ω |
-| Deterministic corpus + fragment enumerator | G, E |
-| Recursive stabilization with threshold | δ (bounded retry loop) |
-| Cross-domain translation with provenance | Φ + provenance metadata |
-| Human-directed constraint steering | E parameterized by q, s |
-| Optional biological / wetware substrate | δ_bio variant of δ |
-| Hybrid heuristic + LLM normalization | κ sub-metrics (λ, σ, η, μ) + optional LLM layer |
+| Sovereign epistemic OS over deterministic infinite data | T (full seven-tuple) |
+| Stateful belief management — not stateless generation | B_t (living ledger) |
+| No confidence laundering — circuit-breaker suspension | P (FACS Bundle) |
+| Deterministic zero-storage indexing (PRP bijection) | I |
+| Commutative reasoning invariance (YBE) | R (R-Matrix Net) |
+| Tamper-evident audit trail + ZK-verified reasoning | V (Genesis Lock + Groth16) |
+| Edge-native execution (MNN / Mojo / MLIR) | E |
+| Canonical provenance schema | D — ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ |
+| Distributed peer validation | V (DeScAI, Phase 5) |
+| Optional biological / wetware substrate | E variant (Phase 5) |
 
 ### Novel Claim Strengthening
 
-The formal definition of T resolves the structural imbalance axiom
-(Δ(t) = P(t) − V(t) → ∞) in a mathematically rigorous way.  Every independent
-claim is grounded in a named formal element of T, providing clear scope boundaries
-and defensible novelty arguments against prior art (generative AI, search engines,
-databases).
+The formal definition of T moves well beyond "stateless generator" architectures.
+Every independent claim is grounded in a named formal element of T, providing clear
+scope boundaries and defensible novelty arguments against prior art (LLMs, search
+engines, databases).  In particular:
+
+- B_t's stateful epistemic ledger is novel over all LLM-based systems.
+- P's suspension log (FACS) is novel over all coherence-scoring systems.
+- R's YBE constraint is novel over all multi-step AI reasoning systems.
+- I's zero-storage PRP bijection is novel over all retrieval index architectures.

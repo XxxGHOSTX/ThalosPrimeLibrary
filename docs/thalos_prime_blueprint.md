@@ -243,31 +243,34 @@ without external dependencies.
 
 ### 8.1 Epistemic Premise
 
-The global information environment is defined by a structural imbalance: exponential
-data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
-Thalos Prime exists to resolve this asymmetry — not by producing more data, but by
-making verification computable and deterministic.
+The global information environment is defined by a structural imbalance where
+exponential data production has outpaced the capacity for verifiable reasoning and
+deterministic retrieval.  Contemporary architectures depend on stochastic pattern
+matching, which is insufficient for the rigorous demands of professional
+accountability and data sovereignty.  Thalos Prime is proposed as a sovereign
+epistemic operating system that resolves this asymmetry.
 
 ### 8.2 Formal System T
 
-The authoritative formal system is **T = (Ω, Σ, G, E, κ, δ, Φ)**.
+The authoritative formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
 See [`docs/FORMAL_MODEL.md`](FORMAL_MODEL.md) for the complete definition,
-formal properties, and invariant table.
+two-tier architecture, FACS bundle specification, and invariant table.
 
 ### 8.3 Mapping T onto This Blueprint
 
 | Formal Element | Blueprint Section | Implementation |
 |----------------|-------------------|----------------|
-| Ω (Universe) | §4 — Stage 1 Normalization filters Ω by Σ | 29-char charset |
-| G (Generator) | §4 — Stage 4 Sequence Generation | `lob_babel_generator.py` |
-| E (Enumerator) | §4 — Stage 3 Index Mapping | `lob_babel_enumerator.py` |
-| κ (Coherence) | §4 — Stage 5 Analysis & Filtering | `lob_decoder.py` |
-| δ (Filter) | §4 — Stage 5, coherence threshold | `CoherenceThresholdError` |
-| Φ (Assembler) | §4 — Stage 7 Output Handling | `VolumeAssembler` |
+| D (Artifact Corpus) | §4 — Stage 1 Normalization + Stage 7 Output | `lob_babel_generator.py`, `belief/ledger.py` |
+| I (PRP Indexer) | §4 — Stage 3 Index Mapping | `lob_babel_enumerator.py`, `indexing/prp.py` |
+| R (Reasoning / FACS) | §4 — Stage 5 Analysis & Filtering | `lob_decoder.py`, `belief/ledger.py` |
+| V (Genesis Lock) | §4 — Stage 7, audit trail | `audit/trail.py`, `thalos_nexus/nucleus.py` |
+| E (Execution Engine) | §4 — Stage 4 Sequence Generation | `lob_babel_generator.py` |
+| P (Provenance / FACS) | §4 — Stage 5, provenance tracking | `audit/trail.py`, FACS Bundle |
+| B_t (Belief Base) | §4 — Stages 5-7, stateful epistemic ledger | `belief/ledger.py` |
 
 ### 8.4 Design Goal (Not Audit)
 
 The 7-stage MNN pipeline described in §2 is the **target architecture** that T
-demands.  Every stage must be fully deterministic (I-1 through I-7 in
+demands.  Every stage must be fully deterministic (I-1 through I-9 in
 `docs/FORMAL_MODEL.md`), and no stage may be bypassed.  This blueprint is the
 formal design authority; CI gates enforce convergence toward it.

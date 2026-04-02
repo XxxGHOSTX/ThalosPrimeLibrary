@@ -330,7 +330,7 @@ For issues or questions:
 > (authoritative); the code described in this guide is the target implementation that
 > converges toward T.
 
-### Formal System T = (Ω, Σ, G, E, κ, δ, Φ)
+### Formal System T = ⟨D, I, R, V, E, P, B_t⟩
 
 See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
 
@@ -338,27 +338,32 @@ See [`docs/FORMAL_MODEL.md`](../FORMAL_MODEL.md) for the complete definition.
 
 | Guide Section | Formal Element | Module |
 |---------------|----------------|--------|
-| Deterministic Page Generation | G: H → Σ^3200 | `lob_babel_generator.py` |
-| Query to Address Enumeration | E: Q × ℕ × ℕ → H\* | `lob_babel_enumerator.py` |
-| Coherence Scoring | κ: Σ\* → [0, 100] | `lob_decoder.py` |
-| Full Pipeline | G ∘ E → κ → δ → Φ | `api/routes/` pipeline |
+| Deterministic Page Generation | E (execution engine) + I (PRP indexer) | `lob_babel_generator.py`, `indexing/prp.py` |
+| Query to Address Enumeration | I — keyed invertible transform | `lob_babel_enumerator.py` |
+| Coherence Scoring | R (reasoning / FACS filter) | `lob_decoder.py`, `belief/ledger.py` |
+| Provenance Tracking | P (FACS Bundle) + D artifact schema | `audit/trail.py` |
+| Full Pipeline | I → E → R → P → B_t | `api/routes/` pipeline |
 
 ### Epistemic Premise
 
-The global information environment is defined by a structural imbalance: exponential
-data production has outpaced the capacity for verifiable, coherence-ranked retrieval.
-Phase 1 implements G and E (making Ω navigable); Phase 2 implements κ and δ (making
-results verifiable).  Together they resolve the structural imbalance for any query
-within the 29-character Babel alphabet.
+The global information environment is defined by a structural imbalance where
+exponential data production has outpaced the capacity for verifiable reasoning and
+deterministic retrieval.  Phase 1 implements I and E (making the information space
+navigable); Phase 2 implements R and P (making results verifiable and provenance-
+tracked).  Together they deliver the production core of T.
 
-### Confidence Level Mapping to κ
+### FACS Suspension and Coherence
 
-| Confidence Level | κ Range | Formal Status |
-|------------------|---------|---------------|
-| High | 80–100 | δ(x) = True — passes epistemic filter |
-| Medium | 60–79 | δ(x) = False at κ_min=80; usable at κ_min=60 |
-| Sparse | 40–59 | δ(x) = False at κ_min=60 |
-| Minimal | 0–39 | δ(x) = False at any production threshold |
+The FACS suspension log (element P) replaces the simple threshold filter.  A result
+below κ_min is **suspended** (not silently discarded) until the FACS bundle is
+cleared.  Only then is it returned or escalated to `CoherenceThresholdError`.
+
+| Confidence Level | Score Range | FACS Status |
+|------------------|-------------|-------------|
+| High | 80–100 | FACS cleared — B_t accepts; returned to user |
+| Medium | 60–79 | FACS flagged at κ_min=80; accepted at κ_min=60 |
+| Sparse | 40–59 | FACS suspended at κ_min=60 |
+| Minimal | 0–39 | FACS suspended at any production threshold |
 
 The default κ_min = 80.0 corresponds to "High" confidence, enforced by
 `CoherenceThresholdError` in the API layer.
