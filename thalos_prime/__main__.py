@@ -34,7 +34,10 @@ import sys
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # ---------------------------------------------------------------------------
 # Logging — configured before any other imports that emit log messages
@@ -118,6 +121,14 @@ class WorkerTask:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+class BackgroundTaskError(Exception):
+    """Raised when a background worker task fails with a recoverable error.
+
+    Wraps any underlying exception so the scheduler can catch a typed error
+    (satisfying TPL no-catch-all invariant) rather than bare ``Exception``.
+    """
+
+
 def _run_index_refresh(task: WorkerTask) -> None:
     """Perform a single index refresh step for the given worker task."""
     logger.debug(
@@ -148,11 +159,34 @@ def _run_session_maintenance(task: WorkerTask) -> None:
     )
 
 
-_WORKER_HANDLERS: dict[str, Any] = {
+_WORKER_HANDLERS: dict[str, Callable[[WorkerTask], None]] = {
     "index_refresh": _run_index_refresh,
     "cache_warm": _run_cache_warm,
     "session_maintenance": _run_session_maintenance,
 }
+
+
+def _execute_worker_safely(
+    handler: Callable[[WorkerTask], None],
+    task: WorkerTask,
+) -> None:
+    """Invoke a worker handler, re-raising any failure as :class:`BackgroundTaskError`.
+
+    Args:
+        handler: Callable ``(WorkerTask) -> None``.
+        task:    The task descriptor to pass to the handler.
+
+    Raises:
+        BackgroundTaskError: Wraps any exception raised by the handler so
+            the scheduler loop can catch a typed error rather than bare
+            ``Exception``, satisfying the TPL no-catch-all invariant.
+
+    """
+    try:
+        handler(task)
+    except Exception as exc:  # re-raised immediately as BackgroundTaskError below
+        msg = f"Task {task.name!r} step {task.step} failed: {exc}"
+        raise BackgroundTaskError(msg) from exc
 
 
 class BackgroundScheduler:
@@ -223,8 +257,8 @@ class BackgroundScheduler:
                     handler = _WORKER_HANDLERS.get(task.name)
                     if handler is not None:
                         try:
-                            handler(task)
-                        except Exception:
+                            _execute_worker_safely(handler, task)
+                        except BackgroundTaskError:
                             logger.exception(
                                 "BackgroundScheduler: task %r step %d raised an error",
                                 task.name,
