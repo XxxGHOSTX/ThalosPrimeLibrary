@@ -4,10 +4,13 @@ class UIManager {
     constructor() {
         this.currentView = 'console';
         this.toastTimeout = 3000;
+        this.serverSettings = null;
+        this.draggedView = null;
         this.init();
     }
     
-    init() {
+    async init() {
+        await this.loadServerSettings();
         this.setupNavigation();
         this.setupClock();
         this.setupModeSelector();
@@ -18,6 +21,7 @@ class UIManager {
     
     setupNavigation() {
         const navButtons = document.querySelectorAll('.nav-btn');
+        this.renderTopNav(navButtons);
         navButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const viewName = btn.dataset.view;
@@ -27,6 +31,26 @@ class UIManager {
                 navButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
+        });
+    }
+
+    renderTopNav(navButtons) {
+        const topNav = document.getElementById('top-nav');
+        if (!topNav) return;
+        topNav.innerHTML = '';
+        navButtons.forEach((btn) => {
+            const clone = btn.cloneNode(true);
+            clone.addEventListener('click', () => {
+                const viewName = clone.dataset.view;
+                this.switchView(viewName);
+                document.querySelectorAll('.nav-btn').forEach((b) => {
+                    b.classList.toggle('active', b.dataset.view === viewName);
+                });
+                Array.from(topNav.querySelectorAll('.nav-btn')).forEach((b) => {
+                    b.classList.toggle('active', b.dataset.view === viewName);
+                });
+            });
+            topNav.appendChild(clone);
         });
     }
     
@@ -110,6 +134,18 @@ class UIManager {
         if (resetBtn) {
             resetBtn.addEventListener('click', () => this.resetSettings());
         }
+
+        const stopBtn = document.getElementById('stop-server-btn');
+        if (stopBtn) {
+            stopBtn.addEventListener('click', async () => this.handleStopServer());
+        }
+
+        const restartBtn = document.getElementById('restart-server-btn');
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () => window.location.reload());
+        }
+
+        this.setupNavOrderDragAndDrop();
     }
     
     async handleSearchSubmit(e) {
@@ -194,13 +230,36 @@ class UIManager {
         }
     }
     
-    handleSettingsSubmit(e) {
+    async handleSettingsSubmit(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
         
         // Save settings to localStorage
         for (const [key, value] of formData.entries()) {
             localStorage.setItem(`setting_${key}`, value);
+        }
+
+        const runtimeAutoOpen = document.getElementById('runtime-auto-open')?.checked ?? true;
+        const payload = {
+            runtime: {
+                host: formData.get('runtime_host') || '127.0.0.1',
+                port: Number(formData.get('runtime_port') || 8000),
+                log_level: formData.get('runtime_log_level') || 'INFO',
+                auto_open_browser: runtimeAutoOpen,
+            },
+            workspace: {
+                layout_mode: formData.get('layout_mode') || 'both',
+                toolbar_mode: formData.get('toolbar_mode') || 'both',
+                nav_order: this.getNavOrder(),
+                sidebar_width: Number(formData.get('sidebar_width') || 250),
+            },
+        };
+
+        try {
+            this.serverSettings = await apiClient.updateSettings(payload);
+        } catch (error) {
+            this.showToast('error', 'Settings Save Failed', error.message);
+            return;
         }
         
         this.showToast('success', 'Settings Saved', 'Your settings have been saved');
@@ -214,22 +273,153 @@ class UIManager {
         if (themeSelect) {
             themeSelect.value = theme;
         }
+        this.applyServerSettingsToForm();
+        this.renderNavOrder();
         this.applySettings();
     }
     
     applySettings() {
         const theme = localStorage.getItem('setting_theme') || 'matrix';
-        document.body.className = `theme-${theme}`;
+        const layoutMode = localStorage.getItem('setting_layout_mode') || 'both';
+        const toolbarMode = localStorage.getItem('setting_toolbar_mode') || 'both';
+        const sidebarWidth = localStorage.getItem('setting_sidebar_width') || '250';
+        document.body.className = `theme-${theme} layout-${layoutMode} toolbar-${toolbarMode}`;
+        document.body.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
     }
     
-    resetSettings() {
+    async resetSettings() {
         if (confirm('Reset all settings to default?')) {
             // Clear all settings
             const keys = Object.keys(localStorage).filter(k => k.startsWith('setting_'));
             keys.forEach(key => localStorage.removeItem(key));
+            try {
+                this.serverSettings = await apiClient.resetSettings();
+            } catch (error) {
+                this.showToast('error', 'Server Reset Failed', error.message);
+            }
             
             this.loadSettings();
             this.showToast('info', 'Settings Reset', 'All settings have been reset to default');
+        }
+    }
+
+    async loadServerSettings() {
+        try {
+            this.serverSettings = await apiClient.getSettings();
+        } catch (error) {
+            this.serverSettings = null;
+            console.warn('Failed to load server settings:', error);
+        }
+    }
+
+    applyServerSettingsToForm() {
+        if (!this.serverSettings) return;
+        const runtime = this.serverSettings.runtime || {};
+        const workspace = this.serverSettings.workspace || {};
+        const setValue = (id, value) => {
+            const el = document.getElementById(id);
+            if (el && value !== undefined && value !== null) el.value = String(value);
+        };
+        setValue('runtime-host', runtime.host);
+        setValue('runtime-port', runtime.port);
+        setValue('runtime-log-level', runtime.log_level);
+        setValue('layout-mode', workspace.layout_mode);
+        setValue('toolbar-mode', workspace.toolbar_mode);
+        setValue('sidebar-width', workspace.sidebar_width);
+        const autoOpen = document.getElementById('runtime-auto-open');
+        if (autoOpen && typeof runtime.auto_open_browser === 'boolean') {
+            autoOpen.checked = runtime.auto_open_browser;
+        }
+        if (Array.isArray(workspace.nav_order)) {
+            localStorage.setItem('setting_nav_order', JSON.stringify(workspace.nav_order));
+        }
+    }
+
+    setupNavOrderDragAndDrop() {
+        const list = document.getElementById('nav-order-list');
+        if (!list) return;
+        list.addEventListener('dragstart', (event) => {
+            const target = event.target.closest('.nav-order-item');
+            if (!target) return;
+            this.draggedView = target.dataset.view;
+            target.classList.add('dragging');
+        });
+        list.addEventListener('dragend', (event) => {
+            const target = event.target.closest('.nav-order-item');
+            if (!target) return;
+            target.classList.remove('dragging');
+            this.draggedView = null;
+        });
+        list.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            const target = event.target.closest('.nav-order-item');
+            if (!target || !this.draggedView || target.dataset.view === this.draggedView) return;
+            const dragged = list.querySelector(`[data-view="${this.draggedView}"]`);
+            if (!dragged) return;
+            const rect = target.getBoundingClientRect();
+            const insertAfter = (event.clientY - rect.top) > rect.height / 2;
+            if (insertAfter) {
+                target.after(dragged);
+            } else {
+                target.before(dragged);
+            }
+        });
+    }
+
+    renderNavOrder() {
+        const list = document.getElementById('nav-order-list');
+        if (!list) return;
+        const fallback = ['console','search','generate','enumerate','decode','history','settings','docs'];
+        const stored = localStorage.getItem('setting_nav_order');
+        let order = fallback;
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+                    order = parsed;
+                }
+            } catch (error) {
+                order = fallback;
+            }
+        }
+        list.innerHTML = order.map((view) => `
+            <li class="nav-order-item" draggable="true" data-view="${view}">
+                ${view.toUpperCase()}
+            </li>
+        `).join('');
+        this.applyNavOrder(order);
+    }
+
+    getNavOrder() {
+        const list = document.getElementById('nav-order-list');
+        if (!list) return ['console','search','generate','enumerate','decode','history','settings','docs'];
+        const order = Array.from(list.querySelectorAll('.nav-order-item')).map((el) => el.dataset.view);
+        localStorage.setItem('setting_nav_order', JSON.stringify(order));
+        this.applyNavOrder(order);
+        return order;
+    }
+
+    applyNavOrder(order) {
+        const navMenu = document.querySelector('.nav-menu');
+        const topNav = document.getElementById('top-nav');
+        if (!navMenu || !topNav) return;
+        order.forEach((view) => {
+            const sideBtn = navMenu.querySelector(`.nav-btn[data-view="${view}"]`);
+            if (sideBtn) navMenu.appendChild(sideBtn);
+        });
+        const topButtons = Array.from(topNav.querySelectorAll('.nav-btn'));
+        order.forEach((view) => {
+            const btn = topButtons.find((b) => b.dataset.view === view);
+            if (btn) topNav.appendChild(btn);
+        });
+    }
+
+    async handleStopServer() {
+        try {
+            await apiClient.shutdownServer();
+            this.showToast('warning', 'Shutdown Requested', 'Server is shutting down');
+        } catch (error) {
+            this.showToast('error', 'Shutdown Failed', error.message);
         }
     }
     

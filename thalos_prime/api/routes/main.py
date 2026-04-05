@@ -1,15 +1,21 @@
-"""Main Routes - Root endpoints.
+"""Main Routes - Root endpoints and UI/static serving."""
 
-Provides the main landing page and UI serving.
-"""
-
-import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 router = APIRouter()
+
+_THIS_FILE = Path(__file__).resolve()
+_REPO_ROOT = _THIS_FILE.parents[3]
+_UI_TEMPLATE_INDEX = _REPO_ROOT / "thalos_prime" / "ui" / "templates" / "index.html"
+_STATIC_DIR = _REPO_ROOT / "thalos_prime" / "ui" / "static"
+
+if _STATIC_DIR.exists():
+    router.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -18,12 +24,8 @@ async def root() -> HTMLResponse:
 
     Returns the Matrix-style interface for Thalos Prime.
     """
-    # Check if index.html exists in root
-    index_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "index.html")
-
-    if os.path.exists(index_path):
-        with open(index_path) as f:
-            return HTMLResponse(content=f.read())
+    if _UI_TEMPLATE_INDEX.exists():
+        return FileResponse(path=str(_UI_TEMPLATE_INDEX), media_type="text/html")
 
     # Return basic HTML if file doesn't exist
     return HTMLResponse(content="""

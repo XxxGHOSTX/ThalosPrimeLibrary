@@ -277,6 +277,7 @@ def register_routes(app: FastAPI) -> None:
         from thalos_prime.api.routes.generate import router as generate_router
         from thalos_prime.api.routes.main import router as main_router
         from thalos_prime.api.routes.search import router as search_router
+        from thalos_prime.api.routes.settings import router as settings_router
 
         # Register routers with prefixes
         app.include_router(main_router, tags=["Main"])
@@ -285,6 +286,7 @@ def register_routes(app: FastAPI) -> None:
         app.include_router(generate_router, prefix="/api/v1/generate", tags=["Generate"])
         app.include_router(enumerate_router, prefix="/api/v1/enumerate", tags=["Enumerate"])
         app.include_router(decode_router, prefix="/api/v1/decode", tags=["Decode"])
+        app.include_router(settings_router, prefix="/api/v1/settings", tags=["Settings"])
         app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
         app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"])
         app.include_router(artifacts_router, prefix="/api/v1/artifacts", tags=["Artifacts"])

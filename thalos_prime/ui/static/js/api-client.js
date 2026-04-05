@@ -182,6 +182,32 @@ class APIClient {
         const status = await this.getStatus();
         return status.version;
     }
+
+    // Settings endpoints
+    async getSettings() {
+        return this.request('/settings', { method: 'GET' });
+    }
+
+    async updateSettings(payload) {
+        return this.request('/settings', {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+    }
+
+    async resetSettings() {
+        return this.request('/settings/reset', { method: 'POST' });
+    }
+
+    async shutdownServer() {
+        return this.request('/admin/shutdown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': 'admin-key-change-in-production',
+            },
+        });
+    }
 }
 
 // Export singleton instance
