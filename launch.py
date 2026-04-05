@@ -382,7 +382,7 @@ def _run_desktop() -> None:
     if not running:
         _step("Starting Thalos Prime backend in detached mode ...")
         if platform.system().lower() == "windows":
-            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+            windows_subprocess_flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
             subprocess.Popen(
                 [
                     _python_executable(),
@@ -398,7 +398,7 @@ def _run_desktop() -> None:
                 cwd=str(_REPO_ROOT),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                creationflags=creationflags,
+                creationflags=windows_subprocess_flags,
             )
         else:
             subprocess.Popen(

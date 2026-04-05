@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict
 from typing import Any
 
@@ -16,6 +17,7 @@ from thalos_prime.user_settings import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("")
@@ -24,7 +26,8 @@ async def get_settings() -> dict[str, Any]:
     try:
         settings = load_settings()
     except UserSettingsError as exc:
-        raise HTTPException(status_code=500, detail=f"Settings load failed: {exc}") from exc
+        logger.exception("Settings load failed")
+        raise HTTPException(status_code=500, detail="Settings load failed") from exc
     payload = asdict(settings)
     payload["settings_file"] = str(settings_file_path())
     return payload

@@ -9,6 +9,7 @@ import os
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -16,6 +17,7 @@ from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from thalos_prime import __version__
 from thalos_prime.config import get_config
@@ -241,6 +243,10 @@ def create_app() -> FastAPI:
 
     # Register routes
     register_routes(app)
+
+    static_dir = Path(__file__).resolve().parents[2] / "ui" / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     # Add health check endpoint
     @app.get("/health", tags=["Health"])

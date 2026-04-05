@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import os
 import subprocess
 import sys
 import time
 import webbrowser
-from pathlib import Path
-from urllib.error import URLError
-from urllib.request import Request, urlopen
 
 import uvicorn
 
@@ -25,15 +23,24 @@ from thalos_prime.user_settings import (
 )
 
 _ENV_FILENAME = ".env"
+_WIN_FLAGS = (
+    int(getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
+    | int(getattr(subprocess, "DETACHED_PROCESS", 0))
+)
+_HTTP_OK_MIN = 200
+_HTTP_OK_MAX_EXCLUSIVE = 300
 
 
 def _status_up(host: str, port: int) -> bool:
-    req = Request(f"http://{host}:{port}/api/v1/status", method="GET")
+    conn = http.client.HTTPConnection(host=host, port=port, timeout=1.0)
     try:
-        with urlopen(req, timeout=1.0) as response:
-            return 200 <= response.status < 300
-    except URLError:
+        conn.request("GET", "/api/v1/status")
+        response = conn.getresponse()
+        return bool(_HTTP_OK_MIN <= response.status < _HTTP_OK_MAX_EXCLUSIVE)
+    except OSError:
         return False
+    finally:
+        conn.close()
 
 
 def _ensure_runtime_files(runtime: RuntimeSettings) -> None:
@@ -57,8 +64,7 @@ def _ensure_runtime_files(runtime: RuntimeSettings) -> None:
 
 def _spawn_server(runtime: RuntimeSettings) -> None:
     if os.name == "nt":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-        subprocess.Popen(
+        subprocess.Popen(  # noqa: S603 - fixed internal executable and arguments only
             [
                 sys.executable,
                 "--serve",
@@ -71,10 +77,10 @@ def _spawn_server(runtime: RuntimeSettings) -> None:
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            creationflags=creationflags,
+            creationflags=_WIN_FLAGS,
         )
         return
-    subprocess.Popen(
+    subprocess.Popen(  # noqa: S603 - fixed internal executable and arguments only
         [
             sys.executable,
             "--serve",
@@ -128,27 +134,15 @@ def main() -> None:
         raise SystemExit(msg) from exc
 
     runtime = settings.runtime
-    if args.host:
-        runtime = RuntimeSettings(
-            host=args.host,
-            port=runtime.port,
-            log_level=runtime.log_level,
-            auto_open_browser=runtime.auto_open_browser,
-        )
-    if args.port:
-        runtime = RuntimeSettings(
-            host=runtime.host,
-            port=args.port,
-            log_level=runtime.log_level,
-            auto_open_browser=runtime.auto_open_browser,
-        )
-    if args.log_level:
-        runtime = RuntimeSettings(
-            host=runtime.host,
-            port=runtime.port,
-            log_level=args.log_level,
-            auto_open_browser=runtime.auto_open_browser,
-        )
+    host = args.host or runtime.host
+    port = args.port or runtime.port
+    log_level = args.log_level or runtime.log_level
+    runtime = RuntimeSettings(
+        host=host,
+        port=port,
+        log_level=log_level,
+        auto_open_browser=runtime.auto_open_browser,
+    )
 
     _ensure_runtime_files(runtime)
     os.environ["THALOS_USER_CONFIG_DIR"] = str(settings_file_path().parent)

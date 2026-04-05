@@ -6,6 +6,7 @@ class UIManager {
         this.toastTimeout = 3000;
         this.serverSettings = null;
         this.draggedView = null;
+        this.defaultNavOrder = ['console','search','generate','enumerate','decode','history','settings','docs'];
         this.init();
     }
     
@@ -369,7 +370,9 @@ class UIManager {
     renderNavOrder() {
         const list = document.getElementById('nav-order-list');
         if (!list) return;
-        const fallback = ['console','search','generate','enumerate','decode','history','settings','docs'];
+        const fallback = Array.isArray(this.serverSettings?.workspace?.nav_order)
+            ? this.serverSettings.workspace.nav_order
+            : this.defaultNavOrder;
         const stored = localStorage.getItem('setting_nav_order');
         let order = fallback;
         if (stored) {
@@ -392,7 +395,7 @@ class UIManager {
 
     getNavOrder() {
         const list = document.getElementById('nav-order-list');
-        if (!list) return ['console','search','generate','enumerate','decode','history','settings','docs'];
+        if (!list) return this.defaultNavOrder;
         const order = Array.from(list.querySelectorAll('.nav-order-item')).map((el) => el.dataset.view);
         localStorage.setItem('setting_nav_order', JSON.stringify(order));
         this.applyNavOrder(order);

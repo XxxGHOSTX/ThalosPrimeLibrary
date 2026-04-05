@@ -1,0 +1,76 @@
+name: Windows Installer
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install pyinstaller
+
+      - name: Build launcher with PyInstaller
+        shell: bash
+        run: |
+          pyinstaller installer/windows/pyinstaller/desktop_launcher.spec --noconfirm
+
+      - name: Install WiX
+        shell: powershell
+        run: dotnet tool install --global wix --version 4.0.5
+
+      - name: Build MSI
+        shell: powershell
+        run: |
+          wix extension add WixToolset.UI.wixext
+          wix build installer/windows/wix/ThalosPrime.wxs `
+            -ext WixToolset.UI.wixext `
+            -d SourceDir="$(Get-Location)" `
+            -o dist/ThalosPrime.msi
+
+      - name: Build Setup.exe with Inno Setup
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
+        with:
+          path: installer/windows/inno/ThalosPrimeSetup.iss
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum ThalosPrime.msi Setup.exe > SHA256SUMS.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installers
+          path: |
+            dist/ThalosPrime.msi
+            dist/Setup.exe
+            dist/SHA256SUMS.txt
+
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/ThalosPrime.msi
+            dist/Setup.exe
+            dist/SHA256SUMS.txt

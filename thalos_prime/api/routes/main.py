@@ -4,22 +4,17 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse, Response
 
 router = APIRouter()
 
 _THIS_FILE = Path(__file__).resolve()
 _REPO_ROOT = _THIS_FILE.parents[3]
 _UI_TEMPLATE_INDEX = _REPO_ROOT / "thalos_prime" / "ui" / "templates" / "index.html"
-_STATIC_DIR = _REPO_ROOT / "thalos_prime" / "ui" / "static"
-
-if _STATIC_DIR.exists():
-    router.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def root() -> HTMLResponse:
+async def root() -> Response:
     """Serve the main UI page.
 
     Returns the Matrix-style interface for Thalos Prime.

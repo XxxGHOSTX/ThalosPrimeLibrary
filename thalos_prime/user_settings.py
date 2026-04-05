@@ -18,6 +18,9 @@ LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 _SETTINGS_FILENAME = "settings.json"
 _SCHEMA_VERSION = 1
+_MAX_PORT = 65535
+_MIN_SIDEBAR_WIDTH = 180
+_MAX_SIDEBAR_WIDTH = 480
 _DEFAULT_NAV_ORDER = [
     "console",
     "search",
@@ -93,6 +96,7 @@ def ensure_settings_dir() -> Path:
 
 
 def _validate_nav_order(order: list[str]) -> list[str]:
+    """Validate and normalize navigation order deterministically."""
     if not order:
         msg = "workspace.nav_order must not be empty"
         raise UserSettingsError(msg)
@@ -101,7 +105,11 @@ def _validate_nav_order(order: list[str]) -> list[str]:
         raise UserSettingsError(msg)
     deduped = list(dict.fromkeys(order))
     missing = [view for view in _DEFAULT_NAV_ORDER if view not in deduped]
-    return deduped + missing
+    merged = deduped + missing
+    if set(merged) != _VALID_NAV_VIEWS:
+        msg = "workspace.nav_order must resolve to the default supported view set"
+        raise UserSettingsError(msg)
+    return merged
 
 
 def _coerce_runtime(payload: object) -> RuntimeSettings:
@@ -115,7 +123,7 @@ def _coerce_runtime(payload: object) -> RuntimeSettings:
     if not isinstance(host, str) or not host.strip():
         msg = "runtime.host must be a non-empty string"
         raise UserSettingsError(msg)
-    if not isinstance(port, int) or not (1 <= port <= 65535):
+    if not isinstance(port, int) or not (1 <= port <= _MAX_PORT):
         msg = "runtime.port must be an integer in [1, 65535]"
         raise UserSettingsError(msg)
     if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
@@ -149,7 +157,9 @@ def _coerce_workspace(payload: object) -> WorkspaceSettings:
     if not isinstance(nav_order, list) or not all(isinstance(v, str) for v in nav_order):
         msg = "workspace.nav_order must be a list of strings"
         raise UserSettingsError(msg)
-    if not isinstance(sidebar_width, int) or not (180 <= sidebar_width <= 480):
+    if not isinstance(sidebar_width, int) or not (
+        _MIN_SIDEBAR_WIDTH <= sidebar_width <= _MAX_SIDEBAR_WIDTH
+    ):
         msg = "workspace.sidebar_width must be an integer in [180, 480]"
         raise UserSettingsError(msg)
     return WorkspaceSettings(
@@ -185,8 +195,7 @@ def _merge_settings(base: UserSettings, updates: dict[str, object]) -> UserSetti
         if key not in {"runtime", "workspace"}:
             msg = f"Unsupported settings key: {key}"
             raise UserSettingsError(msg)
-    for key, value in updates.items():
-        merged[key] = value
+    merged.update(dict(updates))
     return _coerce_user_settings(merged)
 
 
