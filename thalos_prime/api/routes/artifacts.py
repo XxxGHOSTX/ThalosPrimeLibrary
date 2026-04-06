@@ -107,6 +107,10 @@ class EvidenceWorkflowRequest(BaseModel):
     derive_operation: str = "synthesize"
 
 
+class EvidenceWorkflowStateError(RuntimeError):
+    """Raised when deterministic evidence workflow state transitions fail."""
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -479,19 +483,30 @@ async def evidence_bundle_workflow(request: EvidenceWorkflowRequest) -> dict[str
         )
         coord = _indexer.index(artifact.content)
         verdict = _validation_pipeline.validate(artifact, ts)
-
-        with contextlib.suppress(ValueError):
+        try:
             _belief_ledger.admit(
                 artifact=artifact,
                 coordinate_hex=coord.to_hex_str(),
                 confidence=verdict.confidence,
                 timestamp_ns=ts,
             )
+        except ValueError as exc:
+            msg = (
+                "Evidence workflow admission failed deterministically: "
+                f"artifact_id={artifact.artifact_id} index={idx} error={exc}"
+            )
+            raise EvidenceWorkflowStateError(msg) from exc
 
         if verdict.final_status is ValidationStatus.ACCEPTED:
-            with contextlib.suppress(KeyError, ValueError):
+            try:
                 _belief_ledger.accept(artifact.artifact_id, ts)
                 accepted_ids.append(artifact.artifact_id)
+            except (KeyError, ValueError) as exc:
+                msg = (
+                    "Evidence workflow acceptance failed deterministically: "
+                    f"artifact_id={artifact.artifact_id} index={idx} error={exc}"
+                )
+                raise EvidenceWorkflowStateError(msg) from exc
 
         _audit_trail.append(
             event_type=AuditEventType.ARTIFACT_ADMITTED,

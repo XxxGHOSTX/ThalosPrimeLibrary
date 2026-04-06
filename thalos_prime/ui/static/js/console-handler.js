@@ -7,7 +7,6 @@ class ConsoleHandler {
         this.sendBtn = document.getElementById('send-btn');
         this.messageHistory = [];
         this.historyIndex = -1;
-        this.lastWhyAnswer = null;
         
         this.init();
     }
@@ -168,7 +167,6 @@ class ConsoleHandler {
                 <ul>${stepList || '<li>none</li>'}</ul>
             </div>
         `;
-        this.lastWhyAnswer = response;
     }
     
     showTypingIndicator() {

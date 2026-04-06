@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from thalos_prime.library_of_sense.core.interfaces import QueryContext, QueryDomain
 from thalos_prime.library_of_sense.reasoning.symbolic_engine import SymbolicReasoningEngine
 from thalos_prime.library_of_sense.retrieval.computational import ComputationalRetriever
 from thalos_prime.lob_decoder import decode_page
@@ -29,10 +30,12 @@ def _compute_benchmarks() -> dict[str, Any]:
     )
 
     reasoning_engine = SymbolicReasoningEngine()
-    reasoning_result = reasoning_engine.reason("2*x + 2*x", context=None)  # type: ignore[arg-type]
+    reasoning_context = QueryContext(domain=QueryDomain.MATHEMATICS, require_proof=True, seed=0)
+    reasoning_result = reasoning_engine.reason("2*x + 2*x", context=reasoning_context)
 
     retriever = ComputationalRetriever()
-    retrieval_result = retriever.query("2 + 2", context=None)  # type: ignore[arg-type]
+    retrieval_context = QueryContext(domain=QueryDomain.COMPUTATIONAL, seed=0)
+    retrieval_result = retriever.query("2 + 2", context=retrieval_context)
 
     benchmark: dict[str, Any] = {
         "schema_version": "1.0",
@@ -101,4 +104,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

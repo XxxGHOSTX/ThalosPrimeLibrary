@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import hashlib
 import os
 import time
@@ -40,6 +39,10 @@ _SUPPORTED_PROOF_DOMAINS = {QueryDomain.MATHEMATICS, QueryDomain.COMPUTATIONAL}
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _CODE_INDEX_GLOB = "**/*.py"
 _MAX_CODE_FILES = 64
+
+
+class SenseRouteStateError(RuntimeError):
+    """Raised when deterministic Sense route state transitions fail."""
 
 
 class SenseQueryRequest(BaseModel):
@@ -81,8 +84,11 @@ def _register_code_source(handler: QueryHandler) -> None:
     files = sorted(_REPO_ROOT.glob(_CODE_INDEX_GLOB))
     for file_path in files[:_MAX_CODE_FILES]:
         if file_path.is_file():
-            with contextlib.suppress(OSError, UnicodeDecodeError):
+            try:
                 retriever.index_source(file_path.read_text(encoding="utf-8"), filename=str(file_path))
+            except (OSError, UnicodeDecodeError) as exc:
+                msg = f"Sense code indexing failed deterministically for {file_path}: {exc}"
+                raise SenseRouteStateError(msg) from exc
     handler.register_source(retriever)
 
 
@@ -150,17 +156,23 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
     )
     coordinate = _indexer.index(artifact.content).to_hex_str()
     verdict = _validation_pipeline.validate(artifact, ts)
-
-    with contextlib.suppress(ValueError):
+    config_hash = _compute_config_hash()
+    try:
         _belief_ledger.admit(
             artifact=artifact,
             coordinate_hex=coordinate,
             confidence=verdict.confidence,
             timestamp_ns=ts,
         )
+    except ValueError as exc:
+        msg = (
+            "Sense route admission failed deterministically: "
+            f"artifact_id={artifact.artifact_id} seed={request.seed} config_hash={config_hash} error={exc}"
+        )
+        raise SenseRouteStateError(msg) from exc
 
-    if verdict.final_status is ValidationStatus.ACCEPTED:
-        with contextlib.suppress(KeyError, ValueError):
+    try:
+        if verdict.final_status is ValidationStatus.ACCEPTED:
             _belief_ledger.accept(artifact.artifact_id, ts)
             _audit_trail.append(
                 event_type=AuditEventType.ARTIFACT_ACCEPTED,
@@ -168,8 +180,7 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
                 timestamp_ns=ts,
                 payload={"reason": "sense_query_validation_accepted"},
             )
-    elif verdict.final_status is ValidationStatus.DISPUTED:
-        with contextlib.suppress(KeyError):
+        elif verdict.final_status is ValidationStatus.DISPUTED:
             _belief_ledger.dispute(artifact.artifact_id, "sense_query_disputed", ts)
             _audit_trail.append(
                 event_type=AuditEventType.ARTIFACT_DISPUTED,
@@ -177,8 +188,7 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
                 timestamp_ns=ts,
                 payload={"reason": "sense_query_disputed"},
             )
-    elif verdict.final_status is ValidationStatus.REJECTED:
-        with contextlib.suppress(KeyError):
+        elif verdict.final_status is ValidationStatus.REJECTED:
             _belief_ledger.reject(artifact.artifact_id, "sense_query_rejected", ts)
             _audit_trail.append(
                 event_type=AuditEventType.ARTIFACT_REJECTED,
@@ -186,6 +196,13 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
                 timestamp_ns=ts,
                 payload={"reason": "sense_query_rejected"},
             )
+    except (KeyError, ValueError) as exc:
+        msg = (
+            "Sense route state transition failed deterministically: "
+            f"artifact_id={artifact.artifact_id} verdict={verdict.final_status.value} "
+            f"seed={request.seed} config_hash={config_hash} error={exc}"
+        )
+        raise SenseRouteStateError(msg) from exc
 
     _audit_trail.append(
         event_type=AuditEventType.ARTIFACT_ADMITTED,
@@ -197,7 +214,7 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
             "coordinate": coordinate,
         },
         seed=str(request.seed),
-        config_hash=_compute_config_hash(),
+        config_hash=config_hash,
     )
     _SENSE_AUDIT_TRAIL.append(
         event_type=AuditEventType.LIFECYCLE_MILESTONE,
@@ -209,7 +226,7 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
             "proof_required": str(request.require_proof).lower(),
         },
         seed=str(request.seed),
-        config_hash=_compute_config_hash(),
+        config_hash=config_hash,
     )
 
     record = _lookup_record(artifact.artifact_id)
@@ -251,7 +268,7 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
             "proof_trace": trace.model_dump(),
             "deterministic": {
                 "seed": request.seed,
-                "config_hash": _compute_config_hash(),
+                "config_hash": config_hash,
             },
             "why_this_answer": {
                 "confidence": answer.confidence,
