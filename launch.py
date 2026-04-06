@@ -39,6 +39,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import webbrowser
 from pathlib import Path
 from typing import Optional
 
@@ -338,6 +339,93 @@ def _run_serve(host: str, port: int, log_level: str) -> None:
         _fail(f"API server exited with code {result.returncode}")
 
 
+def _run_desktop() -> None:
+    """Desktop launcher mode for packaged installs.
+
+    - Ensures per-user settings/config/data are initialized.
+    - Starts the API server if not running.
+    - Opens the Matrix UI in the default browser.
+    """
+    from urllib.error import URLError
+    from urllib.request import Request, urlopen
+
+    from thalos_prime.user_settings import (
+        UserSettingsError,
+        load_settings,
+        runtime_data_dir,
+    )
+
+    _section("Desktop Launcher")
+    try:
+        settings = load_settings()
+    except UserSettingsError as exc:
+        _fail(f"Settings validation failed: {exc}")
+        return
+
+    host = settings.runtime.host
+    port = settings.runtime.port
+    log_level = settings.runtime.log_level
+
+    data_dir = runtime_data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("THALOS_LIBRARY_PATH", str(data_dir))
+
+    status_url = f"http://{host}:{port}/api/v1/status"
+    req = Request(status_url, method="GET")
+    running = False
+    try:
+        with urlopen(req, timeout=1.0) as response:
+            running = 200 <= response.status < 300
+    except URLError:
+        running = False
+
+    if not running:
+        _step("Starting Thalos Prime backend in detached mode ...")
+        if platform.system().lower() == "windows":
+            windows_subprocess_flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+            subprocess.Popen(
+                [
+                    _python_executable(),
+                    "-m",
+                    "thalos_prime",
+                    "--host",
+                    host,
+                    "--port",
+                    str(port),
+                    "--log-level",
+                    log_level,
+                ],
+                cwd=str(_REPO_ROOT),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=windows_subprocess_flags,
+            )
+        else:
+            subprocess.Popen(
+                [
+                    _python_executable(),
+                    "-m",
+                    "thalos_prime",
+                    "--host",
+                    host,
+                    "--port",
+                    str(port),
+                    "--log-level",
+                    log_level,
+                ],
+                cwd=str(_REPO_ROOT),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+
+    ui_url = f"http://{host}:{port}/"
+    if settings.runtime.auto_open_browser:
+        _step(f"Opening UI: {ui_url}")
+        webbrowser.open(ui_url)
+    _ok("Desktop launch complete")
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -382,6 +470,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip dependency installation check.",
     )
+    parser.add_argument(
+        "--desktop-launch",
+        action="store_true",
+        help="Desktop mode for packaged installation startup.",
+    )
     return parser
 
 
@@ -419,7 +512,9 @@ def main() -> None:
     _ok(f"Config hash: {cfg_hash}")
 
     # ── Action dispatch ────────────────────────────────────────────────────
-    if args.action == "clean":
+    if args.desktop_launch:
+        _run_desktop()
+    elif args.action == "clean":
         _clean()
     elif args.action == "test":
         _run_tests()

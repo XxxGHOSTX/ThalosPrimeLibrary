@@ -142,6 +142,16 @@ See [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) for the ful
 
 **Python 3.12 or later is required.**
 
+### Windows one-click installer (recommended)
+
+For release builds, use the bundled installer artifacts:
+
+- `Setup.exe` (consumer installer)
+- `ThalosPrime.msi` (enterprise installer)
+
+Both create Start Menu shortcuts and can create Desktop shortcuts.
+See `/docs/WINDOWS_INSTALLER_GUIDE.md` for the full 3-step flow and troubleshooting.
+
 **Windows (PowerShell) — fully automated:**
 
 ```powershell

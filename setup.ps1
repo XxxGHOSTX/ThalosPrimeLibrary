@@ -16,7 +16,7 @@
 
 .PARAMETER Action
     What to do after setup.
-    Valid values: serve, test, validate, clean, none  (default: serve)
+    Valid values: serve, test, validate, clean, none, desktop  (default: serve)
 
 .PARAMETER Host
     API server bind host  (default: 127.0.0.1)
@@ -45,7 +45,7 @@
 #>
 [CmdletBinding()]
 param (
-    [ValidateSet("serve", "test", "validate", "clean", "none")]
+    [ValidateSet("serve", "test", "validate", "clean", "none", "desktop")]
     [string]$Action   = "serve",
 
     [string]$Host     = "127.0.0.1",
@@ -270,6 +270,11 @@ switch ($Action) {
         Write-Host "  To run tests:         .\setup.ps1 -Action test"  -ForegroundColor Cyan
         Write-Host "  To clean artifacts:   .\setup.ps1 -Action clean" -ForegroundColor Cyan
         Write-Host "  Cross-platform:       python launch.py --help"    -ForegroundColor Cyan
+    }
+
+    "desktop" {
+        Write-Step "Launching desktop mode ..."
+        & $VenvPython launch.py --desktop-launch --skip-install
     }
 
 }

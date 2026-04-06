@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?define ProductVersion="0.1.0.0" ?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="Thalos Prime"
+    Manufacturer="ThalosPrime"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="4D1E65B1-1A0D-4B0F-8B52-E4D14E961641"
+    Language="1033"
+    Scope="perMachine">
+    <SummaryInformation Description="Thalos Prime desktop installer" />
+    <MajorUpgrade AllowDowngrades="no" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="MainFeature" Title="Thalos Prime" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
+    </Feature>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
+    <UIRef Id="WixUI_InstallDir" />
+
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLDIR" Name="Thalos Prime">
+        <ComponentGroup Id="AppFiles">
+          <Component Id="MainLauncherComponent" Guid="5A8CFD5C-E58A-4A53-B4B9-22D6D5C2C1C6">
+            <File Id="LauncherExeFile" Source="dist\ThalosPrime\ThalosPrimeLauncher.exe" KeyPath="yes" />
+          </Component>
+        </ComponentGroup>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ProgramMenuDir" Name="Thalos Prime">
+        <Component Id="StartMenuShortcutComponent" Guid="8BEA36AF-A9A3-4F6A-9E17-6CA16481E4BE">
+          <Shortcut
+            Id="StartMenuShortcut"
+            Name="Thalos Prime"
+            Description="Launch Thalos Prime"
+            Target="[INSTALLDIR]ThalosPrimeLauncher.exe"
+            WorkingDirectory="INSTALLDIR" />
+          <RemoveFolder Id="ProgramMenuDirRemove" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\ThalosPrime\Installer" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="2B9EDBF7-D0A8-4D6F-8BB2-5648EC30F4F7">
+        <Condition><![CDATA[CREATE_DESKTOP_SHORTCUT = 1]]></Condition>
+        <Shortcut
+          Id="DesktopShortcut"
+          Name="Thalos Prime"
+          Description="Launch Thalos Prime"
+          Target="[INSTALLDIR]ThalosPrimeLauncher.exe"
+          WorkingDirectory="INSTALLDIR" />
+        <RegistryValue Root="HKCU" Key="Software\ThalosPrime\Installer" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1" />
+  </Package>
+</Wix>

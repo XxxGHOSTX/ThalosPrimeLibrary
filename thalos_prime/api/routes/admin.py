@@ -14,6 +14,7 @@ import psutil
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from thalos_prime import __version__
+from thalos_prime.user_settings import load_settings
 from thalos_runtime.core.deps import get_engine
 from thalos_runtime.plugins.chat_high_coherence_task import execution_defaults
 
@@ -172,10 +173,15 @@ async def get_configuration() -> dict[str, Any]:
     """
     from thalos_prime.api.config import config
 
+    settings = load_settings()
+
     # Return non-sensitive config
     return {
         "host": config.host,
         "port": config.port,
+        "desktop_host": settings.runtime.host,
+        "desktop_port": settings.runtime.port,
+        "desktop_log_level": settings.runtime.log_level,
         "cache_ttl": config.cache_ttl,
         "max_results_limit": config.max_results_limit,
         "enable_local_generation": config.enable_local_generation,

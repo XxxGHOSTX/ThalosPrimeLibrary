@@ -53,6 +53,8 @@
         
         <!-- Main Content Area -->
         <main id="main-content">
+            <div id="top-nav" class="top-nav hidden"></div>
+
             <!-- Sidebar -->
             <aside id="sidebar">
                 <nav class="nav-menu">
@@ -235,6 +237,34 @@
                     <div class="settings-container">
                         <h2>Settings</h2>
                         <form id="settings-form" class="settings-form">
+                            <h3>Workspace Layout</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="layout-mode">Navigation Layout:</label>
+                                    <select id="layout-mode" name="layout_mode">
+                                        <option value="both" selected>Top + Side</option>
+                                        <option value="side">Side Only</option>
+                                        <option value="top">Top Only</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="toolbar-mode">Toolbar:</label>
+                                    <select id="toolbar-mode" name="toolbar_mode">
+                                        <option value="both" selected>Top + Side</option>
+                                        <option value="top">Top Only</option>
+                                        <option value="side">Side Only</option>
+                                        <option value="none">Hidden</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sidebar-width">Sidebar Width:</label>
+                                <input type="range" id="sidebar-width" name="sidebar_width" min="180" max="480" value="250">
+                            </div>
+
+                            <h3>Navigation Order (Drag to Reposition)</h3>
+                            <ul id="nav-order-list" class="nav-order-list"></ul>
+
                             <h3>Display</h3>
                             <div class="form-group">
                                 <label for="theme-select">Theme:</label>
@@ -261,6 +291,34 @@
                             </div>
                             
                             <h3>Advanced</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="runtime-host">Runtime Host:</label>
+                                    <input type="text" id="runtime-host" name="runtime_host" value="127.0.0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="runtime-port">Runtime Port:</label>
+                                    <input type="number" id="runtime-port" name="runtime_port" value="8000" min="1" max="65535">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="runtime-log-level">Runtime Log Level:</label>
+                                    <select id="runtime-log-level" name="runtime_log_level">
+                                        <option value="INFO" selected>INFO</option>
+                                        <option value="DEBUG">DEBUG</option>
+                                        <option value="WARNING">WARNING</option>
+                                        <option value="ERROR">ERROR</option>
+                                        <option value="CRITICAL">CRITICAL</option>
+                                    </select>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <label>
+                                        <input type="checkbox" id="runtime-auto-open" name="runtime_auto_open" checked>
+                                        Auto-open browser on desktop launch
+                                    </label>
+                                </div>
+                            </div>
                             <div class="form-group checkbox-group">
                                 <label>
                                     <input type="checkbox" id="show-debug" name="showDebug">
@@ -276,6 +334,8 @@
                             
                             <button type="submit" class="btn btn-primary">Save Settings</button>
                             <button type="button" class="btn btn-secondary" id="reset-settings">Reset to Default</button>
+                            <button type="button" class="btn btn-secondary" id="stop-server-btn">Stop Server</button>
+                            <button type="button" class="btn btn-secondary" id="restart-server-btn">Restart UI</button>
                         </form>
                     </div>
                 </div>
