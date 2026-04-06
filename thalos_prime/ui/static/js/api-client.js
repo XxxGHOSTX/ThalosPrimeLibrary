@@ -72,6 +72,19 @@ class APIClient {
             })
         });
     }
+
+    async querySense(query, domain = 'general', requireProof = false, includeDeepTrace = false, seed = 0) {
+        return this.request('/sense/query', {
+            method: 'POST',
+            body: JSON.stringify({
+                query,
+                domain,
+                require_proof: requireProof,
+                include_deep_trace: includeDeepTrace,
+                seed
+            })
+        });
+    }
     
     async getChatHistory(limit = 20) {
         return this.request(`/chat/history/${this.sessionId}?limit=${limit}`);

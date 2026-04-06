@@ -66,6 +66,15 @@ def test_parser_has_serve_subcommand() -> None:
     assert args.port == 9000
 
 
+def test_parser_has_evidence_bundle_subcommand() -> None:
+    """evidence-bundle subcommand accepts --input and --output."""
+    parser = build_parser()
+    args = parser.parse_args(["evidence-bundle", "--input", "bundle.json"])
+    assert args.command == "evidence-bundle"
+    assert args.input == "bundle.json"
+    assert args.output is None
+
+
 def test_run_cli_generate_succeeds(capsys: pytest.CaptureFixture[str]) -> None:
     """run_cli generate produces a 3200-character page on stdout."""
     rc = run_cli(["generate", "--address", "abc123"])
@@ -153,3 +162,28 @@ def test_run_cli_search_with_output_file(tmp_path: pathlib.Path) -> None:
     assert out_path.exists()
     data = json.loads(out_path.read_text())
     assert isinstance(data, list)
+
+
+def test_run_cli_evidence_bundle_writes_json(tmp_path: pathlib.Path) -> None:
+    """run_cli evidence-bundle writes deterministic workflow JSON to output."""
+    payload = {
+        "items": [
+            {
+                "content": "cli evidence item one",
+                "source_uris": ["https://example.org/one"],
+            },
+            {
+                "content": "cli evidence item two",
+                "source_uris": ["https://example.org/two"],
+            },
+        ],
+        "derive_operation": "synthesize",
+    }
+    in_path = tmp_path / "input.json"
+    out_path = tmp_path / "bundle.json"
+    in_path.write_text(json.dumps(payload), encoding="utf-8")
+    rc = run_cli(["evidence-bundle", "--input", str(in_path), "--output", str(out_path)])
+    assert rc == 0
+    result = json.loads(out_path.read_text(encoding="utf-8"))
+    assert result["workflow"] == "evidence_bundle"
+    assert result["inputs"] == 2

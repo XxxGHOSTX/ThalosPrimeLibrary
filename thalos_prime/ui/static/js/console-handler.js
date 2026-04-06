@@ -7,6 +7,7 @@ class ConsoleHandler {
         this.sendBtn = document.getElementById('send-btn');
         this.messageHistory = [];
         this.historyIndex = -1;
+        this.lastWhyAnswer = null;
         
         this.init();
     }
@@ -58,37 +59,15 @@ class ConsoleHandler {
         this.showTypingIndicator();
         
         try {
-            // Get search mode
             const mode = document.getElementById('search-mode').value;
-            
-            // Send to API
-            const response = await apiClient.sendChat(message, mode, 5, 51);
+            const domain = this.resolveSenseDomain(mode);
+            const response = await apiClient.querySense(message, domain, true, true, 0);
             
             // Remove typing indicator
             this.hideTypingIndicator();
             
-            // Display bot response
-            this.addMessage('bot', response.reply);
-            
-            // Display results if any
-            if (response.results && response.results.length > 0) {
-                this.addResults(response.results);
-            }
-            
-            // Show metadata
-            if (response.metadata && response.metadata.query_time_ms) {
-                const timeMsg = `Query processed in ${response.metadata.query_time_ms.toFixed(0)}ms`;
-                this.addMessage('system', timeMsg);
-            }
-            if (response.metadata && Object.prototype.hasOwnProperty.call(response.metadata, 'high_coherence_satisfied')) {
-                const satisfied = Boolean(response.metadata.high_coherence_satisfied);
-                const attempts = response.metadata.attempts ?? 1;
-                const minScore = response.metadata.min_score_target ?? 51;
-                const statusText = satisfied
-                    ? `High coherence satisfied (≥${minScore}) in ${attempts} attempt(s).`
-                    : `High coherence fallback used (target ≥${minScore}) after ${attempts} attempt(s).`;
-                this.addMessage(satisfied ? 'system' : 'error', statusText);
-            }
+            this.addMessage('bot', response.answer);
+            this.renderWhyAnswer(response);
         } catch (error) {
             this.hideTypingIndicator();
             this.addMessage('error', `Error: ${error.message}`);
@@ -151,6 +130,45 @@ class ConsoleHandler {
         resultsDiv.innerHTML = resultsHTML;
         
         this.consoleOutput.appendChild(resultsDiv);
+    }
+
+    resolveSenseDomain(mode) {
+        if (mode === 'local' || mode === 'hybrid') {
+            return 'code';
+        }
+        if (mode === 'remote') {
+            return 'knowledge_graph';
+        }
+        return 'general';
+    }
+
+    renderWhyAnswer(response) {
+        const panel = document.getElementById('why-answer-panel');
+        if (!panel || !response || !response.provenance) return;
+        const why = response.provenance.why_this_answer || {};
+        const audit = response.provenance.audit_chain || {};
+        const epistemics = response.provenance.artifact_epistemics || {};
+        const steps = Array.isArray(why.reasoning_steps) ? why.reasoning_steps : [];
+        const sources = Array.isArray(response.sources) ? response.sources : [];
+        const sourceList = sources.map((source) => `<li>${this.escapeHtml(String(source))}</li>`).join('');
+        const stepList = steps.map((step) => `<li>${this.escapeHtml(String(step))}</li>`).join('');
+
+        panel.innerHTML = `
+            <div class="message-content">
+                <h4>Why this answer</h4>
+                <p><strong>Domain:</strong> ${this.escapeHtml(String(response.domain || 'general'))}</p>
+                <p><strong>Confidence:</strong> ${Number(response.confidence || 0).toFixed(3)} | <strong>Verified:</strong> ${Boolean(response.verified)}</p>
+                <p><strong>Belief state:</strong> ${this.escapeHtml(String(epistemics.belief_state || 'unknown'))}</p>
+                <p><strong>Validation:</strong> ${this.escapeHtml(String(epistemics.validation_status || 'unknown'))}</p>
+                <p><strong>Artifact ID:</strong> ${this.escapeHtml(String(epistemics.artifact_id || ''))}</p>
+                <p><strong>Audit events:</strong> ${this.escapeHtml(String(audit.artifact_event_count || 0))}</p>
+                <h5>Sources</h5>
+                <ul>${sourceList || '<li>none</li>'}</ul>
+                <h5>Reasoning steps</h5>
+                <ul>${stepList || '<li>none</li>'}</ul>
+            </div>
+        `;
+        this.lastWhyAnswer = response;
     }
     
     showTypingIndicator() {

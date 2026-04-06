@@ -60,6 +60,12 @@ jobs:
           pytest tests -v --cov=thalos_prime --cov-report=term-missing --cov-report=xml --cov-fail-under=80
           echo "::endgroup::"
 
+      - name: Deterministic benchmark regression gate
+        run: |
+          echo "::group::Running deterministic benchmark suite"
+          python scripts/run_deterministic_benchmarks.py --output benchmarks/deterministic_benchmarks.json --expected benchmarks/deterministic_benchmarks_expected.json
+          echo "::endgroup::"
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

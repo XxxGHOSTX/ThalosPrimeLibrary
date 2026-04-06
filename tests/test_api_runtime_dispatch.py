@@ -100,3 +100,39 @@ def test_admin_tasks_lists_registered_task_names() -> None:
     assert "babel.v1.enumerate" in tasks
     assert "babel.v1.decode" in tasks
 
+
+def test_sense_query_returns_structured_provenance() -> None:
+    """POST /api/v1/sense/query returns deterministic answer + provenance surfaces."""
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/sense/query",
+            json={
+                "query": "2 + 2",
+                "domain": "computational",
+                "require_proof": True,
+                "include_deep_trace": True,
+                "seed": 7,
+            },
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "1.0"
+    assert body["domain"] == "computational"
+    assert "provenance" in body
+    assert "proof_trace" in body["provenance"]
+    assert "lineage_graph" in body["provenance"]
+    assert body["provenance"]["deterministic"]["seed"] == 7
+
+
+def test_sense_query_invalid_proof_domain_returns_422() -> None:
+    """Proof-required mode rejects domains without a proof engine binding."""
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/sense/query",
+            json={
+                "query": "explain this code",
+                "domain": "code",
+                "require_proof": True,
+            },
+        )
+    assert response.status_code == 422

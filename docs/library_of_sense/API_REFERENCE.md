@@ -10,9 +10,37 @@ handler.operate()
 handler.register_source(source)
 handler.register_synthesizer(synthesizer)
 answer: StructuredAnswer = handler.handle_query("query", context)
+answer, synthesis = handler.handle_query_with_trace("query", context)
 handler.checkpoint()
 handler.terminate()
 ```
+
+## REST API Endpoint
+
+### `POST /api/v1/sense/query`
+
+Deterministic evidence-backed answer flow with domain routing, proof-required
+mode, and structured provenance.
+
+Request example:
+
+```json
+{
+  "query": "2 + 2",
+  "domain": "computational",
+  "require_proof": true,
+  "include_deep_trace": true,
+  "seed": 7
+}
+```
+
+Response includes:
+
+- answer/confidence/verified/domain
+- retrieval source evidence
+- artifact epistemics (validation status, belief state, lineage)
+- audit chain references
+- proof trace (and optional lineage graph)
 
 ## QueryContext
 

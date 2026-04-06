@@ -349,3 +349,54 @@ class TestConsensusEndpoint:
             json={"artifact_ids": []},
         )
         assert resp.status_code == 200
+
+
+class TestContradictionEndpoint:
+    def test_empty_payload_returns_no_contradictions(self) -> None:
+        resp = client.post("/api/v1/artifacts/contradictions", json={"artifact_ids": []})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["contradictions"] == []
+        assert body["consensus_score"] == 1.0
+
+    def test_unknown_artifacts_return_consensus_zero(self) -> None:
+        resp = client.post(
+            "/api/v1/artifacts/contradictions",
+            json={"artifact_ids": ["x" * 64, "y" * 64]},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["consensus_score"] == 0.0
+
+
+class TestEvidenceBundleWorkflowEndpoint:
+    def test_workflow_requires_items(self) -> None:
+        resp = client.post(
+            "/api/v1/artifacts/workflow/evidence_bundle",
+            json={"items": []},
+        )
+        assert resp.status_code == 422
+
+    def test_workflow_returns_bundle(self) -> None:
+        resp = client.post(
+            "/api/v1/artifacts/workflow/evidence_bundle",
+            json={
+                "items": [
+                    {
+                        "content": "deterministic evidence one",
+                        "source_uris": ["https://example.org/a"],
+                    },
+                    {
+                        "content": "deterministic evidence two",
+                        "source_uris": ["https://example.org/b"],
+                    },
+                ],
+                "derive_operation": "synthesize",
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["workflow"] == "evidence_bundle"
+        assert body["inputs"] == 2
+        assert "proof_bundle" in body
+        assert len(body["proof_bundle"]) == 2

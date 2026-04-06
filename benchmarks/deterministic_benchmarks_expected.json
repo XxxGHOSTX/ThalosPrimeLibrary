@@ -1,0 +1,31 @@
+{
+  "coherence": {
+    "confidence_level": "medium",
+    "exact_match_score": 80.0,
+    "language_score": 40.0,
+    "ngram_score": 30.0,
+    "overall_score": 60.0,
+    "structure_score": 90.0
+  },
+  "reasoning": {
+    "conclusion": "4*x",
+    "confidence": 0.95,
+    "proof_steps": [
+      "Original expression: 4*x",
+      "Simplified: 4*x"
+    ],
+    "valid": true
+  },
+  "replay_hash": "ef107b00d447f760afac720fc83e7753992879c288634f4772cec2d85a0eee73",
+  "retrieval": {
+    "confidence": 0.95,
+    "content": "symbolic=4, numeric=4.00000000000000",
+    "metadata": {
+      "expression": "2 + 2",
+      "numeric": "4.00000000000000",
+      "simplified": "4"
+    },
+    "source": "computational"
+  },
+  "schema_version": "1.0"
+}

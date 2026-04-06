@@ -67,6 +67,15 @@ ThalosPrimeLibrary (`thalos_prime`) is a multi-subsystem Python library that com
   OpenTofu, Cloudflare, GitHub Actions, Docker) with policy enforcement and drift detection.
 - **REST API & interactive UI** — FastAPI server with a Matrix-style browser interface.
 
+### Flagship Use Case — Deterministic Evidence Engine
+
+Thalos Prime is optimized for **deterministic, auditable answer generation** in
+high-stakes domains (security, compliance, scientific claims):
+
+- identical query + seed + config hash => identical answer/provenance
+- every answer includes validation verdicts, belief-state transitions, and audit references
+- no silent fallback when invariants fail; failures remain explicit and replayable
+
 Every subsystem follows the same six-method lifecycle contract
 (`initialize → validate → operate → reconcile → checkpoint → terminate`) and every operation is
 fully deterministic with a seeded replay guarantee.
@@ -440,6 +449,8 @@ The TPL epistemic pipeline is exposed under `/api/v1/artifacts/`:
 | `GET`  | `/api/v1/artifacts/export/{id}` | Export artifact + ProofTrace bundle |
 | `GET`  | `/api/v1/artifacts/graph/{id}` | Lineage graph for an artifact |
 | `POST` | `/api/v1/artifacts/consensus` | Find the highest-confidence accepted artifact |
+| `POST` | `/api/v1/artifacts/contradictions` | Detect evidence disagreement and contradiction reasons |
+| `POST` | `/api/v1/artifacts/workflow/evidence_bundle` | One-call ingest→derive→proof workflow |
 
 **Example: ingest an artifact**
 
@@ -456,6 +467,39 @@ curl -X POST http://localhost:8000/api/v1/artifacts/ingest \
 curl -X POST http://localhost:8000/api/v1/artifacts/derive \
   -H "Content-Type: application/json" \
   -d '{"artifact_ids": ["<accepted-artifact-id>"], "operation": "summarize"}'
+```
+
+### Sense Query Endpoint (Primary Best-Answer Path)
+
+`/api/v1/sense/query` is the first-class endpoint for deterministic,
+evidence-backed answers with structured provenance.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/sense/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "2 + 2",
+    "domain": "computational",
+    "require_proof": true,
+    "include_deep_trace": true,
+    "seed": 7
+  }'
+```
+
+### One-Command / One-Call Evidence Bundle Workflow
+
+CLI:
+
+```bash
+thalos-prime evidence-bundle --input ./evidence_input.json --output ./evidence_bundle.json
+```
+
+API:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/artifacts/workflow/evidence_bundle \
+  -H "Content-Type: application/json" \
+  -d @evidence_input.json
 ```
 
 ### ASGI / Vercel Deployment
@@ -653,6 +697,7 @@ Every pull request and push to `main` runs:
 | State validation | Custom validator — checks state serialisation |
 | Documentation validation | Custom validator — verifies docstrings and required docs |
 | Security scanning | `bandit`, `pip-audit` |
+| Deterministic benchmark replay | `scripts/run_deterministic_benchmarks.py` against expected snapshot |
 | Prohibited patterns | Detects TODOs, stubs, mocks, placeholders |
 
 **All checks must pass** before a pull request can be merged.
@@ -717,6 +762,28 @@ docker compose -f infra/docker-compose.yml up
 | [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
 | [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
 | [VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) | System verification and test results |
+
+---
+
+## Trust Spec
+
+Hard guarantees:
+
+- fully deterministic execution with explicit seed and config hash surfaces
+- fully auditable state transitions via tamper-evident chained audit events
+- no silent fallback; invariant failures are explicit and reproducible
+
+Operational trust surfaces:
+
+- lifecycle conformance (`initialize → validate → operate → reconcile → checkpoint → terminate`)
+- belief-state transitions (`pending/accepted/disputed/rejected`)
+- proof trace and lineage graph exports for evidence-backed answers
+- deterministic benchmark replay in CI
+
+## Edition Strategy
+
+- **OSS Core**: deterministic engine, traceability, sense query, contradiction intelligence, evidence workflows
+- **Advanced**: enterprise connectors, governance dashboards, managed replay/audit operations
 
 ---
 

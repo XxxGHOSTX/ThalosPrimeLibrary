@@ -7,6 +7,9 @@ toolkit that integrates the [Library of Babel](https://libraryofbabel.info) with
 hybrid cognitive synthesis, symbolic reasoning, autonomous agency, and
 infrastructure-as-code generation.
 
+Primary product posture: **deterministic evidence engine** for high-stakes AI
+answer generation, where every output carries reproducible provenance.
+
 Every subsystem is built on two foundational principles:
 
 1. **Determinism** — identical inputs always produce identical outputs. A single
@@ -132,6 +135,19 @@ canonical endpoint map.
 - No module-level RNG state; no implicit async at module boundary.
 - Checkpoints include seed, configuration hash, and schema version for exact
   replay.
+
+## Trust Spec (Operational)
+
+Hard guarantees:
+- deterministic outputs for identical inputs and seeds
+- tamper-evident audit-chain integrity
+- explicit failure semantics (no silent fallback)
+
+Required answer-provenance surfaces:
+- validation verdict and confidence
+- belief state and lineage links
+- audit event references and chain head hashes
+- proof trace bundle (and lineage graph when requested)
 
 ---
 
