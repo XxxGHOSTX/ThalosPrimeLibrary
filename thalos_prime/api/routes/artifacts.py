@@ -86,6 +86,27 @@ class ConsensusResponse(BaseModel):
     message: str
 
 
+class ContradictionRequest(BaseModel):
+    """Request body for POST /contradictions."""
+
+    artifact_ids: list[str]
+
+
+class EvidenceWorkflowItem(BaseModel):
+    """Single ingestion item for deterministic evidence workflow."""
+
+    content: str
+    source_uris: list[str]
+    metadata: dict[str, str] | None = None
+
+
+class EvidenceWorkflowRequest(BaseModel):
+    """Request body for POST /workflow/evidence_bundle."""
+
+    items: list[EvidenceWorkflowItem]
+    derive_operation: str = "synthesize"
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -334,3 +355,188 @@ async def consensus(request: ConsensusRequest) -> ConsensusResponse:
         participant_count=len(candidates),
         message=f"Consensus reached: {winner.artifact_id[:16]}... (confidence={winner.confidence:.3f})",
     )
+
+
+@router.post("/contradictions")
+async def contradictions(request: ContradictionRequest) -> dict[str, Any]:
+    """Return contradiction intelligence over a set of artifact IDs.
+
+    Exposes top-level disagreement signals with explicit reason labels:
+    - state disagreement (accepted/disputed/rejected mismatch)
+    - confidence divergence (spread > 0.2)
+    - explicit FACS contradiction links
+    """
+    if not request.artifact_ids:
+        return {
+            "artifact_ids": [],
+            "contradictions": [],
+            "consensus_score": 1.0,
+            "message": "No artifact IDs provided; no contradictions.",
+        }
+
+    all_records = (
+        _belief_ledger.get_by_state(BeliefState.ACCEPTED)
+        + _belief_ledger.get_by_state(BeliefState.PENDING)
+        + _belief_ledger.get_by_state(BeliefState.DISPUTED)
+        + _belief_ledger.get_by_state(BeliefState.REJECTED)
+    )
+    index = {record.artifact_id: record for record in all_records}
+    selected = [index[artifact_id] for artifact_id in request.artifact_ids if artifact_id in index]
+
+    if not selected:
+        return {
+            "artifact_ids": request.artifact_ids,
+            "contradictions": [],
+            "consensus_score": 0.0,
+            "message": "No provided artifact IDs exist in the belief ledger.",
+        }
+
+    states = {record.state.value for record in selected}
+    state_contradiction = len(states) > 1
+    confidences = [record.confidence for record in selected]
+    confidence_spread = max(confidences) - min(confidences)
+    confidence_contradiction = confidence_spread > 0.2
+    facs_links = [
+        {
+            "artifact_id": record.artifact_id,
+            "facs_flags": record.facs_flags,
+            "lineage": record.lineage,
+        }
+        for record in selected
+        if record.facs_flags.get("disputed", False) or record.facs_flags.get("rejected", False)
+    ]
+
+    contradictions_payload: list[dict[str, Any]] = []
+    if state_contradiction:
+        contradictions_payload.append(
+            {
+                "type": "state_disagreement",
+                "reason": "Artifacts span multiple belief states",
+                "states": sorted(states),
+            }
+        )
+    if confidence_contradiction:
+        contradictions_payload.append(
+            {
+                "type": "confidence_divergence",
+                "reason": "Confidence spread exceeds deterministic threshold",
+                "spread": round(confidence_spread, 4),
+            }
+        )
+    if facs_links:
+        contradictions_payload.append(
+            {
+                "type": "facs_dispute_or_reject",
+                "reason": "One or more artifacts carry disputed/rejected FACS flags",
+                "records": facs_links,
+            }
+        )
+
+    contradictory_count = sum(1 for record in selected if record.state in {BeliefState.DISPUTED, BeliefState.REJECTED})
+    consensus_score = 1.0 - (contradictory_count / len(selected))
+    return {
+        "artifact_ids": request.artifact_ids,
+        "resolved_records": [record.model_dump() for record in selected],
+        "contradictions": contradictions_payload,
+        "consensus_score": round(consensus_score, 4),
+        "message": (
+            "Contradictions detected." if contradictions_payload else "No contradictions detected."
+        ),
+    }
+
+
+@router.post("/workflow/evidence_bundle")
+async def evidence_bundle_workflow(request: EvidenceWorkflowRequest) -> dict[str, Any]:
+    """Run deterministic end-to-end evidence workflow.
+
+    Pipeline:
+    ingest corpus -> validate beliefs -> derive claim (from accepted) -> export proof bundle.
+    """
+    if not request.items:
+        raise HTTPException(status_code=422, detail="items must contain at least one entry")
+
+    try:
+        operation = DeriveOperation(request.derive_operation.lower())
+    except ValueError as exc:
+        valid = [enum.value for enum in DeriveOperation]
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid derive_operation {request.derive_operation!r}. Valid values: {valid}",
+        ) from exc
+
+    ts_base = time.time_ns()
+    ingested: list[dict[str, Any]] = []
+    accepted_ids: list[str] = []
+    trace_bundle: list[dict[str, Any]] = []
+
+    for idx, item in enumerate(request.items):
+        ts = ts_base + idx
+        artifact = Artifact.create(
+            content=item.content,
+            source_uris=item.source_uris,
+            metadata=item.metadata or {},
+            timestamp_ns=ts,
+        )
+        coord = _indexer.index(artifact.content)
+        verdict = _validation_pipeline.validate(artifact, ts)
+
+        with contextlib.suppress(ValueError):
+            _belief_ledger.admit(
+                artifact=artifact,
+                coordinate_hex=coord.to_hex_str(),
+                confidence=verdict.confidence,
+                timestamp_ns=ts,
+            )
+
+        if verdict.final_status is ValidationStatus.ACCEPTED:
+            with contextlib.suppress(KeyError, ValueError):
+                _belief_ledger.accept(artifact.artifact_id, ts)
+                accepted_ids.append(artifact.artifact_id)
+
+        _audit_trail.append(
+            event_type=AuditEventType.ARTIFACT_ADMITTED,
+            artifact_id=artifact.artifact_id,
+            timestamp_ns=ts,
+            payload={
+                "verdict": verdict.final_status.value,
+                "confidence": str(verdict.confidence),
+                "coordinate": coord.to_hex_str(),
+            },
+        )
+        trace = _presenter.build_proof_trace(artifact, verdict, _audit_trail, _belief_ledger)
+        ingested.append(
+            {
+                "artifact": _presenter.export_artifact_json(artifact),
+                "verdict": {
+                    "final_status": verdict.final_status.value,
+                    "confidence": verdict.confidence,
+                    "coordinate": coord.to_hex_str(),
+                },
+            }
+        )
+        trace_bundle.append(trace.model_dump())
+
+    derivation_result: dict[str, Any] | None = None
+    if accepted_ids:
+        derive_ts = ts_base + len(request.items) + 1
+        candidate, derive_verdict = _reasoning_layer.derive(
+            artifact_ids=accepted_ids,
+            operation=operation,
+            timestamp_ns=derive_ts,
+        )
+        derivation_result = {
+            "candidate_claim": candidate.model_dump(),
+            "verdict": {
+                "final_status": derive_verdict.final_status.value,
+                "confidence": derive_verdict.confidence,
+            },
+        }
+
+    return {
+        "workflow": "evidence_bundle",
+        "inputs": len(request.items),
+        "accepted_artifacts": accepted_ids,
+        "ingested": ingested,
+        "derivation": derivation_result,
+        "proof_bundle": trace_bundle,
+    }

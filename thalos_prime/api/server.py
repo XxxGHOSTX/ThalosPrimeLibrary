@@ -282,12 +282,14 @@ def register_routes(app: FastAPI) -> None:
         from thalos_prime.api.routes.enumerate import router as enumerate_router
         from thalos_prime.api.routes.generate import router as generate_router
         from thalos_prime.api.routes.main import router as main_router
+        from thalos_prime.api.routes.sense import router as sense_router
         from thalos_prime.api.routes.search import router as search_router
         from thalos_prime.api.routes.settings import router as settings_router
 
         # Register routers with prefixes
         app.include_router(main_router, tags=["Main"])
         app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
+        app.include_router(sense_router, prefix="/api/v1/sense", tags=["Sense"])
         app.include_router(search_router, prefix="/api/v1/search", tags=["Search"])
         app.include_router(generate_router, prefix="/api/v1/generate", tags=["Generate"])
         app.include_router(enumerate_router, prefix="/api/v1/enumerate", tags=["Enumerate"])

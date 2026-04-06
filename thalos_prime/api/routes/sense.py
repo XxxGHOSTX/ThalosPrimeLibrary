@@ -115,8 +115,9 @@ def _serialize_retrieval_sources(sources: list[RetrievalResult]) -> list[dict[st
 async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
     """Execute a deterministic evidence-backed Sense query."""
     if request.require_proof and request.domain not in _SUPPORTED_PROOF_DOMAINS:
+        supported_domains = [domain.value for domain in sorted(_SUPPORTED_PROOF_DOMAINS, key=lambda item: item.value)]
         msg = (
-            f"Proof mode requires one of {[d.value for d in sorted(_SUPPORTED_PROOF_DOMAINS)]}; "
+            f"Proof mode requires one of {supported_domains}; "
             f"received domain={request.domain.value!r}"
         )
         raise HTTPException(status_code=422, detail=msg)
@@ -266,4 +267,3 @@ async def sense_query(request: SenseQueryRequest) -> dict[str, Any]:
     handler.checkpoint()
     handler.terminate()
     return response
-

@@ -7,6 +7,7 @@ subcommands:
 - ``enumerate`` — enumerate candidate addresses for a query
 - ``decode``    — score coherence of a page at a given address
 - ``search``    — full pipeline: enumerate → generate → decode → rank
+- ``evidence-bundle`` — ingest corpus → derive claim → export proof bundle
 - ``serve``     — start the FastAPI server
 
 All subcommands delegate to the real Thalos Prime modules (BabelGenerator,
@@ -20,6 +21,7 @@ implement any generation or scoring logic itself.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import logging
 import sys
@@ -136,6 +138,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         default=None,
         help="Path to write JSON results (default: stdout)",
+    )
+
+    # ------------------------------------------------------------------
+    # evidence-bundle
+    # ------------------------------------------------------------------
+    evidence_parser = subparsers.add_parser(
+        "evidence-bundle",
+        help="Run deterministic ingest->derive->proof workflow from a JSON input file",
+    )
+    evidence_parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to JSON file with {'items': [...], 'derive_operation': 'synthesize'}",
+    )
+    evidence_parser.add_argument(
+        "--output",
+        default=None,
+        help="Path to write JSON workflow output (default: stdout)",
     )
 
     # ------------------------------------------------------------------
@@ -289,6 +309,30 @@ def _handle_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_evidence_bundle(args: argparse.Namespace) -> int:
+    """Handle the evidence-bundle subcommand.
+
+    Args:
+        args: Parsed arguments containing --input and optional --output.
+
+    Returns:
+        Exit code (0 on success, 1 on error).
+
+    """
+    from thalos_prime.api.routes.artifacts import (
+        EvidenceWorkflowRequest,
+        evidence_bundle_workflow,
+    )
+
+    with open(args.input, encoding="utf-8") as fh:
+        payload = json.load(fh)
+
+    request = EvidenceWorkflowRequest.model_validate(payload)
+    response = asyncio.run(evidence_bundle_workflow(request))
+    _write_output(json.dumps(response, indent=2), args.output)
+    return 0
+
+
 def _handle_serve(args: argparse.Namespace) -> int:
     """Handle the serve subcommand — start the FastAPI server.
 
@@ -322,6 +366,7 @@ _DISPATCH: dict[str, Any] = {
     "enumerate": _handle_enumerate,
     "decode": _handle_decode,
     "search": _handle_search,
+    "evidence-bundle": _handle_evidence_bundle,
     "serve": _handle_serve,
 }
 
