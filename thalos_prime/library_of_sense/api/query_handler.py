@@ -157,6 +157,29 @@ class QueryHandler:
         synthesis = self._verifier.verify_and_mark(synthesis)
         return self._answer_generator.generate(query, synthesis, context)
 
+    def handle_query_with_trace(
+        self,
+        query: str,
+        context: QueryContext | None = None,
+    ) -> tuple[StructuredAnswer, SynthesisResult]:
+        """Process a query and return both structured answer and raw synthesis trace.
+
+        Args:
+            query: The query string to process.
+            context: Optional QueryContext; defaults to GENERAL domain.
+
+        Returns:
+            Tuple of (StructuredAnswer, SynthesisResult) for downstream provenance handling.
+
+        """
+        if context is None:
+            context = QueryContext(seed=self._seed)
+
+        synthesis = self._orchestrator.process_query(query, context)
+        synthesis = self._verifier.verify_and_mark(synthesis)
+        answer = self._answer_generator.generate(query, synthesis, context)
+        return answer, synthesis
+
     def handle_raw(
         self,
         query: str,
