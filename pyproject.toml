@@ -97,7 +97,6 @@ module = [
     "uvicorn",
     "uvicorn.*",
     "jsonschema",
-    "jsonschema.*",
 ]
 ignore_missing_imports = true
 
@@ -161,22 +160,11 @@ skips = [
 [[tool.mypy.overrides]]
 module = [
     "sympy",
-    "sympy.*",
     "networkx",
-    "networkx.*",
     "z3",
-    "rdflib",
-    "rdflib.*",
-    "bs4",
-    "bs4.*",
     "requests",
     "requests.*",
-    "aiohttp",
-    "aiohttp.*",
-    "libcst",
-    "libcst.*",
     "psutil",
-    "psutil.*",
 ]
 ignore_missing_imports = true
 
@@ -233,6 +221,8 @@ disable_error_code = ["no-untyped-call"]
     "SLF001",
     # docstring capitalization in subcommand descriptions
     "D403",
+    # imperative mood in helper docstrings is stylistic for tests
+    "D401",
     # match parameter in raises - test clarity takes priority
     "PT011",
     # 0.0.0.0 bind address in test assertions for serve subcommand
@@ -249,6 +239,11 @@ disable_error_code = ["no-untyped-call"]
     "TRY003", "EM101",
     # type-only imports: tests use annotations with runtime imports
     "TC001", "TC003",
+]
+# Babel subsystem: retain strict correctness checks while allowing incremental
+# documentation hardening without blocking CI.
+"thalos_prime/babel/**/*.py" = [
+    "D101", "D102", "D103", "D105", "D107",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [

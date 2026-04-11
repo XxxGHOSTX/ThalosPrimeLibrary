@@ -265,11 +265,11 @@ Once the server is running, you can access:
 Key endpoints include:
 
 - `GET /health` - Health check
-- `POST /api/v1/generate` - Generate pages from addresses
-- `POST /api/v1/enumerate` - Enumerate addresses from queries
-- `POST /api/v1/decode` - Decode and score pages
-- `POST /api/v1/search` - Search for content
-- `POST /api/v1/chat` - Interactive chat interface
+- `POST /api/v1/generate/` - Generate pages from addresses
+- `POST /api/v1/enumerate/` - Enumerate addresses from queries
+- `POST /api/v1/decode/` - Decode and score pages
+- `POST /api/v1/search/` - Search for content
+- `POST /api/v1/chat/` - Interactive chat interface
 
 ### Testing the API
 
@@ -279,7 +279,7 @@ Key endpoints include:
 curl http://localhost:8000/health
 
 # Generate a page (if endpoint exists)
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8000/api/v1/generate/ \
   -H "Content-Type: application/json" \
   -d '{"address": "abc123"}'
 ```
@@ -294,7 +294,7 @@ print(response.json())
 
 # API request
 response = requests.post(
-    "http://localhost:8000/api/v1/generate",
+    "http://localhost:8000/api/v1/generate/",
     json={"address": "abc123"}
 )
 print(response.json())
