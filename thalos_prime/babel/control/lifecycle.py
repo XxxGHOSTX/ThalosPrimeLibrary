@@ -1,11 +1,9 @@
-"""
-Lifecycle management for Babel components.
-"""
+"""Lifecycle management for Babel components."""
 
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import Protocol, List
+from typing import Protocol
 
 
 class LifecyclePhase(Enum):
@@ -35,7 +33,7 @@ class LifecycleManager:
     """Manage ordered lifecycle transitions."""
 
     def __init__(self) -> None:
-        self.components: List[LifecycleComponent] = []
+        self.components: list[LifecycleComponent] = []
 
     def register(self, component: LifecycleComponent) -> None:
         self.components.append(component)

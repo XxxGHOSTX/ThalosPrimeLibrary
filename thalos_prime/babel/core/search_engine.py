@@ -1,19 +1,18 @@
-"""
-Deterministic search engine mapping coordinates to responses.
-"""
+"""Deterministic search engine mapping coordinates to responses."""
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import TYPE_CHECKING
 
-from .coordinate_system import Coordinate
+if TYPE_CHECKING:
+    from .coordinate_system import Coordinate
 
 
 class DeterministicSearchEngine:
     """Simple in-memory search keyed by coordinates."""
 
     def __init__(self) -> None:
-        self._index: Dict[str, str] = {}
+        self._index: dict[str, str] = {}
 
     def record(self, coordinate: Coordinate, text: str) -> None:
         self._index[coordinate.as_string()] = text

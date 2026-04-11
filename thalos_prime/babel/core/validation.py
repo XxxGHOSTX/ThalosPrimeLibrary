@@ -1,18 +1,16 @@
-"""
-Validation utilities for Babel subsystem.
-"""
+"""Validation utilities for Babel subsystem."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, List
+from typing import Protocol
 
 
 @dataclass(frozen=True)
 class ValidationResult:
     passed: bool
     message: str
-    details: dict
+    details: dict[str, object]
 
 
 class Validator(Protocol):
@@ -24,12 +22,12 @@ class SystemValidator:
     """Run registered validators and aggregate results."""
 
     def __init__(self) -> None:
-        self.validators: List[Validator] = []
+        self.validators: list[Validator] = []
 
     def register(self, validator: Validator) -> None:
         self.validators.append(validator)
 
-    def validate_all(self) -> List[ValidationResult]:
+    def validate_all(self) -> list[ValidationResult]:
         return [validator.validate() for validator in self.validators]
 
     def is_valid(self) -> bool:

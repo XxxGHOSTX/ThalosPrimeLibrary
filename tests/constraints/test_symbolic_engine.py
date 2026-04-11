@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 
 from thalos_prime.constraints.symbolic_engine import (
@@ -45,8 +47,10 @@ class TestConstraintSet:
         )
         d = cs.to_dict()
         assert d["name"] == "test"
-        assert len(d["variables"]) == 1
-        assert d["constraints"] == ["x > 0"]
+        variables = cast("list[dict[str, Any]]", d["variables"])
+        constraints = cast("list[str]", d["constraints"])
+        assert len(variables) == 1
+        assert constraints == ["x > 0"]
 
 
 class TestSymbolicSolution:
@@ -54,7 +58,8 @@ class TestSymbolicSolution:
         s = SymbolicSolution(satisfiable=True, model={"x": "5"}, message="Satisfiable")
         d = s.to_dict()
         assert d["satisfiable"] is True
-        assert d["model"]["x"] == "5"
+        model = cast("dict[str, str]", d["model"])
+        assert model["x"] == "5"
 
     def test_to_dict_with_objective(self) -> None:
         s = SymbolicSolution(

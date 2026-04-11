@@ -1,13 +1,15 @@
-"""
-Deterministic response composition from semantic frames.
-"""
+"""Deterministic response composition from semantic frames."""
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import TYPE_CHECKING
 
-from .coordinate_system import Coordinate
-from ..linguistic.semantic_frames import SemanticFrame
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from thalos_prime.babel.linguistic.semantic_frames import SemanticFrame
+
+    from .coordinate_system import Coordinate
 
 
 class DeterministicResponseComposer:
