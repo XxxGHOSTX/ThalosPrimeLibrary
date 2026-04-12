@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import uuid
 
@@ -762,4 +762,4 @@ async def chat(request: Request):
 
 async def status():
 
-    return {"status": "ok", "time": datetime.now(datetime.UTC).isoformat()}
+    return {"status": "ok", "time": datetime.now(UTC).isoformat()}
