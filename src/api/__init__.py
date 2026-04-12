@@ -762,4 +762,4 @@ async def chat(request: Request):
 
 async def status():
 
-    return {"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}
+    return {"status": "ok", "time": datetime.now(datetime.UTC).isoformat()}

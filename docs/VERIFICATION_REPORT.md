@@ -64,11 +64,11 @@ The Thalos Prime system has been verified and is fully operational. All 80 tests
 
 #### Endpoints Verified
 - ✅ `/` - UI serving
-- ✅ `/api/v1/chat` - Conversational interface
-- ✅ `/api/v1/search` - Advanced search
-- ✅ `/api/v1/generate` - Page generation
-- ✅ `/api/v1/enumerate` - Address enumeration
-- ✅ `/api/v1/decode` - Coherence analysis
+- ✅ `/api/v1/chat/` - Conversational interface
+- ✅ `/api/v1/search/` - Advanced search
+- ✅ `/api/v1/generate/` - Page generation
+- ✅ `/api/v1/enumerate/` - Address enumeration
+- ✅ `/api/v1/decode/` - Coherence analysis
 - ✅ `/api/v1/admin` - System monitoring
 - ✅ `/health` - Health checks
 

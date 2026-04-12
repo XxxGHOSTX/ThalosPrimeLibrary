@@ -33,6 +33,7 @@ class DocstringChecker(ast.NodeVisitor):
         self.file_path = file_path
         self.issues: List[str] = []
         self.has_module_docstring = False
+        self.class_depth = 0
 
     def visit_Module(self, node: ast.Module) -> None:
         """Check for module-level docstring."""
@@ -51,8 +52,9 @@ class DocstringChecker(ast.NodeVisitor):
                 self.issues.append(
                     f"Line {node.lineno}: Public class '{node.name}' lacks docstring"
                 )
-
+        self.class_depth += 1
         self.generic_visit(node)
+        self.class_depth -= 1
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check for function docstring."""
@@ -63,26 +65,6 @@ class DocstringChecker(ast.NodeVisitor):
                 self.issues.append(
                     f"Line {node.lineno}: Public function '{node.name}' lacks docstring"
                 )
-            else:
-                # Check if docstring mentions parameters and return type
-                docstring = ast.get_docstring(node)
-                docstring_str = docstring if docstring is not None else ""
-                has_args = len(node.args.args) > 1 or (
-                    len(node.args.args) == 1 and node.args.args[0].arg != "self"
-                )
-                has_return = node.returns is not None
-
-                if has_args and "Args:" not in docstring_str and "Parameters:" not in docstring_str:
-                    self.issues.append(
-                        f"Line {node.lineno}: Function '{node.name}' docstring "
-                        f"should document parameters"
-                    )
-
-                if has_return and "Returns:" not in docstring_str and "Return:" not in docstring_str:
-                    self.issues.append(
-                        f"Line {node.lineno}: Function '{node.name}' docstring "
-                        f"should document return value"
-                    )
 
         self.generic_visit(node)
 

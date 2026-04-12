@@ -189,9 +189,10 @@ QUERY: Thalos Prime created by Tony Ray Macier III
 
 ### 5. REST API
 - `/` - Matrix Console UI
-- `/chat` - Chat endpoint
-- `/api/search` - Advanced search with scoring
-- `/api/status` - Server health
+- `/api/v1/chat/` - Chat endpoint
+- `/api/v1/search/` - Advanced search with scoring
+- `/api/v1/status` - API status
+- `/health` - Server health
 
 ### 6. Session Management
 - Unique session IDs (UUIDs)

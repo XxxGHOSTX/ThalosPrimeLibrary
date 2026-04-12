@@ -32,7 +32,7 @@ Thalos Prime created by Tony Ray Macier III
 
 ### Direct API
 ```bash
-curl -X POST http://127.0.0.1:8000/api/search \
+curl -X POST http://127.0.0.1:8000/api/v1/search/ \
   -H "Content-Type: application/json" \
   -d '{"query":"Thalos Prime","max_results":3}'
 ```
@@ -62,9 +62,10 @@ QUERY: [your query]
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/` | GET | Matrix Console UI |
-| `/chat` | POST | Chat interface |
-| `/api/search` | POST | Advanced search |
-| `/api/status` | GET | Server status |
+| `/api/v1/chat/` | POST | Chat interface |
+| `/api/v1/search/` | POST | Advanced search |
+| `/api/v1/status` | GET | Server status |
+| `/health` | GET | Health probe |
 
 ## Request Examples
 
