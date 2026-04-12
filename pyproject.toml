@@ -38,6 +38,7 @@ dependencies = [
     "deepdiff>=6.7.0",
     "psutil>=5.9.0",
     "httpx>=0.27.0",
+    "rich>=13.0.0",
 ]
 
 [project.scripts]
@@ -165,6 +166,8 @@ module = [
     "requests",
     "requests.*",
     "psutil",
+    "rich",
+    "rich.*",
 ]
 ignore_missing_imports = true
 
@@ -336,6 +339,12 @@ disable_error_code = ["no-untyped-call"]
 # UP012 (utf-8 encode explicit for clarity), UP032/UP012 (minor style),
 # TRY003/EM102 (BackgroundTaskError message includes dynamic task name/step context)
 "thalos_prime/__main__.py" = ["T201", "PLC0415", "BLE001", "UP012", "UP032", "TRY003", "EM102"]
+# autonomous/orchestrator.py: PLC0415 (lazy imports in worker handlers to avoid circular deps),
+# BLE001 (broad except in _execute_safely re-raised immediately as OrchestratorError),
+# TRY003/EM102 (OrchestratorError message includes dynamic worker name/step),
+# PLW0603 (module-level singleton pattern), SLF001 (orchestrator accesses own _initialized)
+"thalos_prime/autonomous/orchestrator.py" = ["PLC0415", "BLE001", "TRY003", "EM102", "PLW0603", "SLF001"]
+"thalos_prime/autonomous/__init__.py" = ["D104"]
 # errors.py: PLR0913 (CoherenceThresholdError.__init__ needs all error context fields)
 "thalos_prime/errors.py" = ["PLR0913"]
 # generative_engine.py: ARG002 (seed kept for API symmetry), PLR2004 (magic 60/80 are readable constants)
