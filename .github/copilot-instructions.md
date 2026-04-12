@@ -5,6 +5,144 @@ Thalos Prime is a deterministic Library of Babel toolkit implementing strict con
 
 **Only acceptable end-state:** Fully Implemented. Fully Integrated. Fully Operational. No TODOs, stubs, mocks, placeholders, or partial features are permitted in production code.
 
+## Quick orientation
+
+### Core mission
+Extract coherent information from the Library of Babel (libraryofbabel.info) through deterministic page generation, query enumeration, and multi-metric coherence scoring.
+
+### Package structure
+```
+thalos_prime/          # Main library package
+├── lob_babel_generator.py    # Deterministic address → page (SHA-256 based)
+├── lob_babel_enumerator.py   # Query → addresses (n-gram extraction)
+├── lob_decoder.py             # Multi-metric coherence scoring (0-100)
+├── synthesis.py               # deep_synthesis() Nexus scaffold
+├── lifecycle.py               # LifecycleProtocol enforcement
+├── config.py                  # THALOS_LIBRARY_PATH management
+├── api/                       # FastAPI server (routes, models)
+├── babel/                     # Control plane orchestration
+├── constraints/               # Z3-based symbolic constraint solving
+├── knowledge_graph/           # Neo4j graph operations
+├── planning/                  # MCTS and Tree-of-Thoughts planners
+├── library_of_sense/          # Graph-RAG retrieval layer
+└── ...
+
+thalos_nexus/          # Biological cell metaphor components
+├── nucleus.py         # Core orchestration
+├── membrane.py        # Input/output boundaries
+├── mitochondria.py    # Energy/resource management
+└── ...
+
+tests/                 # 80+ tests with 80%+ coverage
+tools/                 # CI validators (lifecycle, determinism, docs)
+```
+
+### Essential workflows
+```bash
+# Development setup
+make install          # or: pip install -e ".[dev]"
+
+# Run all checks (required before PR)
+make check            # typecheck + lint + test + validate
+
+# Individual checks
+make typecheck        # mypy --strict + pyright
+make lint             # ruff with ALL rules
+make test             # pytest with 80% coverage requirement
+make validate         # custom validators (lifecycle, determinism, state, docs)
+
+# Run API server
+uvicorn thalos_prime.api.server:app --reload
+
+# Docker deployment
+docker-compose up --build
+```
+
+## Library of Babel integration specifics
+
+### Canonical endpoints
+Always use `thalos_prime.get_babel_endpoints()` to retrieve URLs:
+- Base: `https://libraryofbabel.info`
+- Search UI: `https://libraryofbabel.info/search.html`
+- API: `https://libraryofbabel.info/search.cgi`
+
+⚠️ **Not** thelibraryofbabel.com — wrong domain.
+
+### Core trilogy: Generate → Enumerate → Score
+
+**1. Deterministic generation** (`lob_babel_generator.py`):
+```python
+from thalos_prime import address_to_page, text_to_address, normalize_text
+
+# Address → page (always 3200 chars, 29-char alphabet: space, comma, period, a-z)
+page = address_to_page("abc123def456")  # SHA-256 deterministic
+
+# Reverse: text → address
+addr = text_to_address("hello world")
+
+# Normalize to Library format
+normalized = normalize_text("Hello, World!")  # -> "hello, world."
+```
+
+**2. Query enumeration** (`lob_babel_enumerator.py`):
+```python
+from thalos_prime import enumerate_addresses, query_to_addresses
+
+# Extract n-grams → generate candidate addresses
+results = enumerate_addresses("antimicrobial peptide", max_results=10, depth=2)
+# Returns: [{"address": "...", "score": 0.85, "ngrams": ["anti", "microb", ...]}, ...]
+
+# Simple interface: just addresses
+addrs = query_to_addresses("test query", count=5)
+```
+
+**3. Coherence scoring** (`lob_decoder.py`):
+```python
+from thalos_prime import score_coherence, decode_page, BabelDecoder
+
+# Score a page (0-100, weighted by language/structure/ngram/exact_match)
+coherence = score_coherence(page_text, query="test")
+print(f"{coherence.overall_score:.2f}/100 - {coherence.confidence_level}")
+
+# Full provenance tracking
+decoded = decode_page(address="abc123", text=page, query="test", source="local")
+# Returns: DecodedPage(address, raw_text, coherence, query, source, timestamp)
+
+# Custom weights
+decoder = BabelDecoder(weight_language=0.4, weight_structure=0.3, 
+                      weight_ngram=0.2, weight_exact_match=0.1)
+```
+
+### Full pipeline example
+```python
+from thalos_prime import enumerate_addresses, address_to_page, decode_page
+
+query = "linguistic coherence"
+addresses = enumerate_addresses(query, max_results=5)
+decoded_pages = []
+
+for addr_info in addresses:
+    page = address_to_page(addr_info["address"])
+    decoded = decode_page(addr_info["address"], page, query, source="local")
+    decoded_pages.append(decoded)
+
+# Sort by score
+decoded_pages.sort(key=lambda x: x.coherence.overall_score, reverse=True)
+best = decoded_pages[0]
+```
+
+### Deep synthesis scaffold
+```python
+from thalos_prime import deep_synthesis
+
+result = deep_synthesis("Find antimicrobial peptide")
+# Returns: {"semantic_decomposition": {...}, "nexus_result": [
+#   {"view": "Physical/Chemical", "coordinates_hint": {...}},
+#   {"view": "Logical/Mathematical", ...},
+#   {"view": "Linguistic/Narrative", ...}
+# ]}
+```
+
 ## Absolute operating principles
 
 ### Determinism
@@ -101,6 +239,40 @@ All methods must have no unreachable code branches.
 - Seed all randomness in tests; no flaky or non-deterministic tests.
 - Tests must pass in isolation and in parallel.
 - Minimum coverage: 80% line coverage, 100% for critical paths.
+
+### Testing patterns
+**Determinism testing** (see `tests/test_lob_babel_generator.py`):
+```python
+def test_deterministic():
+    hex_addr = query_to_hex("thalos prime test")
+    page1 = address_to_page(hex_addr)
+    page2 = address_to_page(hex_addr)
+    assert page1 == page2  # Same input → same output
+    assert len(page1) == 3200  # Always 3200 chars
+```
+
+**Lifecycle testing** (all components):
+```python
+def test_lifecycle():
+    component = MyLifecycleComponent()
+    component.initialize()  # Must succeed or raise typed exception
+    result = component.validate()  # Returns ValidationResult
+    assert result.is_valid
+    component.operate()  # Idempotent
+    checkpoint = component.checkpoint()  # Returns serializable dict
+    component.reconcile()  # Converge to consistent state
+    component.terminate()  # Clean shutdown
+```
+
+**Dependency mocking** (optional deps):
+```python
+# conftest.py automatically skips tests requiring missing deps
+collect_ignore_glob = []
+try:
+    import fastapi
+except ImportError:
+    collect_ignore_glob += ["tests/test_api_*.py"]
+```
 
 ### Concurrency
 - Document all ordering and synchronization guarantees.
@@ -262,6 +434,29 @@ All code must converge to complete, deterministic, and operational state before 
 - `thalos_prime/lob_babel_generator.py`: Deterministic page generation.
 - `thalos_prime/lob_babel_enumerator.py`: Query enumeration and address mapping.
 - `thalos_prime/lob_decoder.py`: Multi-metric coherence scoring.
+
+### API structure (`thalos_prime/api/`)
+- `server.py`: FastAPI app with lifespan management, middleware, error handlers
+- `routes/`: Modular route definitions
+  - `chat.py`: Conversational interface
+  - `search.py`: Library search endpoints
+  - `generate.py`, `enumerate.py`, `decode.py`: Core operations
+  - `agent.py`: Multi-agent orchestration
+  - `admin.py`: Administrative endpoints
+
+### Advanced systems
+- `babel/`: Control plane orchestration, lifecycle management
+- `constraints/`: Z3-based symbolic constraint solving (SymbolicConstraintEngine)
+- `knowledge_graph/`: Neo4j integration (Neo4jKnowledgeGraph, CypherQuery)
+- `planning/`: MCTS and Tree-of-Thoughts planners for search strategy
+- `library_of_sense/`: Graph-RAG retrieval layer for semantic search
+- `simulation/`: WorldModel for state space exploration
+
+### Thalos Nexus (biological metaphor)
+- `thalos_nexus/nucleus.py`: Core orchestration hub
+- `thalos_nexus/membrane.py`: Input/output boundaries and filtering
+- `thalos_nexus/mitochondria.py`: Energy and resource management
+- `thalos_nexus/lysosome.py`: Cleanup and resource recycling
 
 ### Reference documentation
 - `ARCHITECTURE.md`: System architecture and design.

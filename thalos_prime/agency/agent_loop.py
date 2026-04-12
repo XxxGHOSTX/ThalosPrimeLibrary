@@ -15,13 +15,17 @@ import hashlib
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
-from thalos_prime.agency.belief_tracker import BeliefEntry, BeliefTracker
 from thalos_prime.library_of_sense.core.interfaces import ValidationResult
 from thalos_prime.lifecycle import BaseLifecycleComponent
-from thalos_prime.planning.tree_of_thoughts import TreeOfThoughtsPlanner
-from thalos_prime.simulation.world_model import WorldModel, WorldState
+from thalos_prime.simulation.world_model import WorldState
+
+if TYPE_CHECKING:
+    from thalos_prime.agency.action_executor import ActionExecutor, ActionResult
+    from thalos_prime.agency.belief_tracker import BeliefEntry, BeliefTracker
+    from thalos_prime.planning.tree_of_thoughts import TreeOfThoughtsPlanner
+    from thalos_prime.simulation.world_model import WorldModel
 
 logger = logging.getLogger(__name__)
 

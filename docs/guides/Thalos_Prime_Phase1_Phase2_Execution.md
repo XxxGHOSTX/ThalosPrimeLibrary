@@ -15,7 +15,7 @@ Scope: Build and integrate deterministic generator + enumerator + storage (Phase
 - Generator module (Python): address_to_page(hex_addr) using exact charset/LCG constants; unit tests with fixed vectors.
 - Enumerator: given query, split into ngrams; map to addresses (seeded hash + offsets); allow depth/config; tests for stable outputs.
 - Storage: add Redis client; persist generated pages + scores; integrate shard manager for distribution (optional).
-- API endpoints: /api/generate (hex or query→hex), /api/enumerate (query→addresses), /api/search to accept mode=local|remote.
+- API endpoints: /api/v1/generate/ (hex or query→hex), /api/v1/enumerate/ (query→addresses), /api/v1/search/ to accept mode=local|remote.
 - UI toggle: add mode switch; surface provenance (local/remote) and hex.
 - Config: add redis URL, mode default, max_results, timeout.
 - Tests: unit (generator, enumerator), integration (generate→decode→reply), API smoke.
@@ -41,7 +41,7 @@ Scope: Build and integrate deterministic generator + enumerator + storage (Phase
 - Heuristics: implement scorer with configurable weights; include language detection (lightweight) and punctuation metrics; tests with golden samples.
 - LLM normalization (optional): pluggable function with provider/key; tag outputs; fallback to heuristic only.
 - Batch pipeline: simple async worker or Redis queue for scoring batches; timeouts and error handling.
-- API/UI: extend /api/search or add /api/decode to accept mode and return raw+normalized+scores; surface in UI.
+- API/UI: extend /api/v1/search/ or add /api/v1/decode/ to accept mode and return raw+normalized+scores; surface in UI.
 - Logging: persist provenance to Redis/Postgres; include score, source, duration.
 - Tests: unit (scorer), integration (decode endpoint), LLM-off path.
 
@@ -62,14 +62,14 @@ Scope: Build and integrate deterministic generator + enumerator + storage (Phase
 - Config additions: redis_url, default_mode (local/remote), llm_enabled, llm_provider/key, scoring weights, cache TTL
 
 ## How to Integrate with Current Code
-- Keep /chat and /api/search; add mode flag to switch local generator vs remote fetch.
+- Keep /api/v1/chat/ and /api/v1/search/; add mode flag to switch local generator vs remote fetch.
 - Add /api/generate (hex/query) and /api/enumerate; reuse coherence scorer once generator outputs text.
 - UI: add mode toggle (Local/Remote), raw vs normalized view, show scores and provenance.
 - Reuse shard manager if distributing stored pages.
 
 ## Minimal Sequence to Ship (MVP)
 1) Implement generator + enumerator + /api/generate + /api/enumerate + UI toggle (Local/Remote).
-2) Integrate generator path into /api/search with cache and coherence scoring.
+2) Integrate generator path into /api/v1/search/ with cache and coherence scoring.
 3) Add enhanced heuristics and /api/decode with heuristic-only path; UI toggle raw vs normalized.
 4) Add optional LLM normalization (config off by default); log provenance.
 5) Add tests for generator, enumerator, scorer, API.

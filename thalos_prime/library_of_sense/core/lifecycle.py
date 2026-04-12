@@ -29,6 +29,17 @@ class LifecycleState(StrEnum):
     TERMINATED = "terminated"
     ERROR = "error"
 
+    def to_dict(self) -> dict[str, str]:
+        """Return deterministic serialization for lifecycle state enum."""
+        return {"state": self.value}
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return checkpoint payload for lifecycle state enum."""
+        return {
+            "schema_version": "1.0",
+            "lifecycle": self.to_dict(),
+        }
+
 
 @dataclass
 class LifecycleEvent:

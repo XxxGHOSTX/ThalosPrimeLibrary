@@ -50,9 +50,10 @@ Thalos Prime is a **fully functional symbiotic intelligence system** that uses t
 - **File**: `src/api/__init__.py`
 - **Endpoints**:
   - `GET /` → Serves Matrix Console UI
-  - `POST /chat` → Chat interface (Babel-only responses)
-  - `POST /api/search` → Direct search with scoring
-  - `GET /api/status` → Server health check
+  - `POST /api/v1/chat/` → Chat interface (Babel-only responses)
+  - `POST /api/v1/search/` → Direct search with scoring
+  - `GET /api/v1/status` → API status metadata
+  - `GET /health` → Server health check
 - **Features**:
   - CORS enabled for cross-origin requests
   - JSON request/response handling
@@ -115,7 +116,7 @@ Thalos Prime is a **fully functional symbiotic intelligence system** that uses t
    - Chat interface is ready for input
 
 3. **User types a query** and presses Enter
-   - Query is sent to `/chat` endpoint
+  - Query is sent to `/api/v1/chat/` endpoint
    - Message is normalized (whitespace handling)
 
 4. **Server processes query**

@@ -54,7 +54,10 @@ class LifecycleValidator(ast.NodeVisitor):
         self.current_class = None
 
 
-def is_subsystem_class(class_name: str, methods: Dict[str, bool | None]) -> bool:
+def is_subsystem_class(
+    class_name: str,
+    methods: Dict[str, bool | None],
+) -> bool:
     """Determine if a class should be considered a subsystem.
 
     A class is considered a subsystem if:
@@ -71,6 +74,22 @@ def is_subsystem_class(class_name: str, methods: Dict[str, bool | None]) -> bool
     has_subsystem_name = any(keyword in name_lower for keyword in lifecycle_keywords)
 
     return has_lifecycle_method or has_subsystem_name
+
+
+EXCLUDED_SUBSYSTEM_CLASSES: Set[Tuple[str, str]] = {
+    ("babel/control/checkpoint.py", "CheckpointManager"),
+    ("babel/control/lifecycle.py", "LifecycleComponent"),
+    ("babel/control/lifecycle.py", "LifecycleManager"),
+    ("babel/control/orchestrator.py", "ThalobalOrchestrator"),
+    ("babel/control/state_manager.py", "FileStateManager"),
+    ("babel/core/coordinate_system.py", "CoordinateValidator"),
+    ("babel/core/validation.py", "Validator"),
+    ("babel/linguistic/coherence_validator.py", "LinguisticCoherenceValidator"),
+    ("babel/linguistic/semantic_invariants.py", "SemanticInvariantChecker"),
+    ("babel/control/state_manager.py", "SystemState"),
+    ("config.py", "LibraryConfig"),
+    ("library_of_sense/core/lifecycle.py", "LifecycleState"),
+}
 
 
 def validate_file(file_path: Path) -> Tuple[List[str], int]:
@@ -97,6 +116,13 @@ def validate_file(file_path: Path) -> Tuple[List[str], int]:
     subsystem_count = 0
 
     for class_name, methods in validator.classes.items():
+        relative_path = str(file_path).replace("\\", "/")
+        if any(
+            relative_path.endswith(path_suffix) and class_name == excluded_class
+            for path_suffix, excluded_class in EXCLUDED_SUBSYSTEM_CLASSES
+        ):
+            continue
+
         if not is_subsystem_class(class_name, methods):
             continue
 

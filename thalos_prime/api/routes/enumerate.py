@@ -17,6 +17,7 @@ from thalos_runtime.core.executor import ExecutionError
 from thalos_runtime.core.registry import RegistryError
 
 router = APIRouter()
+# Shared enumerator instance for API request handling.
 enumerator = BabelEnumerator()
 
 

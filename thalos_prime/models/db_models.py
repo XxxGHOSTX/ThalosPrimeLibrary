@@ -23,6 +23,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+# SQLAlchemy declarative model registry used by all DB model classes.
 Base: Any = declarative_base()
 
 def generate_uuid() -> str:
@@ -84,7 +85,7 @@ class Session(Base):
         DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
     is_active = Column(Boolean, default=True, nullable=False)
-    metadata = Column(JSON, default=dict, nullable=True)
+    metadata_json = Column("metadata", JSON, default=dict, nullable=True)
 
     # Relationships
     user = relationship("User", back_populates="sessions")
@@ -130,7 +131,7 @@ class Query(Base):
     created_at = Column(
         DateTime, default=func.now(), nullable=False, index=True,
     )
-    metadata = Column(JSON, default=dict, nullable=True)
+    metadata_json = Column("metadata", JSON, default=dict, nullable=True)
 
     # Relationships
     session = relationship("Session", back_populates="queries")
@@ -173,7 +174,7 @@ class CachedResult(Base):
     source = Column(String(20), nullable=False, default="local")
     created_at = Column(DateTime, default=func.now(), nullable=False)
     expires_at = Column(DateTime, nullable=True, index=True)
-    metadata = Column(JSON, default=dict, nullable=True)
+    metadata_json = Column("metadata", JSON, default=dict, nullable=True)
 
     # Relationships
     query = relationship("Query", back_populates="results")
@@ -208,7 +209,7 @@ class GeneratedPage(Base):
     last_accessed = Column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False,
     )
-    metadata = Column(JSON, default=dict, nullable=True)
+    metadata_json = Column("metadata", JSON, default=dict, nullable=True)
 
     __table_args__ = (
         Index("idx_page_accessed", "last_accessed"),
@@ -241,7 +242,7 @@ class APILog(Base):
     created_at = Column(
         DateTime, default=func.now(), nullable=False, index=True,
     )
-    metadata = Column(JSON, default=dict, nullable=True)
+    metadata_json = Column("metadata", JSON, default=dict, nullable=True)
 
     __table_args__ = (
         Index("idx_log_endpoint_time", "endpoint", "created_at"),
