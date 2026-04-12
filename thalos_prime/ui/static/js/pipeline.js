@@ -122,8 +122,10 @@ class PipelineRunner {
             return;
         }
         const rows = addresses.slice(0, 10).map((a, i) => {
-            const addr = typeof a === 'string' ? a : (a.address || JSON.stringify(a));
-            const score = typeof a === 'object' && a.score != null ? ` <span class="score-badge">${Number(a.score).toFixed(3)}</span>` : '';
+            const rawAddr = typeof a === 'string' ? a : (a.address || JSON.stringify(a));
+            const addr = this._escHtml(rawAddr);
+            const rawScore = typeof a === 'object' && a.score != null ? Number(a.score).toFixed(3) : null;
+            const score = rawScore != null ? ` <span class="score-badge">${this._escHtml(rawScore)}</span>` : '';
             return `<div class="enum-row"><span class="enum-idx">${String(i + 1).padStart(2, '0')}</span> <span class="enum-addr">${addr}</span>${score}</div>`;
         });
         this._enumOutput.innerHTML = rows.join('');
@@ -137,15 +139,17 @@ class PipelineRunner {
         }
         const cards = results.slice(0, 5).map(r => {
             const score = r.coherence ? r.coherence.overall_score : (r.score || 0);
-            const addr = r.address || r.id || '—';
+            const rawAddr = r.address || r.id || '—';
             const text = r.page_text || r.text || '';
-            const preview = text.length > 200 ? text.slice(0, 200) + '…' : text;
+            const rawPreview = text.length > 200 ? text.slice(0, 200) + '…' : text;
+            const addr = this._escHtml(rawAddr);
+            const preview = this._escHtml(rawPreview);
             const scoreClass = score >= 90 ? 'score-high' : score >= 79 ? 'score-mid' : 'score-low';
             return `
                 <div class="page-card">
                     <div class="page-card-header">
                         <span class="page-addr">${addr}</span>
-                        <span class="page-score ${scoreClass}">${Number(score).toFixed(1)}/100</span>
+                        <span class="page-score ${scoreClass}">${this._escHtml(Number(score).toFixed(1))}/100</span>
                     </div>
                     <div class="page-preview">${preview}</div>
                 </div>`;
@@ -153,25 +157,38 @@ class PipelineRunner {
         this._pagesOutput.innerHTML = cards.join('');
     }
 
+    /** Escape a string for safe insertion as HTML text content. */
+    _escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     _renderSynth(result, query, pages) {
         if (!this._synthOutput) return;
+        const safeQuery = this._escHtml(query);
         if (!result) {
             // Offline fallback: summarise from pages
             const best = pages[0];
             const score = best && best.coherence ? best.coherence.overall_score.toFixed(1) : '—';
+            const safeScore = this._escHtml(score);
             this._synthOutput.innerHTML = `
                 <div class="synth-card">
-                    <div class="synth-query">> Query: <em>${query}</em></div>
-                    <div class="synth-note">Best coherence score: <strong>${score}/100</strong></div>
+                    <div class="synth-query">&gt; Query: <em>${safeQuery}</em></div>
+                    <div class="synth-note">Best coherence score: <strong>${safeScore}/100</strong></div>
                     <div class="synth-note dim-text">(API unavailable — synthesis from local results)</div>
                 </div>`;
             return;
         }
         const resp = result.response || result.message || result.text || JSON.stringify(result);
+        const safeResp = this._escHtml(resp);
         this._synthOutput.innerHTML = `
             <div class="synth-card">
-                <div class="synth-query">> Query: <em>${query}</em></div>
-                <div class="synth-response">${resp}</div>
+                <div class="synth-query">&gt; Query: <em>${safeQuery}</em></div>
+                <div class="synth-response">${safeResp}</div>
             </div>`;
     }
 
