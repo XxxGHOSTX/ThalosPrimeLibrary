@@ -57,9 +57,13 @@ _WORKER_QUEUE_MAX: int = 64  # bounded queue for background tasks
 _CONFIG_HASH_ENV_VAR = "THALOS_CONFIG_HASH"
 
 # Background worker intervals (seconds)
-_INDEX_REFRESH_INTERVAL_S: float = 300.0   # every 5 minutes
-_CACHE_WARM_INTERVAL_S: float = 600.0      # every 10 minutes
-_SESSION_MAINT_INTERVAL_S: float = 900.0   # every 15 minutes
+_INDEX_REFRESH_INTERVAL_S: float = 300.0          # every 5 minutes
+_CACHE_WARM_INTERVAL_S: float = 600.0             # every 10 minutes
+_SESSION_MAINT_INTERVAL_S: float = 900.0          # every 15 minutes
+_COHERENCE_FLOOR_INTERVAL_S: float = 60.0         # every 1 minute
+
+# Coherence floor enforced by the background worker
+_COHERENCE_FLOOR_MIN_SCORE: float = 79.0
 
 
 # ---------------------------------------------------------------------------
@@ -232,10 +236,54 @@ def _run_session_maintenance(task: WorkerTask) -> None:
     )
 
 
+def _run_coherence_floor_enforcement(task: WorkerTask) -> None:
+    """Evict SEARCH_CACHE entries that contain any result below the coherence floor.
+
+    Continuously enforces the minimum coherence threshold (>= 79.0) for every
+    result stored in the search cache.  Any cached response that contains even
+    one result with ``coherence.overall_score < 79.0`` is evicted so the next
+    request regenerates it via the AdaptiveCoherenceSearch pipeline (which
+    guarantees the floor).
+
+    This worker runs every 60 seconds and is always active — no manual flag
+    required.  It is the final safety net ensuring sub-threshold results are
+    never surfaced to callers.
+    """
+    from thalos_prime.api.routes.search import SEARCH_CACHE
+
+    before_count = len(SEARCH_CACHE)
+    sub_floor_keys: list[str] = []
+    for key, (data, _ts) in SEARCH_CACHE.items():
+        results = data.get("results", [])
+        if isinstance(results, list):
+            for result in results:
+                coherence = result.get("coherence", {})
+                if isinstance(coherence, dict):
+                    score = float(coherence.get("overall_score", 0.0))
+                else:
+                    score = 0.0
+                if score < _COHERENCE_FLOOR_MIN_SCORE:
+                    sub_floor_keys.append(key)
+                    break
+    for key in sub_floor_keys:
+        del SEARCH_CACHE[key]
+    after_count = len(SEARCH_CACHE)
+    logger.info(
+        "coherence_floor: step=%d seed=%d floor=%.1f — evicted %d sub-floor entries (%d → %d)",
+        task.step,
+        task.seed,
+        _COHERENCE_FLOOR_MIN_SCORE,
+        len(sub_floor_keys),
+        before_count,
+        after_count,
+    )
+
+
 _WORKER_HANDLERS: dict[str, Callable[[WorkerTask], None]] = {
     "index_refresh": _run_index_refresh,
     "cache_warm": _run_cache_warm,
     "session_maintenance": _run_session_maintenance,
+    "coherence_floor": _run_coherence_floor_enforcement,
 }
 
 
@@ -409,6 +457,7 @@ def main() -> None:
             ("index_refresh", _INDEX_REFRESH_INTERVAL_S),
             ("cache_warm", _CACHE_WARM_INTERVAL_S),
             ("session_maintenance", _SESSION_MAINT_INTERVAL_S),
+            ("coherence_floor", _COHERENCE_FLOOR_INTERVAL_S),
         ]:
             seed_input = f"{config_hash}:{task_name}".encode("utf-8")
             seed = int(hashlib.sha256(seed_input).hexdigest()[:8], 16)
