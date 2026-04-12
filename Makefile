@@ -1,5 +1,5 @@
 .PHONY: help install typecheck lint test validate check pre-commit-install clean \
-        launch serve setup-windows setup-unix
+        launch serve setup-windows setup-unix utility-benchmark
 
 # Detect OS for cross-platform targets
 UNAME := $(shell uname -s 2>/dev/null || echo Windows)
@@ -21,6 +21,7 @@ help:
 	@echo "  make lint              - Run ruff linter"
 	@echo "  make test              - Run pytest with coverage"
 	@echo "  make validate          - Run all custom validators"
+	@echo "  make utility-benchmark - Generate deterministic real-world utility benchmark reports"
 	@echo "  make check             - Run all checks (typecheck + lint + test + validate)"
 	@echo "  make clean             - Remove build artifacts and cache"
 	@echo "  make pre-commit-install- Install pre-commit hooks"
@@ -53,6 +54,10 @@ validate:
 	python tools/validate_docs.py
 	@echo "Running prohibited patterns detector..."
 	python tools/detect_prohibited_patterns.py
+
+utility-benchmark:
+	@echo "Running deterministic real-world utility benchmark..."
+	python tools/real_world_utility_benchmark.py --max-results 5 --threshold 55.0
 
 check: typecheck lint test validate
 	@echo "✅ All checks passed!"
