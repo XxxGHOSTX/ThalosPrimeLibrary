@@ -129,15 +129,15 @@ def test_generate_random_address_with_seed() -> None:
 def test_coherence_threshold_error_fields() -> None:
     """CoherenceThresholdError exposes all required fields."""
     err = CoherenceThresholdError(
-        min_score=80.0,
-        best_score=19.5,
+        min_score=90.0,
+        best_score=79.5,
         attempts=5,
         time_budget_s=3.14,
         checkpoint={"task": "test", "seed": 1},
         mode="local",
     )
-    assert err.min_score == 80.0
-    assert err.best_score == 19.5
+    assert err.min_score == 90.0
+    assert err.best_score == 79.5
     assert err.attempts == 5
     assert err.mode == "local"
     assert "checkpoint" in err.state_snapshot
@@ -146,8 +146,8 @@ def test_coherence_threshold_error_fields() -> None:
 def test_coherence_threshold_error_to_dict() -> None:
     """to_dict() returns a fully serializable dict with required keys."""
     err = CoherenceThresholdError(
-        min_score=80.0,
-        best_score=19.5,
+        min_score=90.0,
+        best_score=79.5,
         attempts=3,
         time_budget_s=1.0,
         checkpoint={"task": "t", "seed": 0},
@@ -165,14 +165,14 @@ def test_coherence_threshold_error_is_exception() -> None:
     """CoherenceThresholdError can be raised and caught."""
     with pytest.raises(CoherenceThresholdError) as exc_info:
         raise CoherenceThresholdError(
-            min_score=80.0,
-            best_score=10.0,
+            min_score=90.0,
+            best_score=79.5,
             attempts=1,
             time_budget_s=0.0,
             checkpoint={},
             mode="local",
         )
-    assert exc_info.value.min_score == 80.0
+    assert exc_info.value.min_score == 90.0
 
 
 # ---------------------------------------------------------------------------

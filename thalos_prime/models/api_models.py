@@ -84,12 +84,12 @@ class CoherenceInfo(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         json_schema_extra={
             "example": {
-                "overall_score": 75.5,
-                "language_score": 65.0,
-                "structure_score": 55.0,
-                "ngram_score": 45.0,
+                "overall_score": 86.5,
+                "language_score": 82.0,
+                "structure_score": 84.0,
+                "ngram_score": 82.0,
                 "exact_match_score": 100.0,
-                "confidence_level": "medium",
+                "confidence_level": "high",
                 "metrics": {"word_count": 150, "sentence_count": 8},
             }
         }
