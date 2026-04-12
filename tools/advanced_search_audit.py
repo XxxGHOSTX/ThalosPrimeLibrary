@@ -264,7 +264,7 @@ def _find_needs(reports: list[ScenarioReport]) -> list[str]:
             needs.append(
                 "Relevance signal remains saturated in local deterministic mode; add harder query sets and stronger lexical-semantic discriminators.",
             )
-        if diversity_gain <= 0.01 and novelty_gain <= 0.004:
+        if diversity_gain <= 0.01:
             needs.append(
                 "Diversity gain is minimal; introduce broader candidate pools or corpus-backed retrieval to improve novelty spread.",
             )

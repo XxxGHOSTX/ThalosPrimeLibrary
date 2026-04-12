@@ -244,6 +244,7 @@ disable_error_code = ["no-untyped-call"]
 # documentation hardening without blocking CI.
 "thalos_prime/babel/**/*.py" = [
     "D101", "D102", "D103", "D105", "D107",
+    "TC001", "TC003",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [
@@ -313,8 +314,6 @@ disable_error_code = ["no-untyped-call"]
     "TRY003", "EM101", "EM102",
     "TRY401",
 ]
-# Babel subsystem: runtime imports used in annotations across all layers
-"thalos_prime/babel/**/*.py" = ["TC001", "TC003"]
 # Indexing: TRY003 (ValueError in __init__ and _prp_transform use built-in exception types by design)
 "thalos_prime/indexing/**/*.py" = ["TRY003"]
 # Belief: TRY003 (KeyError/ValueError with messages use built-in exception types by design)

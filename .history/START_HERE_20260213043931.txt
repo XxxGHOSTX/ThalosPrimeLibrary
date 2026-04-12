@@ -1,7 +1,0 @@
-Start Here
-----------
-
-1) Install deps: `C:/Users/LT/AppData/Local/Programs/Python/Python314/python.exe -m pip install -e .[dev]`
-2) Run Babel tests: `C:/Users/LT/AppData/Local/Programs/Python/Python314/python.exe -m pytest tests/babel -v`
-3) Explore code: thalos_prime/babel for deterministic conversational pipeline.
-4) Outstanding work: implement non-Babel modules (api, database, models) and expand tests to reach full completion.
