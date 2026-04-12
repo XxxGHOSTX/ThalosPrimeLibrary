@@ -40,7 +40,6 @@ class RemoteAccessPolicy(StrEnum):
 
     LOCAL_ONLY = "local_only"
     CONSENT_REQUIRED = "consent_required"
-    ALLOW_REMOTE = "allow_remote"
     ALWAYS_ALLOW = "always_allow"
 
 

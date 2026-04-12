@@ -171,6 +171,7 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
     "yaml",
+    "yaml.*",
     "deepdiff",
     "deepdiff.*",
     "cryptography",
@@ -243,7 +244,6 @@ disable_error_code = ["no-untyped-call"]
 # documentation hardening without blocking CI.
 "thalos_prime/babel/**/*.py" = [
     "D101", "D102", "D103", "D105", "D107",
-    "TC001", "TC003",
 ]
 # Optional API module - FastAPI/Pydantic/SQLAlchemy patterns
 "thalos_prime/api/**/*.py" = [

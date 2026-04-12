@@ -60,10 +60,7 @@ def _is_remote_allowed(request: SearchRequest) -> tuple[bool, str]:
     """Evaluate remote access policy with explicit rationale."""
     if request.remote_access_policy == RemoteAccessPolicy.LOCAL_ONLY:
         return False, "remote_access_policy=local_only"
-    if request.remote_access_policy in {
-        RemoteAccessPolicy.ALWAYS_ALLOW,
-        RemoteAccessPolicy.ALLOW_REMOTE,
-    }:
+    if request.remote_access_policy == RemoteAccessPolicy.ALWAYS_ALLOW:
         return True, "allowed"
     if request.remote_consent:
         return True, "allowed"
