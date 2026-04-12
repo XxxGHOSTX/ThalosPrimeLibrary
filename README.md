@@ -420,7 +420,98 @@ python -m thalos_prime                 # module entry point
 
 The server starts on **http://localhost:8000** by default.
 
-### Interactive Documentation
+---
+
+## Desktop Program & Launchers
+
+ThalosPrimeLibrary ships native launchers for all major platforms.  Each launcher
+automatically sets up the virtual environment, installs dependencies, starts all
+background workers, and opens the Matrix-style browser interface.
+
+### Windows
+
+**Double-click installer (recommended):**
+- `Setup.exe` — installs Thalos Prime and creates Start Menu/Desktop shortcuts
+- `ThalosPrime.msi` — enterprise MSI installer
+
+**Manual:**
+```powershell
+.\setup.ps1          # automated setup + server + opens browser
+```
+
+### macOS
+
+**Double-click launcher:**
+```
+launcher_macos.command   # double-click in Finder to launch
+```
+Or from Terminal:
+```bash
+bash launcher_macos.command
+```
+This creates a `.venv`, installs all dependencies, starts the server on
+`http://127.0.0.1:8000`, and opens the browser automatically.
+
+### Linux
+
+**Application launcher** (copy to `~/.local/share/applications/` for menu integration):
+```
+thalos_prime.desktop
+```
+
+**Shell:**
+```bash
+bash setup.sh        # automated setup + server
+```
+
+### Cross-platform Python launcher
+
+```bash
+python launch.py                    # setup + start server + open browser
+python launch.py --action test      # run tests
+python launch.py --action check     # full quality check
+python launch.py --host 0.0.0.0 --port 9000
+```
+
+---
+
+## Always-On Background Workers
+
+All advanced capabilities are **automatically active** on every server start —
+no manual flags or configuration required.
+
+| Worker | Interval | Purpose |
+|--------|----------|---------|
+| `index_refresh` | 5 min | Evicts stale cache entries |
+| `cache_warm` | 10 min | Pre-warms top-5 session queries |
+| `coherence_floor_enforcer` | 2 min | Enforces ≥79.0 coherence on all cached results |
+| `benchmark_reporter` | 30 min | Runs deterministic regression benchmarks |
+| `audit_health_check` | 5 min | Verifies audit trail integrity |
+| `session_maintenance` | 15 min | Prunes abandoned ghost sessions |
+
+**API-level always-on defaults** (no flags needed):
+- `enable_adaptive_optimization=True` — intent-aware search optimization
+- `enable_query_expansion=True` — deterministic query variant expansion
+- `enable_diversity_rerank=True` — diversity-aware result reranking
+
+---
+
+## Matrix-Style Desktop UI
+
+The browser interface at **http://localhost:8000** provides:
+
+| View | Description |
+|------|-------------|
+| **Console** | Interactive chat with the full pipeline |
+| **Pipeline** | Visual query → enumerate → generate → score → synthesize flow |
+| **Search** | Advanced adaptive search with real-time scoring |
+| **Generate** | Deterministic Babel page generation |
+| **Enumerate** | Query-to-address mapping |
+| **Decode** | Coherence analysis and multi-metric scoring |
+| **Workers** | Background worker status — all always-on |
+| **Settings** | Runtime and UI configuration |
+
+
 
 | URL | Description |
 |-----|-------------|

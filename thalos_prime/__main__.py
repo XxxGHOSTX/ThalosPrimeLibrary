@@ -57,9 +57,12 @@ _WORKER_QUEUE_MAX: int = 64  # bounded queue for background tasks
 _CONFIG_HASH_ENV_VAR = "THALOS_CONFIG_HASH"
 
 # Background worker intervals (seconds)
-_INDEX_REFRESH_INTERVAL_S: float = 300.0   # every 5 minutes
-_CACHE_WARM_INTERVAL_S: float = 600.0      # every 10 minutes
-_SESSION_MAINT_INTERVAL_S: float = 900.0   # every 15 minutes
+_INDEX_REFRESH_INTERVAL_S: float = 300.0        # every 5 minutes
+_CACHE_WARM_INTERVAL_S: float = 600.0           # every 10 minutes
+_SESSION_MAINT_INTERVAL_S: float = 900.0        # every 15 minutes
+_COHERENCE_FLOOR_INTERVAL_S: float = 120.0      # every 2 minutes
+_BENCHMARK_REPORTER_INTERVAL_S: float = 1800.0  # every 30 minutes
+_AUDIT_HEALTH_INTERVAL_S: float = 300.0         # every 5 minutes
 
 
 # ---------------------------------------------------------------------------
@@ -232,10 +235,94 @@ def _run_session_maintenance(task: WorkerTask) -> None:
     )
 
 
+def _run_coherence_floor_enforcer(task: WorkerTask) -> None:
+    """Enforce minimum coherence floor on all SEARCH_CACHE entries.
+
+    Evicts any cached search result whose overall_score is below the
+    enforced minimum (79.0).  This ensures no stale below-floor result
+    can ever be served from cache, regardless of how it was originally
+    stored.  Runs every 2 minutes for near-real-time enforcement.
+    """
+    from thalos_prime.api.routes.search import SEARCH_CACHE
+
+    floor_threshold: float = 79.0
+    before_count = len(SEARCH_CACHE)
+    violating_keys = [
+        k
+        for k, (payload, _ts) in SEARCH_CACHE.items()
+        if isinstance(payload.get("coherence_score"), (int, float))
+        and float(payload["coherence_score"]) < floor_threshold
+    ]
+    for k in violating_keys:
+        del SEARCH_CACHE[k]
+    after_count = len(SEARCH_CACHE)
+    logger.info(
+        "coherence_floor_enforcer: step=%d seed=%d — evicted %d sub-floor entries (%d → %d)",
+        task.step,
+        task.seed,
+        len(violating_keys),
+        before_count,
+        after_count,
+    )
+
+
+def _run_benchmark_reporter(task: WorkerTask) -> None:
+    """Run a lightweight deterministic benchmark and log the results.
+
+    Executes a fixed set of canonical queries through the adaptive search
+    engine and logs coherence scores.  Results are deterministic given the
+    fixed seed embedded in the task descriptor.  This provides ongoing
+    regression visibility without external tooling.
+    """
+    from thalos_prime.adaptive_search import adaptive_search
+
+    probe_queries: list[str] = [
+        "deterministic knowledge extraction",
+        "language coherence scoring benchmark",
+        "library of babel information retrieval",
+    ]
+    scores: list[float] = []
+    for query in probe_queries:
+        results = adaptive_search(query, max_results=1)
+        if results:
+            scores.append(results[0].coherence.overall_score)
+    avg = sum(scores) / len(scores) if scores else 0.0
+    min_score = min(scores) if scores else 0.0
+    logger.info(
+        "benchmark_reporter: step=%d seed=%d — probes=%d avg_score=%.2f min_score=%.2f",
+        task.step,
+        task.seed,
+        len(scores),
+        avg,
+        min_score,
+    )
+
+
+def _run_audit_health_check(task: WorkerTask) -> None:
+    """Check audit trail health and log event counts.
+
+    Instantiates the system-level AuditTrail and logs event counts to
+    verify the audit subsystem is operational.  Does not alter any state.
+    """
+    from thalos_prime.audit.trail import AuditTrail
+
+    trail = AuditTrail(trail_id="system_health")
+    events = trail.get_events()
+    logger.info(
+        "audit_health_check: step=%d seed=%d — total_audit_events=%d",
+        task.step,
+        task.seed,
+        len(events),
+    )
+
+
 _WORKER_HANDLERS: dict[str, Callable[[WorkerTask], None]] = {
     "index_refresh": _run_index_refresh,
     "cache_warm": _run_cache_warm,
     "session_maintenance": _run_session_maintenance,
+    "coherence_floor_enforcer": _run_coherence_floor_enforcer,
+    "benchmark_reporter": _run_benchmark_reporter,
+    "audit_health_check": _run_audit_health_check,
 }
 
 
@@ -409,6 +496,9 @@ def main() -> None:
             ("index_refresh", _INDEX_REFRESH_INTERVAL_S),
             ("cache_warm", _CACHE_WARM_INTERVAL_S),
             ("session_maintenance", _SESSION_MAINT_INTERVAL_S),
+            ("coherence_floor_enforcer", _COHERENCE_FLOOR_INTERVAL_S),
+            ("benchmark_reporter", _BENCHMARK_REPORTER_INTERVAL_S),
+            ("audit_health_check", _AUDIT_HEALTH_INTERVAL_S),
         ]:
             seed_input = f"{config_hash}:{task_name}".encode("utf-8")
             seed = int(hashlib.sha256(seed_input).hexdigest()[:8], 16)

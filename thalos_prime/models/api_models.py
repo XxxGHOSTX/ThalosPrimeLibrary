@@ -188,16 +188,16 @@ class SearchRequest(BaseModel):
         description="Explicit user consent for remote retrieval when policy requires it",
     )
     enable_query_expansion: bool = Field(
-        default=False,
-        description="Enable deterministic query variant expansion",
+        default=True,
+        description="Enable deterministic query variant expansion (always-on by default)",
     )
     enable_diversity_rerank: bool = Field(
-        default=False,
-        description="Enable diversity-aware reranking",
+        default=True,
+        description="Enable diversity-aware reranking (always-on by default)",
     )
     enable_adaptive_optimization: bool = Field(
-        default=False,
-        description="Enable intent-aware adaptive optimization",
+        default=True,
+        description="Enable intent-aware adaptive optimization (always-on by default)",
     )
     diversity_lambda: float = Field(
         default=0.7,
