@@ -11,7 +11,19 @@ Validates that:
 import ast
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple
+from typing import Any, List, Set, Tuple
+
+
+IGNORED_GLOBAL_NAMES: Set[str] = {
+    "__all__",
+    "__version__",
+    "__author__",
+    "router",
+    "logger",
+    "log",
+    "TYPE_CHECKING",
+    "config",
+}
 
 
 class StateValidator(ast.NodeVisitor):
@@ -26,7 +38,7 @@ class StateValidator(ast.NodeVisitor):
         self.file_path = file_path
         self.issues: List[str] = []
         self.state_classes: Set[str] = set()
-        self.global_vars: List[Tuple[int, str]] = []
+        self.global_vars: List[Tuple[int, str, ast.AST | None]] = []
         self.in_class = False
         self.in_function = False
 
@@ -72,15 +84,64 @@ class StateValidator(ast.NodeVisitor):
         self.generic_visit(node)
         self.in_function = was_in_function
 
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Visit async function definitions to track scope."""
+        was_in_function = self.in_function
+        self.in_function = True
+        self.generic_visit(node)
+        self.in_function = was_in_function
+
     def visit_Assign(self, node: ast.Assign) -> None:
         """Visit assignments to detect module-level global variables."""
         # Only record module-level assignments (not in classes or functions)
         if not self.in_class and not self.in_function:
             for target in node.targets:
                 if isinstance(target, ast.Name):
-                    self.global_vars.append((node.lineno, target.id))
+                    self.global_vars.append((node.lineno, target.id, node.value))
 
         self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Visit annotated assignments to detect module-level global variables."""
+        if not self.in_class and not self.in_function and isinstance(node.target, ast.Name):
+            self.global_vars.append((node.lineno, node.target.id, node.value))
+
+        self.generic_visit(node)
+
+
+def _is_probable_runtime_state(value: ast.AST | None) -> bool:
+    """Return True when assignment value likely represents mutable runtime state."""
+    if value is None:
+        return False
+
+    mutable_nodes = (
+        ast.List,
+        ast.Dict,
+        ast.Set,
+        ast.ListComp,
+        ast.SetComp,
+        ast.DictComp,
+    )
+    if isinstance(value, mutable_nodes):
+        return True
+
+    if isinstance(value, ast.Call):
+        if isinstance(value.func, ast.Name) and value.func.id in {
+            "dict",
+            "list",
+            "set",
+            "defaultdict",
+            "APIRouter",
+        }:
+            return True
+        if isinstance(value.func, ast.Attribute) and value.func.attr in {"getLogger"}:
+            return False
+        return True
+
+    if isinstance(value, ast.Constant):
+        return False
+
+    return False
 
 
 def validate_file(file_path: Path) -> List[str]:
@@ -108,11 +169,15 @@ def validate_file(file_path: Path) -> List[str]:
         with open(file_path, encoding="utf-8") as f:
             lines = f.readlines()
 
-        for lineno, var_name in validator.global_vars:
-            # Skip common patterns like __version__, TYPE_CHECKING, etc.
-            if var_name.startswith("_") and var_name.isupper():
+        for lineno, var_name, value in validator.global_vars:
+            # Skip common patterns like exported symbols and constants.
+            if var_name in IGNORED_GLOBAL_NAMES:
                 continue
-            if var_name in {"TYPE_CHECKING", "logger", "log"}:
+            if var_name.startswith("__") and var_name.endswith("__"):
+                continue
+            if var_name.isupper():
+                continue
+            if not _is_probable_runtime_state(value):
                 continue
 
             # Check if there's a docstring or comment nearby

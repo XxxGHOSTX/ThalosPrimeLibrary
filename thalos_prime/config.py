@@ -82,6 +82,20 @@ class LibraryConfig:
         self.local_library_path = path
         self._added_to_path = False
 
+    def to_dict(self) -> dict[str, object]:
+        """Return deterministic serialization for configuration state."""
+        return {
+            "local_library_path": self.local_library_path,
+            "added_to_path": self._added_to_path,
+        }
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return checkpoint payload for configuration state."""
+        return {
+            "schema_version": "1.0",
+            "config": self.to_dict(),
+        }
+
 
 # Global configuration instance
 _config = LibraryConfig()

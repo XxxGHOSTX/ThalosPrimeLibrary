@@ -239,7 +239,7 @@ class ActionExecutor(BaseLifecycleComponent):
 
         try:
             result = handler(params)
-        except Exception as exc:
+        except (RuntimeError, ValueError, TypeError, KeyError) as exc:
             result = ActionResult(
                 action=action,
                 success=False,

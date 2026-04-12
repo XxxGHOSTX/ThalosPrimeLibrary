@@ -74,3 +74,6 @@ data/*
 # Lock files
 .thalos_prime.lock
 __pycache__
+
+# VS Code Local History extension
+.history/

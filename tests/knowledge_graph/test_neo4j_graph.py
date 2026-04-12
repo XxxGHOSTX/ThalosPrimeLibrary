@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from thalos_prime.knowledge_graph.neo4j_graph import (
     CypherQuery,
     Neo4jKnowledgeGraph,
@@ -33,7 +35,8 @@ class TestRelationshipRecord:
         assert d["source_id"] == "a"
         assert d["target_id"] == "b"
         assert d["rel_type"] == "KNOWS"
-        assert d["properties"]["since"] == 2020
+        props = cast("dict[str, Any]", d["properties"])
+        assert props["since"] == 2020
 
 
 class TestCypherQuery:

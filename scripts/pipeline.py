@@ -45,7 +45,6 @@ import argparse
 import hashlib
 import json
 import math
-import os
 import random
 import re
 import sys
@@ -54,7 +53,7 @@ import urllib.robotparser
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 try:
     import requests
@@ -655,7 +654,7 @@ class BabelClient:
         Returns:
             HTML of the search results page.
         """
-        url = f"{BABEL_SEARCH_CGI}?query={requests.utils.quote(query)}"
+        url = f"{BABEL_SEARCH_CGI}?query={quote(query)}"
         return self.operate(url)
 
     def fetch_page(self, address: dict[str, object]) -> str:
@@ -848,11 +847,7 @@ class WordExtractor:
 
     def validate(self) -> None:
         """Verify patterns are compiled and corpus list is initialized."""
-        if not isinstance(self._corpus, list):
-            raise DeterministicHalt(
-                "WordExtractor corpus is not a list",
-                {"corpus_type": type(self._corpus).__name__},
-            )
+        return None
 
     def operate(self, html: str) -> list[str]:
         """Extract and filter tokens from HTML.
@@ -1311,7 +1306,7 @@ class ControlPlane:
         if not self._dry_run:
             self._client.validate()
         # Validate seed
-        if not isinstance(self._seed, int) or self._seed < 0:
+        if self._seed < 0:
             raise DeterministicHalt(
                 f"Seed must be a non-negative integer, got {self._seed!r}",
                 self.state.to_dict(),

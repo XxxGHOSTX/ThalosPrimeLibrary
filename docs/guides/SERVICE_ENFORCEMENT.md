@@ -21,7 +21,8 @@ Use these instructions when you want the service to remain up continuously and *
 - Avoid closing the terminal; stopping the process will shut down the service.
 
 ## Quick Checks
-- To verify it’s up: open `http://127.0.0.1:8000/api/status` in a browser.
+- To verify it’s up: open `http://127.0.0.1:8000/api/v1/status` in a browser.
+- Health probe: `http://127.0.0.1:8000/health`
 - To check port use: `netstat -ano | findstr :8000`
 
 ## Notes

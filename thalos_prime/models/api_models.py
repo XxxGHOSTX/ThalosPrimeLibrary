@@ -35,6 +35,15 @@ class ConfidenceLevel(StrEnum):
     MINIMAL = "minimal"
 
 
+class RemoteAccessPolicy(StrEnum):
+    """Policy for allowing remote/federated retrieval in search."""
+
+    LOCAL_ONLY = "local_only"
+    CONSENT_REQUIRED = "consent_required"
+    ALLOW_REMOTE = "allow_remote"
+    ALWAYS_ALLOW = "always_allow"
+
+
 # Address Information
 class AddressInfo(BaseModel):
     """Library of Babel address information."""
@@ -170,6 +179,32 @@ class SearchRequest(BaseModel):
     max_results: int = Field(default=10, ge=1, le=50, description="Maximum results to return")
     mode: SearchMode = Field(default=SearchMode.HYBRID, description="Search mode")
     min_score: float = Field(default=0.0, ge=0.0, le=100.0, description="Minimum coherence score")
+    remote_access_policy: RemoteAccessPolicy = Field(
+        default=RemoteAccessPolicy.CONSENT_REQUIRED,
+        description="Remote retrieval policy",
+    )
+    remote_consent: bool = Field(
+        default=False,
+        description="Explicit user consent for remote retrieval when policy requires it",
+    )
+    enable_query_expansion: bool = Field(
+        default=False,
+        description="Enable deterministic query variant expansion",
+    )
+    enable_diversity_rerank: bool = Field(
+        default=False,
+        description="Enable diversity-aware reranking",
+    )
+    enable_adaptive_optimization: bool = Field(
+        default=False,
+        description="Enable intent-aware adaptive optimization",
+    )
+    diversity_lambda: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="Diversity weight for reranking (0=relevance only, 1=diversity only)",
+    )
 
 
 class SearchResponse(BaseModel):

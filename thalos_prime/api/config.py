@@ -4,8 +4,9 @@ Configuration settings for the Thalos Prime API.
 """
 
 import os
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class APIConfig(BaseModel):
@@ -75,9 +76,13 @@ class APIConfig(BaseModel):
         description="Allowed CORS origins",
     )
 
-    class Config:
-        env_prefix = "THALOS_"
-        case_sensitive = False
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        extra="ignore",
+    )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a deterministic JSON-serializable configuration mapping."""
+        return self.model_dump(mode="json")
 
 
 # Load configuration from environment
