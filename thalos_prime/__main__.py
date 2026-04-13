@@ -238,21 +238,41 @@ def _run_session_maintenance(task: WorkerTask) -> None:
 def _run_coherence_floor_enforcer(task: WorkerTask) -> None:
     """Enforce minimum coherence floor on all SEARCH_CACHE entries.
 
-    Evicts any cached search result whose overall_score is below the
-    enforced minimum (79.0).  This ensures no stale below-floor result
-    can ever be served from cache, regardless of how it was originally
-    stored.  Runs every 2 minutes for near-real-time enforcement.
+    Evicts any cached SearchResponse payload in which the minimum
+    ``coherence.overall_score`` across its ``results`` list is below the
+    enforced minimum (79.0).  Cached payloads are ``SearchResponse.model_dump()``
+    objects whose schema is ``{"results": [{"coherence": {"overall_score": …}}]}``.
+
+    A snapshot of the cache is taken before iteration to avoid
+    ``RuntimeError: dictionary changed size during iteration`` under concurrent
+    access from FastAPI request handlers.  Individual entries are removed with
+    ``pop()`` so concurrent additions after the snapshot are never deleted.
     """
     from thalos_prime.api.routes.search import SEARCH_CACHE
 
     floor_threshold: float = 79.0
     before_count = len(SEARCH_CACHE)
+    # Snapshot to avoid RuntimeError from concurrent mutation by request handlers.
     cache_items_snapshot = list(SEARCH_CACHE.items())
+
+    def _min_score(payload: dict[str, Any]) -> float:
+        """Return the minimum result coherence score in a SearchResponse payload."""
+        results = payload.get("results")
+        if not isinstance(results, list) or not results:
+            return 0.0
+        scores = [
+            float(r["coherence"]["overall_score"])
+            for r in results
+            if isinstance(r, dict)
+            and isinstance(r.get("coherence"), dict)
+            and isinstance(r["coherence"].get("overall_score"), (int, float))
+        ]
+        return min(scores) if scores else 0.0
+
     violating_keys = [
         k
         for k, (payload, _ts) in cache_items_snapshot
-        if isinstance(payload.get("coherence_score"), (int, float))
-        and float(payload["coherence_score"]) < floor_threshold
+        if _min_score(payload) < floor_threshold
     ]
     evicted_count = 0
     for k in violating_keys:
@@ -273,12 +293,15 @@ def _run_benchmark_reporter(task: WorkerTask) -> None:
     """Run a lightweight deterministic benchmark and log the results.
 
     Executes a fixed set of canonical queries through the adaptive search
-    engine and logs coherence scores.  Results are deterministic given the
-    fixed seed embedded in the task descriptor.  This provides ongoing
-    regression visibility without external tooling.
+    engine and logs coherence scores.  A 30-second timeout is passed to each
+    query so the scheduler thread is never blocked longer than 90 seconds
+    total.  Stage 1 of the adaptive engine (GenerativeEngine corpus) always
+    resolves in under one second, so the timeout is a safety bound only.
     """
     from thalos_prime.adaptive_search import adaptive_search
 
+    # Short per-query budget; Stage 1 always resolves immediately.
+    probe_timeout_s: float = 30.0
     probe_queries: list[str] = [
         "deterministic knowledge extraction",
         "language coherence scoring benchmark",
@@ -286,7 +309,7 @@ def _run_benchmark_reporter(task: WorkerTask) -> None:
     ]
     scores: list[float] = []
     for query in probe_queries:
-        results = adaptive_search(query, max_results=1)
+        results = adaptive_search(query, max_results=1, timeout_seconds=probe_timeout_s)
         if results:
             scores.append(results[0].coherence.overall_score)
     avg = sum(scores) / len(scores) if scores else 0.0
@@ -302,15 +325,17 @@ def _run_benchmark_reporter(task: WorkerTask) -> None:
 
 
 def _run_audit_health_check(task: WorkerTask) -> None:
-    """Check audit trail health and log event counts.
+    """Check the shared audit trail health and log authoritative event counts.
 
-    Instantiates the system-level AuditTrail and logs event counts to
-    verify the audit subsystem is operational.  Does not alter any state.
+    Queries the module-level ``_audit_trail`` instance from
+    ``thalos_prime.api.routes.artifacts`` — the same trail used by all
+    artifact epistemic operations — so the reported event count reflects
+    real system activity rather than an empty in-memory instance.
+    Does not alter any state.
     """
-    from thalos_prime.audit.trail import AuditTrail
+    from thalos_prime.api.routes.artifacts import _audit_trail
 
-    trail = AuditTrail(trail_id="system_health")
-    events = trail.get_events()
+    events = _audit_trail.get_events()
     logger.info(
         "audit_health_check: step=%d seed=%d — total_audit_events=%d",
         task.step,

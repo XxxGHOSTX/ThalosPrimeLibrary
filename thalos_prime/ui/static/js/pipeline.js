@@ -57,11 +57,15 @@ class PipelineRunner {
         await this._delay(120);
         this._setStageStatus('query', 'DONE');
 
-        // Stage 2: Enumerate addresses
+        // Stage 2: Enumerate addresses — POST to /api/v1/enumerate with JSON body
         this._setStageStatus('enumerate', 'RUNNING');
         let addresses = [];
         try {
-            const enumRes = await fetch(`/api/v1/enumerate?query=${encodeURIComponent(query)}&max_results=${maxResults}&depth=${depth}`);
+            const enumRes = await fetch('/api/v1/enumerate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, max_results: maxResults, depth }),
+            });
             if (enumRes.ok) {
                 const enumData = await enumRes.json();
                 addresses = enumData.addresses || enumData.results || [];
@@ -139,7 +143,8 @@ class PipelineRunner {
         }
         const cards = results.slice(0, 5).map(r => {
             const score = r.coherence ? r.coherence.overall_score : (r.score || 0);
-            const rawAddr = r.address || r.id || '—';
+            // r.address is an AddressInfo object {hex_address, url, ...}; extract string.
+            const rawAddr = (r.address && (r.address.hex_address || r.address.url)) || r.id || '—';
             const text = r.page_text || r.text || '';
             const rawPreview = text.length > 200 ? text.slice(0, 200) + '…' : text;
             const addr = this._escHtml(rawAddr);
@@ -183,7 +188,8 @@ class PipelineRunner {
                 </div>`;
             return;
         }
-        const resp = result.response || result.message || result.text || JSON.stringify(result);
+        // ChatResponse has the assistant reply in `reply`; fall back for other shapes.
+        const resp = result.reply || result.response || result.message || result.text || JSON.stringify(result);
         const safeResp = this._escHtml(resp);
         this._synthOutput.innerHTML = `
             <div class="synth-card">

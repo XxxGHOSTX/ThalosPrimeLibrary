@@ -50,8 +50,15 @@ def test_enable_diversity_rerank_is_true_by_default() -> None:
 )
 def test_explicit_false_still_accepted(flag: str) -> None:
     """Callers can still explicitly disable individual features if needed."""
-    kwargs: dict[str, object] = {"query": "test", flag: False}
-    req = SearchRequest(**kwargs)  # type: ignore[arg-type]
+    if flag == "enable_adaptive_optimization":
+        req = SearchRequest(query="test", enable_adaptive_optimization=False)
+    elif flag == "enable_query_expansion":
+        req = SearchRequest(query="test", enable_query_expansion=False)
+    elif flag == "enable_diversity_rerank":
+        req = SearchRequest(query="test", enable_diversity_rerank=False)
+    else:
+        pytest.fail(f"Unexpected flag value: {flag!r}")
+        return  # unreachable — satisfies mypy
     assert getattr(req, flag) is False
 
 
@@ -116,25 +123,48 @@ def test_worker_task_seed_is_preserved() -> None:
 # ---------------------------------------------------------------------------
 
 def test_coherence_floor_enforcer_clears_sub_floor_entries() -> None:
-    """_run_coherence_floor_enforcer evicts entries with coherence_score < 79."""
+    """_run_coherence_floor_enforcer evicts SearchResponse payloads below floor.
+
+    Uses SearchResponse.model_dump()-shaped payloads — the actual cache schema —
+    where scores live at results[].coherence.overall_score, not at a top-level key.
+    """
     from thalos_prime.__main__ import WorkerTask, _run_coherence_floor_enforcer
     from thalos_prime.api.routes.search import SEARCH_CACHE
 
-    # Inject synthetic entries
-    SEARCH_CACHE["floor_test_below"] = ({"coherence_score": 50.0}, 0.0)
-    SEARCH_CACHE["floor_test_above"] = ({"coherence_score": 90.0}, 0.0)
-    SEARCH_CACHE["floor_test_no_score"] = ({"address": "abc"}, 0.0)
+    def _make_payload(overall_score: float) -> dict[str, object]:
+        """Return a minimal SearchResponse.model_dump()-shaped payload."""
+        return {
+            "query": "test",
+            "results": [
+                {
+                    "address": {"hex_address": "abc123", "url": "http://example.com"},
+                    "text": "x" * 3200,
+                    "coherence": {"overall_score": overall_score, "confidence_level": "high"},
+                    "provenance": {"address": "abc123", "source": "local", "timestamp": 0.0},
+                }
+            ],
+            "total_found": 1,
+            "mode": "hybrid",
+            "cached": False,
+            "metadata": {},
+        }
+
+    SEARCH_CACHE["floor_sr_below"] = (_make_payload(50.0), 0.0)
+    SEARCH_CACHE["floor_sr_above"] = (_make_payload(90.0), 0.0)
+    # Entry with no results list — min score defaults to 0.0 so it IS evicted.
+    SEARCH_CACHE["floor_sr_empty_results"] = ({"query": "test", "results": []}, 0.0)
 
     task = WorkerTask(name="coherence_floor_enforcer", interval_s=120.0, seed=1)
     _run_coherence_floor_enforcer(task)
 
-    assert "floor_test_below" not in SEARCH_CACHE, "Sub-floor entry should be evicted."
-    assert "floor_test_above" in SEARCH_CACHE, "Above-floor entry should be retained."
-    assert "floor_test_no_score" in SEARCH_CACHE, "Entry without score field should be retained."
+    assert "floor_sr_below" not in SEARCH_CACHE, "Below-floor entry should be evicted."
+    assert "floor_sr_above" in SEARCH_CACHE, "Above-floor entry should be retained."
+    assert "floor_sr_empty_results" not in SEARCH_CACHE, (
+        "Entry with empty results (min score = 0.0) should be evicted."
+    )
 
     # Cleanup
-    SEARCH_CACHE.pop("floor_test_above", None)
-    SEARCH_CACHE.pop("floor_test_no_score", None)
+    SEARCH_CACHE.pop("floor_sr_above", None)
 
 
 # ---------------------------------------------------------------------------
