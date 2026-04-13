@@ -247,20 +247,23 @@ def _run_coherence_floor_enforcer(task: WorkerTask) -> None:
 
     floor_threshold: float = 79.0
     before_count = len(SEARCH_CACHE)
+    cache_items_snapshot = list(SEARCH_CACHE.items())
     violating_keys = [
         k
-        for k, (payload, _ts) in SEARCH_CACHE.items()
+        for k, (payload, _ts) in cache_items_snapshot
         if isinstance(payload.get("coherence_score"), (int, float))
         and float(payload["coherence_score"]) < floor_threshold
     ]
+    evicted_count = 0
     for k in violating_keys:
-        del SEARCH_CACHE[k]
+        if SEARCH_CACHE.pop(k, None) is not None:
+            evicted_count += 1
     after_count = len(SEARCH_CACHE)
     logger.info(
         "coherence_floor_enforcer: step=%d seed=%d — evicted %d sub-floor entries (%d → %d)",
         task.step,
         task.seed,
-        len(violating_keys),
+        evicted_count,
         before_count,
         after_count,
     )
