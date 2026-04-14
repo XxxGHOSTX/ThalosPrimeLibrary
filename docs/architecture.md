@@ -125,6 +125,68 @@ canonical endpoint map.
 
 ---
 
+## Deterministic Innovation Objective
+
+Innovation is modeled as constrained deterministic selection:
+
+`x* = arg max_{x∈Ω} (U(x) · N(x) · F(x) · E(x))  s.t.  K(x) ≤ 0`
+
+Where `U` is utility, `N` is novelty, `F` is feasibility, `E` is
+explainability/reproducibility, and `K` captures hard-constraint violations.
+
+For runtime execution:
+
+`Artifact = Φ(ConceptGraph, Constraints, Objectives, DeterministicSeed)`
+
+This objective governs ranking and selection of output artifacts.
+
+---
+
+## Purity Network Formalism and Convergence
+
+Given `N = (V, E, Θ)` with transitions `x_(t+1) = T_(θ_t)(x_t)`, purity is:
+
+`Π(N) = α·Coherence + β·Determinism + γ·ConstraintSatisfaction + δ·ProvenanceIntegrity − λ·EntropyLeak`
+
+Convergence target:
+
+`max_Θ Π(N)  s.t.  ∀t: K(x_t) ≤ 0, x_t reproducible, trace(x_t) complete`
+
+Purity invariants:
+
+1. Semantic identity continuity.
+2. Complete causal/provenance traceability.
+3. Hard-constraint closure.
+4. Deterministic replay with same input and seed.
+5. Entropy/ambiguity reduction per stage.
+
+---
+
+## Closed-Loop Runtime Mapping
+
+| Phase | Repository mapping |
+|---|---|
+| Perception/Parse | ingest and semantic extraction (`api/routes`, `library_of_sense/retrieval`, `lob_babel_enumerator`) |
+| Abstraction | symbol/entity/claim normalization (`artifacts/schema`, `validation/pipeline`, `reasoning_tpl/derive`) |
+| Recombination | planner and graph traversal (`planning`, `knowledge_graph`, `graph_rag`) |
+| Constraint Projection | symbolic + policy filtering (`constraints`, `infra_synthesis/policy`, validation gates) |
+| Selection | utility/coherence/risk/novelty scoring (`lob_decoder`, `api/routes/search`, reasoning control plane) |
+| Externalization | API responses, reports, executable plans (`api`, `export/presenter`, `infra_synthesis`) |
+| Recursion | feedback-driven rescoring and stabilization (`belief/ledger`, `audit/trail`, maintenance loops) |
+
+---
+
+## Acceptance Criteria
+
+- Objective and purity metadata are emitted in response metadata as additive fields.
+- Policy/schema version headers are present for runtime signaling.
+- Per-stage scores, constraint outcomes, seed, config hash, and transition logs are observable.
+- Checkpoint/restore preserves objective/purity continuity.
+- Determinism, constraint-closure, provenance-completeness, and API-compatibility tests pass.
+- `make check` passes with no nondeterministic regressions.
+
+---
+
 ## Determinism Guarantees
 
 - A single integer `--seed` seeds an isolated `random.Random(seed)` instance.

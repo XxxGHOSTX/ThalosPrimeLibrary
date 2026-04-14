@@ -659,4 +659,73 @@ evidence d ∈ D that triggered the state transition from Accepted to Disputed.
 
 ---
 
-*Last updated: 2026-04-02 — Formal Specification v1.0, incorporating TPL Formal Specification and Extended Architecture documents.*
+## 19. Deterministic Innovation Objective and Purity Constraints
+
+### 19.1 Objective Functional
+
+Innovation in T is constrained maximization over candidate artifacts:
+
+`x* = arg max_{x∈Ω} (U(x) · N(x) · F(x) · E(x))  s.t.  K(x) ≤ 0`
+
+Where:
+
+- `U(x)`: utility score
+- `N(x)`: novelty score via non-trivial recombination
+- `F(x)`: feasibility score under symbolic/policy constraints
+- `E(x)`: explainability/reproducibility score
+- `K(x)`: hard-constraint violation operator
+
+Operational compiler form:
+
+`Artifact = Φ(ConceptGraph, Constraints, Objectives, DeterministicSeed)`
+
+### 19.2 Purity Functional
+
+For `N = (V, E, Θ)` with transition rule `x_(t+1) = T_(θ_t)(x_t)`:
+
+`Π(N) = α·Coherence + β·Determinism + γ·ConstraintSatisfaction + δ·ProvenanceIntegrity − λ·EntropyLeak`
+
+Convergence program:
+
+`max_Θ Π(N)  s.t.  ∀t: K(x_t) ≤ 0, reproducible(x_t), complete_trace(x_t)`
+
+### 19.3 Purity Invariants
+
+| ID | Invariant | Formal form |
+|----|-----------|-------------|
+| I-P1 | Identity preservation | `semantic_distance(x_t, x_(t+1))` is bounded by stage contract |
+| I-P2 | Causal transparency | `∀x, ∃trace(x)` and `trace(x)` is complete |
+| I-P3 | Constraint closure | `K(x_t) > 0 ⟹ reject_or_halt(x_t)` |
+| I-P4 | Replay determinism | `f(input, seed) = output` deterministically |
+| I-P5 | Entropy control | `Entropy(x_(t+1)) ≤ Entropy(x_t)` under fixed objective |
+
+### 19.4 Closed-Loop Dynamics
+
+Pipeline:
+
+`Signal → Abstraction → Recombination → Constraint Projection → Selection → Artifact → Feedback`
+
+Adaptive update:
+
+`Θ_(t+1) = Θ_t + η∇_Θ Π`
+
+Required semantics:
+
+1. Each cycle tightens constraints.
+2. Each cycle improves traceability.
+3. Each cycle reduces semantic drift.
+4. Termination criteria are deterministic and auditable.
+
+### 19.5 Acceptance Conditions
+
+A system state is conformant iff:
+
+1. Hard constraints are satisfied (`K(x_t) ≤ 0`) for accepted outputs.
+2. Outputs are reproducible for identical input and seed.
+3. Full derivation/provenance trace is available for every accepted artifact.
+4. Objective and purity metadata are observable at API boundaries without breaking prior schemas.
+5. Checkpoint/restore preserves objective and purity continuity.
+
+---
+
+*Last updated: 2026-04-14 — Formal Specification v1.0, incorporating deterministic innovation objective and purity constraints.*

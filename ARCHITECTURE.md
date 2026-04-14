@@ -13,15 +13,18 @@ knowledge artifacts.
 1. [Design Principles](#design-principles)
 2. [System Overview](#system-overview)
 3. [Data Pipeline](#data-pipeline)
-4. [Control Plane Subsystems](#control-plane-subsystems)
-5. [Data Plane Subsystems](#data-plane-subsystems)
-6. [REST API Layer](#rest-api-layer)
-7. [Lifecycle Contract](#lifecycle-contract)
-8. [Determinism and Replay](#determinism-and-replay)
-9. [State Surfaces](#state-surfaces)
-10. [Audit and Provenance](#audit-and-provenance)
-11. [Test Coverage](#test-coverage)
-12. [Conformance Rules](#conformance-rules)
+4. [Deterministic Innovation Objective](#deterministic-innovation-objective)
+5. [Purity Network Formalism](#purity-network-formalism)
+6. [Closed-Loop Compilation Contract](#closed-loop-compilation-contract)
+7. [Control Plane Subsystems](#control-plane-subsystems)
+8. [Data Plane Subsystems](#data-plane-subsystems)
+9. [REST API Layer](#rest-api-layer)
+10. [Lifecycle Contract](#lifecycle-contract)
+11. [Determinism and Replay](#determinism-and-replay)
+12. [State Surfaces](#state-surfaces)
+13. [Audit and Provenance](#audit-and-provenance)
+14. [Test Coverage](#test-coverage)
+15. [Conformance Rules](#conformance-rules)
 
 ---
 
@@ -102,6 +105,78 @@ raw data
 
 **Contract**: Code that bypasses validation, loses provenance, or collapses
 belief state into a stateless response is **nonconforming** to this architecture.
+
+---
+
+## Deterministic Innovation Objective
+
+TPL treats invention as constrained optimization over a deterministic candidate space:
+
+`x* = arg max_{x∈Ω} (U(x) · N(x) · F(x) · E(x))  s.t.  K(x) ≤ 0`
+
+Where:
+
+- `U(x)` = utility
+- `N(x)` = novelty via non-trivial recombination
+- `F(x)` = feasibility under explicit constraints
+- `E(x)` = explainability and reproducibility
+- `K(x)` = hard-constraint violations (must remain bounded/zero)
+
+This objective is the governing selection rule for generated artifacts and is
+enforced by deterministic scoring, policy gates, and replayable state.
+
+---
+
+## Purity Network Formalism
+
+For system network `N = (V, E, Θ)` and transitions `x_(t+1) = T_(θ_t)(x_t)`,
+purity is measured as:
+
+`Π(N) = α·Coherence + β·Determinism + γ·ConstraintSatisfaction + δ·ProvenanceIntegrity − λ·EntropyLeak`
+
+Primary stability goal:
+
+`max_Θ Π(N)  s.t.  ∀t: K(x_t) ≤ 0, x_t reproducible, trace(x_t) complete`
+
+### Purity Invariants (non-negotiable)
+
+1. Semantic identity continuity across transformations.
+2. Complete derivation/provenance chain for every output.
+3. Hard-constraint closure: invalid states rejected early.
+4. Deterministic replay for identical input + seed.
+5. Entropy/ambiguity reduction at each stage transition.
+
+### Convergence Semantics
+
+- Each cycle must tighten constraints, improve traceability, and reduce drift.
+- Objective is self-stabilizing epistemic behavior, not single-pass generation.
+- Stopping criteria must be deterministic, explicit, and auditable.
+
+---
+
+## Closed-Loop Compilation Contract
+
+Artifact generation is a deterministic compiler:
+
+`Artifact = Φ(ConceptGraph, Constraints, Objectives, DeterministicSeed)`
+
+### Runtime phase mapping to repository surfaces
+
+| Phase | Runtime role | Repository surfaces |
+|---|---|---|
+| Perception / Parse | Ingest and semantic extraction | `thalos_prime/api/routes/search.py`, `thalos_prime/library_of_sense/retrieval/`, `thalos_prime/lob_babel_enumerator.py` |
+| Abstraction | Symbol/entity/claim normalization | `thalos_prime/artifacts/schema.py`, `thalos_prime/validation/pipeline.py`, `thalos_prime/reasoning_tpl/derive.py` |
+| Recombination | Graph traversal + planner search | `thalos_prime/planning/` (MCTS/ToT), `thalos_prime/knowledge_graph/`, `thalos_prime/graph_rag/` |
+| Constraint Projection | Symbolic constraints + policy gates | `thalos_prime/constraints/`, `thalos_prime/infra_synthesis/policy/`, `thalos_prime/validation/pipeline.py` |
+| Selection | Utility/coherence/risk/novelty scoring | `thalos_prime/lob_decoder.py`, `thalos_prime/api/routes/search.py`, `thalos_prime/reasoning/` |
+| Externalization | API artifact/report/executable plan output | `thalos_prime/api/`, `thalos_prime/export/presenter.py`, `thalos_prime/infra_synthesis/` |
+| Recursion | Feedback, re-score, stabilize | `thalos_prime/belief/ledger.py`, `thalos_prime/audit/trail.py`, `thalos_prime/__main__.py` background maintenance loops |
+
+### API contract updates
+
+- Responses must expose objective/purity metadata in response metadata payloads.
+- Runtime signaling must include policy/version headers.
+- Existing response schemas remain backward compatible; new fields are additive.
 
 ---
 
@@ -286,6 +361,13 @@ All artifact endpoints are registered under `/api/v1/artifacts/`.
 - `ConsensusRequest` — `{artifact_ids, min_confidence}`
 - `ConsensusResponse` — `{consensus_artifact_id, agreement_score, participant_count, message}`
 
+### Objective/Purity response metadata contract
+
+- Include per-request objective context (utility/novelty/feasibility/explainability weights or defaults).
+- Include purity metrics and constraint outcomes in metadata where applicable.
+- Include policy and schema version headers for runtime interpretability.
+- Preserve backward compatibility by keeping existing response fields unchanged.
+
 ---
 
 ## Lifecycle Contract
@@ -332,6 +414,12 @@ To guarantee deterministic replay:
 All state surfaces are serialised as plain Python dicts (JSON-compatible).
 No external databases are used in the core subsystems.
 
+Additional observability requirements:
+
+- Record per-stage scores and constraint outcomes for each deterministic cycle.
+- Persist deterministic seed, configuration hash, and transition logs.
+- Preserve checkpoint/restore continuity for objective and purity state.
+
 ---
 
 ## Audit and Provenance
@@ -365,6 +453,13 @@ The TPL architecture guarantees end-to-end provenance for every artifact:
 
 Run all tests: `python -m pytest tests/ -q`
 
+### Deterministic innovation and purity test strategy
+
+- Determinism tests: same input + seed must replay identical outputs.
+- Constraint-violation tests: hard constraints must halt or reject deterministically.
+- Provenance completeness tests: derivation trace must remain complete end-to-end.
+- API integration tests: objective/purity metadata and policy/version headers propagate without schema breakage.
+
 ---
 
 ## Conformance Rules
@@ -378,6 +473,20 @@ The following are **architectural non-conformance** conditions that must be trea
 5. **Lifecycle method in Data Plane** — `PrpIndexer`, `EdgeExecutor`, and `ExportPresenter` must not implement `initialize / operate / reconcile / checkpoint / terminate`.
 6. **Weak cryptography** — AES-ECB must not be used. The PRP indexer uses HMAC-SHA256.
 7. **Non-deterministic operations** — any use of `time.time()`, `random.random()`, or filesystem scans without explicit seeding and logging.
+8. **Purity contract violation** — any path that omits objective scoring dimensions, constraint closure, or provenance-complete traceability.
+
+---
+
+## Verification Gate
+
+Before merge, the repository must pass:
+
+- `make check`
+- deterministic replay checks for changed surfaces
+- objective/purity observability and API compatibility checks
+
+The release state must remain fully implemented, fully integrated, and fully
+operational with no nondeterministic regressions.
 
 ---
 

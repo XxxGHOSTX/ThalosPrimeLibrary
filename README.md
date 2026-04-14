@@ -136,6 +136,31 @@ The core data pipeline runs these stages in order:
 
 See [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) for the full specification.
 
+### Deterministic Innovation and Purity Loop
+
+ThalosPrimeLibrary treats invention as deterministic constrained optimization:
+
+`x* = arg max_{x∈Ω} (U(x) · N(x) · F(x) · E(x))  s.t.  K(x) ≤ 0`
+
+- `U`: utility
+- `N`: novelty (non-trivial recombination)
+- `F`: feasibility (constraints pass)
+- `E`: explainability/reproducibility
+- `K`: hard-constraint violations
+
+Operationally, artifact production is a deterministic compiler:
+
+`Artifact = Φ(ConceptGraph, Constraints, Objectives, DeterministicSeed)`
+
+Runtime loop:
+
+`Signal → Abstraction → Recombination → Constraint Projection → Selection → Artifact → Feedback`
+
+Purity is enforced as a system property combining coherence, determinism,
+constraint satisfaction, and provenance integrity while minimizing entropy leak.
+Each cycle tightens constraints, improves traceability, and reduces drift to
+converge on explainable, valid, reusable outputs.
+
 ---
 
 ## Installation
