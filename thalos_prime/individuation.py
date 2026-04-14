@@ -56,6 +56,10 @@ from thalos_prime.lifecycle import BaseLifecycleComponent
 
 logger = logging.getLogger(__name__)
 
+# Minimum coherence score required for an entity to be considered a fully
+# realised individual rather than still in the process of individuating.
+INDIVIDUAL_PHASE_THRESHOLD: float = 50.0
+
 # ---------------------------------------------------------------------------
 # Phase taxonomy
 # ---------------------------------------------------------------------------
@@ -425,20 +429,22 @@ class IndividuationEngine(BaseLifecycleComponent):
         process_log.append(f"psychic:  entity_id={entity_id[:12]}… derived from content SHA-256")
 
         # --- Technical individuation: determine phase from coherence ----------
-        if coherence_score >= 50.0:  # noqa: PLR2004
+        if coherence_score >= INDIVIDUAL_PHASE_THRESHOLD:
             phase = IndividuationPhase.INDIVIDUAL
             process_log.append(
-                f"technical: coherence={coherence_score:.1f} ≥ 50 → phase=INDIVIDUAL"
+                f"technical: coherence={coherence_score:.1f} >= {INDIVIDUAL_PHASE_THRESHOLD}"
+                " -> phase=INDIVIDUAL"
             )
         elif coherence_score > 0.0:
             phase = IndividuationPhase.INDIVIDUATING
             process_log.append(
-                f"technical: 0 < coherence={coherence_score:.1f} < 50 → phase=INDIVIDUATING"
+                f"technical: 0 < coherence={coherence_score:.1f}"
+                f" < {INDIVIDUAL_PHASE_THRESHOLD} -> phase=INDIVIDUATING"
             )
         else:
             phase = IndividuationPhase.PRE_INDIVIDUAL
             process_log.append(
-                f"technical: coherence={coherence_score:.1f} = 0 → phase=PRE_INDIVIDUAL"
+                f"technical: coherence={coherence_score:.1f} = 0 -> phase=PRE_INDIVIDUAL"
             )
 
         entity = IndividuatedEntity(

@@ -28,11 +28,14 @@ from thalos_prime.individuation import (
 
 router = APIRouter()
 
+# Maximum number of addresses that can be enqueued in the pre-individual pool
+# in a single request.
+_MAX_POOL_BATCH_SIZE: int = 1000
+
 # Shared engine instance for this route module.
 _engine = IndividuationEngine(seed=0)
 _engine.initialize()
 _engine.validate()
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -81,9 +84,9 @@ async def individuate_endpoint(
         Body(embed=True, ge=0.0, le=100.0, description="Pre-computed coherence score"),
     ],
     extra_candidates: Annotated[
-        list[str],
+        list[str] | None,
         Body(embed=True, description="Extra addresses for the pre-individual pool"),
-    ] = [],  # noqa: B006
+    ] = None,
 ) -> dict[str, Any]:
     """Individuate a single Library of Babel page.
 
@@ -187,8 +190,11 @@ async def add_to_pool(
         Dict with the number of addresses added.
 
     """
-    if len(addresses) > 1000:
-        raise HTTPException(status_code=400, detail="Cannot enqueue more than 1 000 addresses at once")
+    if len(addresses) > _MAX_POOL_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot enqueue more than {_MAX_POOL_BATCH_SIZE} addresses at once",
+        )
     added = _engine.add_to_pre_individual_pool(addresses)
     return {
         "added": added,

@@ -108,6 +108,7 @@ from thalos_prime.reasoning.engine import (
 from thalos_prime.simulation.world_model import WorldModel, WorldState
 
 from .individuation import (
+    INDIVIDUAL_PHASE_THRESHOLD,
     IndividuatedEntity,
     IndividuationEngine,
     IndividuationPhase,
@@ -162,6 +163,7 @@ __all__ = [
     "BaseLifecycleComponent",
     "LifecycleProtocol",
     # Individuation
+    "INDIVIDUAL_PHASE_THRESHOLD",
     "IndividuationEngine",
     "IndividuationPhase",
     "IndividuationResult",
