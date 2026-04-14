@@ -107,6 +107,14 @@ from thalos_prime.reasoning.engine import (
 )
 from thalos_prime.simulation.world_model import WorldModel, WorldState
 
+from .individuation import (
+    IndividuatedEntity,
+    IndividuationEngine,
+    IndividuationPhase,
+    IndividuationResult,
+    get_individuation_summary,
+    individuate_page,
+)
 from .synthesis import deep_synthesis
 
 __all__ = [
@@ -153,6 +161,13 @@ __all__ = [
     # Lifecycle
     "BaseLifecycleComponent",
     "LifecycleProtocol",
+    # Individuation
+    "IndividuationEngine",
+    "IndividuationPhase",
+    "IndividuationResult",
+    "IndividuatedEntity",
+    "get_individuation_summary",
+    "individuate_page",
     # GraphRAG
     "GraphRAGRetriever",
     # Planning
