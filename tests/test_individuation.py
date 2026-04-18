@@ -255,7 +255,8 @@ def test_reconcile_deduplicates_pool() -> None:
     engine.initialize()
     engine.validate()
 
-    # Manually populate pool with duplicates (bypass add helper)
+    # Intentional private-state setup to create duplicate pool entries and
+    # verify reconcile() deduplicates them deterministically.
     engine._pre_individual_pool = ["x", "y", "x", "z", "y"]
     engine.reconcile()
 
@@ -292,7 +293,8 @@ def test_operate_requires_validate() -> None:
     """operate() raises RuntimeError if validate() was not called."""
     engine = IndividuationEngine(seed=0)
     engine.initialize()
-    # Deliberately skip validate()
+    # Intentional private-flag override to assert operate() enforces
+    # validate() as a lifecycle precondition.
     engine._validated = False
     try:
         engine.operate()

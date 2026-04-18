@@ -624,7 +624,6 @@ def get_individuation_summary() -> dict[str, object]:
     return _get_default_engine().individuation_summary()
 
 
-
 # ---------------------------------------------------------------------------
 # Deterministic individuation policy metadata
 # ---------------------------------------------------------------------------
