@@ -147,7 +147,7 @@ def _expand_query_variants(query: str) -> list[str]:
 
 def _tokenize(text: str) -> set[str]:
     """Extract normalized unique tokens from text."""
-    return {token for token in text.lower().split() if token}
+    return set(text.lower().split())
 
 
 def _token_jaccard_tokens(tokens_a: set[str], tokens_b: set[str]) -> float:
@@ -155,8 +155,6 @@ def _token_jaccard_tokens(tokens_a: set[str], tokens_b: set[str]) -> float:
     if not tokens_a or not tokens_b:
         return 0.0
     union = tokens_a | tokens_b
-    if not union:
-        return 0.0
     return len(tokens_a & tokens_b) / len(union)
 
 
@@ -211,7 +209,7 @@ def _novelty(result: PageResult, peers: list[PageResult], token_sets: dict[int, 
         (
             _token_jaccard_tokens(result_tokens, token_sets[id(peer)])
             for peer in peers
-            if peer is not result
+            if peer.address.hex_address != result.address.hex_address
         ),
         default=0.0,
     )
