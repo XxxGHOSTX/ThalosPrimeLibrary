@@ -7,6 +7,7 @@ needed; in practice Stage 1 (GenerativeEngine corpus) always resolves queries
 in under one second.
 """
 
+import json
 import time
 from typing import Annotated, Any
 
@@ -144,15 +145,21 @@ def _expand_query_variants(query: str) -> list[str]:
     return ordered
 
 
-def _token_jaccard(text_a: str, text_b: str) -> float:
-    tokens_a = set(text_a.lower().split())
-    tokens_b = set(text_b.lower().split())
+def _tokenize(text: str) -> set[str]:
+    return {token for token in text.lower().split() if token}
+
+
+def _token_jaccard_tokens(tokens_a: set[str], tokens_b: set[str]) -> float:
     if not tokens_a or not tokens_b:
         return 0.0
     union = tokens_a | tokens_b
     if not union:
         return 0.0
     return len(tokens_a & tokens_b) / len(union)
+
+
+def _token_jaccard(text_a: str, text_b: str) -> float:
+    return _token_jaccard_tokens(_tokenize(text_a), _tokenize(text_b))
 
 
 def _clamp01(value: float) -> float:
@@ -196,9 +203,14 @@ def _constraint_satisfaction(result: PageResult, effective_min: float) -> float:
     return 1.0
 
 
-def _novelty(result: PageResult, peers: list[PageResult]) -> float:
+def _novelty(result: PageResult, peers: list[PageResult], token_sets: dict[int, set[str]]) -> float:
+    result_tokens = token_sets[id(result)]
     max_similarity = max(
-        (_token_jaccard(result.text, peer.text) for peer in peers if peer.address.hex_address != result.address.hex_address),
+        (
+            _token_jaccard_tokens(result_tokens, token_sets[id(peer)])
+            for peer in peers
+            if peer is not result
+        ),
         default=0.0,
     )
     return _clamp01(1.0 - max_similarity)
@@ -210,10 +222,11 @@ def _compute_purity_metrics(
     peers: list[PageResult],
     query: str,
     effective_min: float,
+    token_sets: dict[int, set[str]],
 ) -> dict[str, float]:
     """Compute deterministic objective and purity functional components."""
     utility = _clamp01((result.coherence.overall_score / 100.0 + _query_coverage(result.text, query)) / 2.0)
-    novelty = _novelty(result, peers)
+    novelty = _novelty(result, peers, token_sets)
     feasibility = _constraint_satisfaction(result, effective_min)
     determinism = 1.0  # Adaptive search uses deterministic seeded generation.
     provenance = _provenance_integrity(result)
@@ -250,12 +263,14 @@ def _annotate_purity_metrics(
     loop_cycle: int,
 ) -> None:
     """Attach purity metrics to each result without mutating ranking order."""
+    token_sets = {id(result): _tokenize(result.text) for result in results}
     for result in results:
         purity = _compute_purity_metrics(
             result,
             peers=results,
             query=query,
             effective_min=effective_min,
+            token_sets=token_sets,
         )
         result.coherence.metrics["purity"] = {
             "loop_cycle": loop_cycle,
@@ -285,16 +300,23 @@ def _diversify_results(
 
     effective_lambda = min(1.0, max(0.0, diversity_lambda))
     selected: list[PageResult] = [results[0]]
-    remaining = list(results[1:])
+    selected_token_sets: list[set[str]] = [_tokenize(results[0].text)]
+    remaining: list[tuple[PageResult, set[str]]] = [
+        (result, _tokenize(result.text))
+        for result in results[1:]
+    ]
 
     while remaining and len(selected) < max_results:
         best_idx = 0
         best_score = float("-inf")
 
-        for idx, candidate in enumerate(remaining):
+        for idx, (candidate, candidate_tokens) in enumerate(remaining):
             base_score = float(candidate.coherence.metrics.get("combined_score", candidate.coherence.overall_score))
             max_similarity = max(
-                (_token_jaccard(candidate.text, prior.text) for prior in selected),
+                (
+                    _token_jaccard_tokens(candidate_tokens, prior_token_set)
+                    for prior_token_set in selected_token_sets
+                ),
                 default=0.0,
             )
             mmr_score = ((1.0 - effective_lambda) * base_score) - (effective_lambda * max_similarity * 100.0)
@@ -302,7 +324,9 @@ def _diversify_results(
                 best_score = mmr_score
                 best_idx = idx
 
-        selected.append(remaining.pop(best_idx))
+        chosen, chosen_tokens = remaining.pop(best_idx)
+        selected.append(chosen)
+        selected_token_sets.append(chosen_tokens)
 
     return selected[:max_results]
 
@@ -321,6 +345,22 @@ def get_cached_search(cache_key: str) -> dict[str, Any] | None:
 def cache_search(cache_key: str, data: dict[str, Any]) -> None:
     """Cache search results."""
     SEARCH_CACHE[cache_key] = (data, time.time())
+
+
+def _search_cache_key(request: SearchRequest) -> str:
+    cache_key_payload = {
+        "query": request.query,
+        "max_results": request.max_results,
+        "mode": request.mode.value,
+        "min_score": request.min_score,
+        "remote_access_policy": request.remote_access_policy.value,
+        "remote_consent": request.remote_consent,
+        "enable_query_expansion": request.enable_query_expansion,
+        "enable_diversity_rerank": request.enable_diversity_rerank,
+        "enable_adaptive_optimization": request.enable_adaptive_optimization,
+        "diversity_lambda": request.diversity_lambda,
+    }
+    return f"adaptive:{json.dumps(cache_key_payload, sort_keys=True, separators=(',', ':'))}"
 
 
 def _adaptive_result_to_page_result(ar: AdaptiveResult) -> PageResult:
@@ -393,7 +433,7 @@ def execute_search_request(request: SearchRequest, *, use_cache: bool = True) ->
         Fully scored SearchResponse with operational compiler metadata.
 
     """
-    cache_key = f"adaptive:{request.query}:{request.max_results}:{request.mode}"
+    cache_key = _search_cache_key(request)
     if use_cache:
         cached_result = get_cached_search(cache_key)
         if cached_result:

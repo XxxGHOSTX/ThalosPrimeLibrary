@@ -43,8 +43,10 @@ class ConsoleHandler {
     async handleSend() {
         const message = this.consoleInput.value.trim();
         if (!message) return;
+        const tokens = message.split(/\s+/).filter(Boolean);
+        const command = tokens[0] || '';
 
-        if (message.startsWith('/benchmark-tasks')) {
+        if (command === '/benchmark-tasks') {
             this.messageHistory.push(message);
             this.historyIndex = this.messageHistory.length;
             this.consoleInput.value = '';
@@ -63,14 +65,46 @@ class ConsoleHandler {
             return;
         }
 
-        if (message.startsWith('/benchmark')) {
+        if (command === '/benchmark-compare') {
             this.messageHistory.push(message);
             this.historyIndex = this.messageHistory.length;
             this.consoleInput.value = '';
             this.addMessage('user', message);
             this.showTypingIndicator();
 
-            const tokens = message.split(/\s+/).filter(Boolean);
+            const seed = Number.parseInt(tokens[1] || '2026', 10);
+            const perturbation = Number.parseInt(tokens[2] || '0', 10);
+
+            try {
+                const result = await apiClient.compareBenchmark(seed, perturbation);
+                this.hideTypingIndicator();
+                const summary = result.summary;
+                const lines = [
+                    `Benchmark: ${result.benchmark}`,
+                    `Tasks: ${result.task_count}`,
+                    `Operational Mean: ${summary.operational_mean_score.toFixed(6)}`,
+                    `Noisy Baseline Mean: ${summary.noisy_baseline_mean_score.toFixed(6)}`,
+                    `Random Baseline Mean: ${summary.random_baseline_mean_score.toFixed(6)}`,
+                    `Win Rate vs Noisy: ${(summary.operational_vs_noisy_win_rate * 100).toFixed(2)}%`,
+                    `Win Rate vs Random: ${(summary.operational_vs_random_win_rate * 100).toFixed(2)}%`,
+                    `Outperforms Both Means: ${summary.operational_outperforms_both_means}`,
+                ].join('\n');
+                this.addMessage('bot', lines);
+            } catch (error) {
+                this.hideTypingIndicator();
+                this.addMessage('error', `Error: ${error.message}`);
+            }
+            this.scrollToBottom();
+            return;
+        }
+
+        if (command === '/benchmark') {
+            this.messageHistory.push(message);
+            this.historyIndex = this.messageHistory.length;
+            this.consoleInput.value = '';
+            this.addMessage('user', message);
+            this.showTypingIndicator();
+
             const taskId = tokens[1] || 'latent-11';
             const seed = Number.parseInt(tokens[2] || '2026', 10);
             const perturbation = Number.parseInt(tokens[3] || '0', 10);
@@ -89,40 +123,6 @@ class ConsoleHandler {
                     `Query: ${result.selected_query}`,
                 ].join('\n');
                 this.addMessage('bot', summary);
-            } catch (error) {
-                this.hideTypingIndicator();
-                this.addMessage('error', `Error: ${error.message}`);
-            }
-            this.scrollToBottom();
-            return;
-        }
-
-        if (message.startsWith('/benchmark-compare')) {
-            this.messageHistory.push(message);
-            this.historyIndex = this.messageHistory.length;
-            this.consoleInput.value = '';
-            this.addMessage('user', message);
-            this.showTypingIndicator();
-
-            const tokens = message.split(/\s+/).filter(Boolean);
-            const seed = Number.parseInt(tokens[1] || '2026', 10);
-            const perturbation = Number.parseInt(tokens[2] || '0', 10);
-
-            try {
-                const result = await apiClient.compareBenchmark(seed, perturbation);
-                this.hideTypingIndicator();
-                const summary = result.summary;
-                const lines = [
-                    `Benchmark: ${result.benchmark}`,
-                    `Tasks: ${result.task_count}`,
-                    `Operational Mean: ${summary.operational_mean_score.toFixed(6)}`,
-                    `Noisy Baseline Mean: ${summary.noisy_baseline_mean_score.toFixed(6)}`,
-                    `Random Baseline Mean: ${summary.random_baseline_mean_score.toFixed(6)}`,
-                    `Win Rate vs Noisy: ${(summary.operational_vs_noisy_win_rate * 100).toFixed(2)}%`,
-                    `Win Rate vs Random: ${(summary.operational_vs_random_win_rate * 100).toFixed(2)}%`,
-                    `Outperforms Both Means: ${summary.operational_outperforms_both_means}`,
-                ];
-                this.addMessage('bot', lines.join('\n'));
             } catch (error) {
                 this.hideTypingIndicator();
                 this.addMessage('error', `Error: ${error.message}`);
