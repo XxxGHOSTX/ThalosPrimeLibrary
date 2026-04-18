@@ -146,12 +146,18 @@ def _expand_query_variants(query: str) -> list[str]:
 
 
 def _tokenize(text: str) -> set[str]:
-    """Extract normalized unique tokens from text."""
+    """Extract unique lowercase tokens from whitespace-split text.
+
+    Empty input (or whitespace-only input) returns an empty set.
+    """
     return set(text.lower().split())
 
 
 def _token_jaccard_tokens(tokens_a: set[str], tokens_b: set[str]) -> float:
-    """Compute Jaccard similarity between two token sets."""
+    """Compute Jaccard similarity in [0.0, 1.0] for two token sets.
+
+    Returns 0.0 when either token set is empty.
+    """
     if not tokens_a or not tokens_b:
         return 0.0
     union = tokens_a | tokens_b
