@@ -20,6 +20,7 @@ from thalos_prime.models.api_models import (
     ProvenanceInfo,
 )
 from thalos_runtime.plugins.common import (
+    HIGH_CONFIDENCE_FLOOR,
     ExecutionContext,
     normalize_chat_payload,
 )
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _TASK_NAME = "chat.v1.handle_message"
-_HIGH_CONFIDENCE_FLOOR = 80.0
 
 @dataclass
 class RuntimeSessionStore:
@@ -227,7 +227,7 @@ class ChatTask:
 
     def _candidate_to_page_result(self, candidate: dict[str, Any], *, query: str) -> PageResult:
         score = float(candidate["coherence_score"])
-        confidence = ConfidenceLevel.HIGH if score >= _HIGH_CONFIDENCE_FLOOR else ConfidenceLevel.MEDIUM
+        confidence = ConfidenceLevel.HIGH if score >= HIGH_CONFIDENCE_FLOOR else ConfidenceLevel.MEDIUM
         return PageResult(
             address=AddressInfo(
                 hex_address=str(candidate["address"]),

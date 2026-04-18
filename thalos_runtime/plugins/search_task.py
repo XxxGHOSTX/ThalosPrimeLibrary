@@ -16,7 +16,7 @@ from thalos_prime.models.api_models import (
     SearchRequest,
     SearchResponse,
 )
-from thalos_runtime.plugins.common import ExecutionContext
+from thalos_runtime.plugins.common import HIGH_CONFIDENCE_FLOOR, ExecutionContext
 
 if TYPE_CHECKING:
     from thalos_runtime.core.engine import RuntimeEngine
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _TASK_NAME = "search.v1.query"
-_HIGH_CONFIDENCE_FLOOR = 80.0
 
 
 class SearchTask:
@@ -86,8 +85,9 @@ class SearchTask:
         )
 
     def _candidate_to_page_result(self, candidate: dict[str, Any], *, query: str) -> PageResult:
+        """Convert canonical engine candidates to API ``PageResult`` records."""
         score = float(candidate["coherence_score"])
-        confidence = ConfidenceLevel.HIGH if score >= _HIGH_CONFIDENCE_FLOOR else ConfidenceLevel.MEDIUM
+        confidence = ConfidenceLevel.HIGH if score >= HIGH_CONFIDENCE_FLOOR else ConfidenceLevel.MEDIUM
         return PageResult(
             address=AddressInfo(
                 hex_address=str(candidate["address"]),

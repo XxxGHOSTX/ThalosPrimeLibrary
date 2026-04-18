@@ -16,6 +16,10 @@ from thalos_prime.pipeline import (
     validate_candidates,
 )
 
+# Two deterministic passes are the minimum required to detect convergence and
+# expose oscillation (`stable` true only when both selected IDs match).
+_STABILIZATION_CYCLES = 2
+
 
 def _as_float(value: object) -> float:
     if isinstance(value, (float, int)):
@@ -57,7 +61,7 @@ class ThalosEngine:
             "purity_functional": 0.0,
         }
 
-        for cycle_index in range(2):
+        for cycle_index in range(_STABILIZATION_CYCLES):
             candidates = generate_candidates(
                 input_text,
                 max_candidates=config.max_candidates,

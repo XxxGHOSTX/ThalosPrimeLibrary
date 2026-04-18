@@ -12,6 +12,11 @@ except ImportError:  # pragma: no cover - optional dependency path
     _Z3Bool = None
     _Z3Solver = None
     _z3_sat = None
+_HAS_Z3 = _Z3Bool is not None and _Z3Solver is not None and _z3_sat is not None
+
+_DETERMINISTIC_CONSTRAINT = "deterministic=true"
+_SEARCH_INTENT_CONSTRAINT = "intent=search"
+_MAX_RESULTS_CONSTRAINT_PREFIX = "max_results<="
 
 
 def _as_string_list(value: object) -> list[str]:
@@ -22,8 +27,11 @@ def _as_string_list(value: object) -> list[str]:
 
 def _z3_constraint_score(constraints: dict[str, object]) -> float | None:
     """Return constraint score using z3 when available."""
-    if _Z3Bool is None or _Z3Solver is None or _z3_sat is None:
+    if not _HAS_Z3:
         return None
+    if _Z3Bool is None or _Z3Solver is None or _z3_sat is None:
+        msg = "z3 symbols unavailable despite _HAS_Z3=True"
+        raise RuntimeError(msg)
 
     hard = _as_string_list(constraints.get("hard", []))
     solver = _Z3Solver()
@@ -52,11 +60,11 @@ def validate_candidates(
         penalty = 0.0
 
         for hard in hard_constraints:
-            if hard == "deterministic=true":
+            if hard == _DETERMINISTIC_CONSTRAINT:
                 continue
-            if hard == "intent=search":
+            if hard == _SEARCH_INTENT_CONSTRAINT:
                 continue
-            if hard.startswith("max_results<="):
+            if hard.startswith(_MAX_RESULTS_CONSTRAINT_PREFIX):
                 continue
             if hard not in text:
                 satisfied = False

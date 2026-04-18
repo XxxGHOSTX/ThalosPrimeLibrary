@@ -69,10 +69,7 @@ class ShardManager:
     # Lifecycle contract methods
     def initialize(self) -> None:
         """Initialize shard manager state."""
-        if not hasattr(self, "store"):
-            self.store = ShardStore()
-        if not hasattr(self, "index"):
-            self.index = {}
+        self.reconcile()
 
     def validate(self) -> bool:
         """Validate shard manager invariants."""

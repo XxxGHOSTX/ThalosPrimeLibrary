@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html.parser
+import logging
 import re
 import urllib.parse
 import urllib.request
@@ -13,6 +14,7 @@ DEFAULT_BASE_URLS = [
     "https://libraryofbabel.info/search.html",
 ]
 DEFAULT_TIMEOUT = 10
+logger = logging.getLogger(__name__)
 
 
 class _TextCollector(html.parser.HTMLParser):
@@ -22,6 +24,7 @@ class _TextCollector(html.parser.HTMLParser):
         self._chunks: list[tuple[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:  # noqa: ARG002
+        # ``attrs`` is required by HTMLParser interface.
         self._stack.append(tag)
 
     def handle_endtag(self, tag: str) -> None:  # noqa: ARG002
@@ -108,6 +111,7 @@ def search_library(
         try:
             html = _fetch_url(url, timeout=timeout)
         except OSError:
+            logger.debug("search_library fetch failed for %s", url)
             continue
         links = _extract_book_links(html, base)
         if links:
@@ -135,6 +139,7 @@ def search_and_fetch(
         try:
             results.append(fetch_page(str(info["url"]), timeout=timeout))
         except OSError:
+            logger.debug("search_and_fetch page fetch failed for %s", info["url"])
             continue
     return results
 

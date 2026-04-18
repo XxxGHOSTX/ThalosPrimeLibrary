@@ -8,6 +8,7 @@ in under one second.
 """
 
 import time
+from hashlib import sha256
 from typing import Annotated, Any
 
 from fastapi import APIRouter
@@ -29,6 +30,9 @@ router = APIRouter()
 
 # Minimum score enforced globally on every search result
 _MIN_COHERENCE_SCORE: float = 79.0
+# Prime modulus bounds very large integer query hashes while preserving stable
+# deterministic distribution of seed values.
+_SEED_MODULUS = 1_000_000_007
 
 # Simple in-memory cache (replace with Redis in production)
 SEARCH_CACHE: dict[str, tuple[dict[str, Any], float]] = {}
@@ -251,7 +255,7 @@ def execute_search_request(request: SearchRequest, *, use_cache: bool = True) ->
         metadata["cache_hit"] = True
         return cached_response.model_copy(update={"cached": True, "metadata": metadata})
 
-    seed = int.from_bytes(request.query.encode("utf-8"), "big", signed=False) % 1_000_000_007
+    seed = int(sha256(request.query.encode("utf-8")).hexdigest()[:16], 16) % _SEED_MODULUS
     artifact = ThalosEngine().run(
         request.query,
         EngineConfig(
@@ -274,6 +278,8 @@ def execute_search_request(request: SearchRequest, *, use_cache: bool = True) ->
     ]
 
     if not page_results:
+        # Fallback to generative mode to preserve non-empty deterministic search
+        # behavior when strict local/hybrid coherence filtering removes all hits.
         fallback_artifact = ThalosEngine().run(
             request.query,
             EngineConfig(

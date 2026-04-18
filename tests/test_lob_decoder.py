@@ -11,6 +11,7 @@ class TestDecoder(unittest.TestCase):
 
         score = score_coherence(text, "Thalos Prime").overall_score
 
+        # Canonical decoder weights exact-match less heavily than the legacy shim.
         self.assertGreaterEqual(score, 50)
 
 
@@ -32,6 +33,5 @@ class TestDecoder(unittest.TestCase):
 if __name__ == "__main__":
 
     unittest.main()
-
 
 

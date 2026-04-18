@@ -64,7 +64,7 @@ def generate_candidates(
         )
 
     if not candidates:
-        fallback_address = sha256(f"{input_text}:{cycle_index}".encode()).hexdigest()
+        fallback_address = sha256(f"{input_text}\0{cycle_index}".encode()).hexdigest()
         page = address_to_page(fallback_address)
         coherence = score_coherence(page, input_text)
         candidates.append(

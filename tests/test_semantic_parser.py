@@ -8,7 +8,9 @@ class TestSemanticParser(unittest.TestCase):
     def test_detects_genomic_node(self) -> None:
         out = semantic_deconstruct("Analyze DNA sequence for mutations")
         self.assertEqual(out["node"], "genomic")
-        dimensions = cast("dict[str, str]", out["dimensions"])
+        dimensions_obj = out["dimensions"]
+        self.assertIsInstance(dimensions_obj, dict)
+        dimensions = cast("dict[str, str]", dimensions_obj)
         self.assertIn("physical", dimensions)
 
     def test_detects_logical_node(self) -> None:
