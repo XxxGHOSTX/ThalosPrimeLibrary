@@ -78,5 +78,8 @@ async def api_status() -> dict[str, Any]:
             "export": "/api/v1/artifacts/export/{artifact_id}",
             "graph": "/api/v1/artifacts/graph/{artifact_id}",
             "consensus": "/api/v1/artifacts/consensus",
+            "individuation": "/api/v1/individuation/individuate",
+            "individuation_collective": "/api/v1/individuation/collective",
+            "individuation_summary": "/api/v1/individuation/summary",
         },
     }
