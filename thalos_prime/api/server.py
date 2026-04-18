@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 from thalos_prime import __version__
 from thalos_prime.config import get_config
+from thalos_prime.individuation import policy_version as individuation_policy_version
 from thalos_prime.models.api_models import ErrorResponse
 from thalos_runtime.core.deps import get_engine, set_engine
 from thalos_runtime.core.engine import RuntimeEngine
@@ -179,6 +180,7 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = f"{process_time:.4f}"
+        response.headers["X-Thalos-Individuation-Policy"] = individuation_policy_version()
         return response
 
     @app.middleware("http")

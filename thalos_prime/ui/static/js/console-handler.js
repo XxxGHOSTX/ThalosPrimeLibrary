@@ -43,6 +43,93 @@ class ConsoleHandler {
     async handleSend() {
         const message = this.consoleInput.value.trim();
         if (!message) return;
+
+        if (message.startsWith('/benchmark-tasks')) {
+            this.messageHistory.push(message);
+            this.historyIndex = this.messageHistory.length;
+            this.consoleInput.value = '';
+            this.addMessage('user', message);
+            this.showTypingIndicator();
+            try {
+                const tasks = await apiClient.getBenchmarkTasks();
+                this.hideTypingIndicator();
+                const lines = tasks.tasks.map((t) => `${t.task_id}: ${t.title}`);
+                this.addMessage('bot', `Available benchmark tasks (${tasks.count}):\n${lines.join('\n')}`);
+            } catch (error) {
+                this.hideTypingIndicator();
+                this.addMessage('error', `Error: ${error.message}`);
+            }
+            this.scrollToBottom();
+            return;
+        }
+
+        if (message.startsWith('/benchmark')) {
+            this.messageHistory.push(message);
+            this.historyIndex = this.messageHistory.length;
+            this.consoleInput.value = '';
+            this.addMessage('user', message);
+            this.showTypingIndicator();
+
+            const tokens = message.split(/\s+/).filter(Boolean);
+            const taskId = tokens[1] || 'latent-11';
+            const seed = Number.parseInt(tokens[2] || '2026', 10);
+            const perturbation = Number.parseInt(tokens[3] || '0', 10);
+
+            try {
+                const result = await apiClient.runBenchmark(taskId, seed, perturbation);
+                this.hideTypingIndicator();
+                const summary = [
+                    `Benchmark: ${result.benchmark}`,
+                    `Task: ${result.task_id}`,
+                    `Seed: ${result.seed}  Perturbation: ${result.perturbation}`,
+                    `Selected Candidate: ${result.selected_candidate}`,
+                    `Selected Address: ${result.selected_address}`,
+                    `Constraints Pass: ${result.constraints_pass}`,
+                    `Stabilized: ${result.stabilized}`,
+                    `Query: ${result.selected_query}`,
+                ].join('\n');
+                this.addMessage('bot', summary);
+            } catch (error) {
+                this.hideTypingIndicator();
+                this.addMessage('error', `Error: ${error.message}`);
+            }
+            this.scrollToBottom();
+            return;
+        }
+
+        if (message.startsWith('/benchmark-compare')) {
+            this.messageHistory.push(message);
+            this.historyIndex = this.messageHistory.length;
+            this.consoleInput.value = '';
+            this.addMessage('user', message);
+            this.showTypingIndicator();
+
+            const tokens = message.split(/\s+/).filter(Boolean);
+            const seed = Number.parseInt(tokens[1] || '2026', 10);
+            const perturbation = Number.parseInt(tokens[2] || '0', 10);
+
+            try {
+                const result = await apiClient.compareBenchmark(seed, perturbation);
+                this.hideTypingIndicator();
+                const summary = result.summary;
+                const lines = [
+                    `Benchmark: ${result.benchmark}`,
+                    `Tasks: ${result.task_count}`,
+                    `Operational Mean: ${summary.operational_mean_score.toFixed(6)}`,
+                    `Noisy Baseline Mean: ${summary.noisy_baseline_mean_score.toFixed(6)}`,
+                    `Random Baseline Mean: ${summary.random_baseline_mean_score.toFixed(6)}`,
+                    `Win Rate vs Noisy: ${(summary.operational_vs_noisy_win_rate * 100).toFixed(2)}%`,
+                    `Win Rate vs Random: ${(summary.operational_vs_random_win_rate * 100).toFixed(2)}%`,
+                    `Outperforms Both Means: ${summary.operational_outperforms_both_means}`,
+                ];
+                this.addMessage('bot', lines.join('\n'));
+            } catch (error) {
+                this.hideTypingIndicator();
+                this.addMessage('error', `Error: ${error.message}`);
+            }
+            this.scrollToBottom();
+            return;
+        }
         
         // Add to history
         this.messageHistory.push(message);
@@ -194,6 +281,9 @@ Available commands:
   • /clear   - Clear console
   • /history - Show query history
   • /mode    - Change search mode
+    • /benchmark-tasks - List benchmark tasks
+    • /benchmark <task_id> <seed> <perturbation> - Run benchmark
+    • /benchmark-compare <seed> <perturbation> - Compare against baselines
 
 Ready for input...
         `;
