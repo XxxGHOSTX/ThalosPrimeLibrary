@@ -146,10 +146,12 @@ def _expand_query_variants(query: str) -> list[str]:
 
 
 def _tokenize(text: str) -> set[str]:
+    """Extract normalized unique tokens from text."""
     return {token for token in text.lower().split() if token}
 
 
 def _token_jaccard_tokens(tokens_a: set[str], tokens_b: set[str]) -> float:
+    """Compute Jaccard similarity between two token sets."""
     if not tokens_a or not tokens_b:
         return 0.0
     union = tokens_a | tokens_b
@@ -348,6 +350,7 @@ def cache_search(cache_key: str, data: dict[str, Any]) -> None:
 
 
 def _search_cache_key(request: SearchRequest) -> str:
+    """Build a deterministic cache key from all behavior-affecting controls."""
     cache_key_payload = {
         "query": request.query,
         "max_results": request.max_results,
