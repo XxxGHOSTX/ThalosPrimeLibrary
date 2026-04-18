@@ -204,6 +204,11 @@ def text_to_address(text: str) -> str:
     return _generator.text_to_address(text)
 
 
+def query_to_hex(query: str) -> str:
+    """Return a stable uppercase hex address fragment for a query."""
+    return text_to_address(query).upper()[:32]
+
+
 def normalize_text(text: str) -> str:
     """Convenience function to normalize text to Library format.
 

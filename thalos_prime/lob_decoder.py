@@ -437,3 +437,33 @@ def decode_page(
 
     """
     return _decoder.decode_page(address, text, query, source)
+
+
+def decode_pages(
+    pages: list[dict[str, Any]],
+    query: str,
+    *,
+    with_normalization: bool = False,
+) -> list[dict[str, Any]]:
+    """Decode and rank multiple pages for convenience compatibility."""
+    decoded: list[dict[str, Any]] = []
+    for page in pages:
+        raw_text = str(page.get("text", ""))
+        decoded_page = _decoder.decode_page(
+            address=str(page.get("address", {}).get("hex", page.get("address", "unknown"))),
+            text=raw_text,
+            query=query,
+            source=str(page.get("source", "unknown")),
+            normalize=with_normalization,
+        )
+        decoded.append(
+            {
+                "address": page.get("address"),
+                "snippet": raw_text[:240].replace("\n", " "),
+                "score": float(decoded_page.coherence.overall_score),
+                "normalized": decoded_page.normalized_text,
+                "source": decoded_page.source,
+            },
+        )
+    decoded.sort(key=lambda item: float(item["score"]), reverse=True)
+    return decoded

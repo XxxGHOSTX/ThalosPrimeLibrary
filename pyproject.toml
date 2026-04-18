@@ -178,13 +178,6 @@ module = [
     "cryptography.*",
 ]
 ignore_missing_imports = true
-[[tool.mypy.overrides]]
-module = [
-    "src",
-    "src.*",
-]
-ignore_errors = true
-
 # Optional FastAPI/SQLAlchemy/Pydantic modules - decorators/subclassing
 # are untyped because those packages use Any when imports are missing
 [[tool.mypy.overrides]]
@@ -197,17 +190,6 @@ module = [
     "thalos_prime.database.*",
 ]
 disable_error_code = ["misc", "untyped-decorator"]
-
-# Test files that call legacy src/ untyped functions
-[[tool.mypy.overrides]]
-module = [
-    "tests.test_lob_shard_manager",
-    "tests.test_lob_babel_search",
-    "tests.test_api_chat",
-    "tests.test_api_search",
-    "tests.test_main",
-]
-disable_error_code = ["no-untyped-call"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [

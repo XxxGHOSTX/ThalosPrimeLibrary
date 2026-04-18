@@ -1,16 +1,15 @@
-from typing import Dict, List
+"""Deterministic semantic decomposition helpers."""
+
+from __future__ import annotations
 
 
-def semantic_deconstruct(text: str) -> Dict:
-    """
-    Lightweight semantic decomposition that classifies the prompt across
-    multiple modalities and emits a structured "nexus" payload.
-    """
+def semantic_deconstruct(text: str) -> dict[str, object]:
+    """Classify prompt across deterministic semantic nodes."""
     if not text:
         return {"fragments": [], "dimensions": {}, "node": "unknown"}
 
     lower = text.lower()
-    fragments: List[str] = [frag for frag in text.split() if frag]
+    fragments = [fragment for fragment in text.split() if fragment]
 
     node = "narrative"
     if any(tok in lower for tok in ["dna", "rna", "gene", "peptide", "protein", "sequence"]):
@@ -21,13 +20,8 @@ def semantic_deconstruct(text: str) -> Dict:
         node = "chemical"
 
     dimensions = {
-        "physical": _dimension_text("physical/chemical", lower),
-        "logical": _dimension_text("logical/mathematical", lower),
-        "narrative": _dimension_text("linguistic/narrative", lower),
+        "physical": f"[physical/chemical] Nexus view for: {lower[:200]}",
+        "logical": f"[logical/mathematical] Nexus view for: {lower[:200]}",
+        "narrative": f"[linguistic/narrative] Nexus view for: {lower[:200]}",
     }
-
     return {"fragments": fragments, "dimensions": dimensions, "node": node}
-
-
-def _dimension_text(label: str, text: str) -> str:
-    return f"[{label}] Nexus view for: {text[:200]}"

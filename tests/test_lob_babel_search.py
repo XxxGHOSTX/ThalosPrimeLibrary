@@ -1,6 +1,6 @@
 import unittest
 
-from src.lob_babel_search import (
+from thalos_prime.lob_babel_search import (
     _extract_address_info,
     _extract_book_links,
     _extract_page_text,

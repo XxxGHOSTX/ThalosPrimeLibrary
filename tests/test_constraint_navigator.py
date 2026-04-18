@@ -1,6 +1,6 @@
 import unittest
 
-from src.constraint_navigator import translate_constraints
+from thalos_prime.constraint_navigator import translate_constraints
 
 
 class TestConstraintNavigator(unittest.TestCase):

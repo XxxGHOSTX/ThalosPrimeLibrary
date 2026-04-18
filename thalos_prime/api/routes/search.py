@@ -13,10 +13,11 @@ from typing import Annotated, Any
 from fastapi import APIRouter
 from fastapi import Query as QueryParam
 
-from thalos_prime.adaptive_search import AdaptiveResult, adaptive_search
+from thalos_prime.core.engine import EngineConfig, ThalosEngine
 from thalos_prime.models.api_models import (
     AddressInfo,
     CoherenceInfo,
+    ConfidenceLevel,
     PageResult,
     ProvenanceInfo,
     RemoteAccessPolicy,
@@ -197,78 +198,73 @@ def cache_search(cache_key: str, data: dict[str, Any]) -> None:
     SEARCH_CACHE[cache_key] = (data, time.time())
 
 
-def _adaptive_result_to_page_result(ar: AdaptiveResult) -> PageResult:
-    """Convert an AdaptiveResult to a PageResult suitable for SearchResponse.
-
-    All AdaptiveResults are guaranteed to have overall_score >= 79.0.
-    """
-    cs = ar.coherence
+def _candidate_to_page_result(candidate: dict[str, Any], *, query: str) -> PageResult:
+    """Convert canonical engine candidates to SearchResponse page results."""
+    score = float(candidate["coherence_score"])
     addr_info = AddressInfo(
-        hex_address=ar.address,
+        hex_address=str(candidate["address"]),
         wall=None,
         shelf=None,
         volume=None,
         page=None,
-        url=f"https://libraryofbabel.info/book.cgi?hex={ar.address}",
+        url=f"https://libraryofbabel.info/book.cgi?hex={candidate['address']}",
     )
     coherence_info = CoherenceInfo(
-        overall_score=cs.overall_score,
-        language_score=cs.language_score,
-        structure_score=cs.structure_score,
-        ngram_score=cs.ngram_score,
-        exact_match_score=cs.exact_match_score,
-        confidence_level=cs.confidence_level,  # type: ignore[arg-type]
-        metrics=cs.metrics,
+        overall_score=score,
+        language_score=score,
+        structure_score=score,
+        ngram_score=score,
+        exact_match_score=score,
+        confidence_level=ConfidenceLevel.HIGH if score >= 80.0 else ConfidenceLevel.MEDIUM,
+        metrics={
+            "combined_score": float(candidate["score"]),
+            "constraint_score": float(candidate["constraint_score"]),
+            "purity_score": float(candidate["purity_score"]),
+        },
     )
     provenance = ProvenanceInfo(
-        address=ar.address,
-        source="adaptive",
-        query=ar.query,
+        address=str(candidate["address"]),
+        source=str(candidate["source"]),
+        query=query,
         timestamp=time.time(),
         normalized=False,
         llm_provider=None,
     )
+    text = str(candidate["text"])
     return PageResult(
         address=addr_info,
-        text=ar.text,
-        snippet=ar.text[:200],
+        text=text,
+        snippet=text[:200],
         coherence=coherence_info,
         provenance=provenance,
         normalized_text=None,
     )
 
 
-@router.post("")
-async def search(request: SearchRequest) -> SearchResponse:
-    """Search for pages matching the query.
-
-    All results are guaranteed to have coherence.overall_score >= 79.0.
-    The adaptive search engine runs up to 30 minutes if necessary, but
-    Stage 1 (GenerativeEngine corpus) resolves most queries in < 1 second.
-
-    Args:
-        request: Search request with query, mode, and filters
-
-    Returns:
-        SearchResponse with results, all scoring >= 79.0
-
-    """
+def execute_search_request(request: SearchRequest, *, use_cache: bool = True) -> SearchResponse:
+    """Execute search through the canonical Thalos engine."""
     cache_key = f"adaptive:{request.query}:{request.max_results}:{request.mode}"
-    cached_result = get_cached_search(cache_key)
+    cached_result = get_cached_search(cache_key) if use_cache else None
     if cached_result:
         cached_response = SearchResponse.model_validate(cached_result)
         metadata = dict(cached_response.metadata)
         metadata["cache_hit"] = True
         return cached_response.model_copy(update={"cached": True, "metadata": metadata})
 
-    # Run adaptive search — guaranteed >= 79.0 on all results
-    adaptive_results = adaptive_search(
+    seed = int.from_bytes(request.query.encode("utf-8"), "big", signed=False) % 1_000_000_007
+    artifact = ThalosEngine().run(
         request.query,
-        max_results=request.max_results,
-        timeout_seconds=1800.0,
+        EngineConfig(
+            seed=seed,
+            max_candidates=request.max_results,
+            mode=request.mode.value,
+            intent_override="search",
+        ),
     )
-
-    page_results = [_adaptive_result_to_page_result(ar) for ar in adaptive_results]
+    page_results = [
+        _candidate_to_page_result(candidate.model_dump(), query=request.query)
+        for candidate in artifact.candidates
+    ]
 
     # Apply any user-requested min_score filter (only raises the bar further)
     effective_min = max(_MIN_COHERENCE_SCORE, request.min_score)
@@ -299,10 +295,21 @@ async def search(request: SearchRequest) -> SearchResponse:
         metadata={
             "min_coherence_enforced": _MIN_COHERENCE_SCORE,
             "mode": request.mode.value,
+            "seed": artifact.seed,
+            "version": artifact.version,
+            "purity_metrics": artifact.purity_metrics,
+            "stabilization": artifact.stabilization,
         },
     )
-    cache_search(cache_key, response.model_dump())
+    if use_cache:
+        cache_search(cache_key, response.model_dump())
     return response
+
+
+@router.post("")
+async def search(request: SearchRequest) -> SearchResponse:
+    """Search for pages matching the query."""
+    return execute_search_request(request)
 
 
 @router.get("/suggestions")

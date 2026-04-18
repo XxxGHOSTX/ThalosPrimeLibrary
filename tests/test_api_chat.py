@@ -1,31 +1,27 @@
 import unittest
 
-from src.api import build_reply
+from fastapi.testclient import TestClient
+
+from thalos_prime.api.server import app
 
 
 class TestApiChat(unittest.TestCase):
 
-    def test_help_reply(self) -> None:
-
-        reply = build_reply("help", [], allow_search=False)
-
-        self.assertIn("BABEL_CORE", reply)
-
-
-
-    def test_time_reply(self) -> None:
-
-        reply = build_reply("time", [], allow_search=False)
-
-        self.assertIn("BABEL_CORE", reply)
-
-
-
-    def test_mode_reply(self) -> None:
-
-        reply = build_reply("mode: analyst", [], allow_search=False)
-
-        self.assertIn("BABEL_CORE", reply)
+    def test_chat_generative_reply(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/v1/chat",
+                json={
+                    "message": "help",
+                    "mode": "generative",
+                    "max_results": 2,
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIn("reply", body)
+        self.assertIn("results", body)
+        self.assertTrue(body["reply"])
 
 
 
@@ -34,6 +30,5 @@ class TestApiChat(unittest.TestCase):
 if __name__ == "__main__":
 
     unittest.main()
-
 
 

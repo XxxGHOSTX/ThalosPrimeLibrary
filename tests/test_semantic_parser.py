@@ -1,6 +1,6 @@
 import unittest
 
-from src.semantic_parser import semantic_deconstruct
+from thalos_prime.semantic_parser import semantic_deconstruct
 
 
 class TestSemanticParser(unittest.TestCase):
