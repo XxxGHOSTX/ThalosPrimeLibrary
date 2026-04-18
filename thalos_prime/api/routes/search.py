@@ -273,6 +273,24 @@ def execute_search_request(request: SearchRequest, *, use_cache: bool = True) ->
         if pr.coherence.overall_score >= effective_min
     ]
 
+    if not page_results:
+        fallback_artifact = ThalosEngine().run(
+            request.query,
+            EngineConfig(
+                seed=seed,
+                max_candidates=request.max_results,
+                mode="generative",
+                intent_override="search",
+            ),
+        )
+        fallback_results = [
+            _candidate_to_page_result(candidate.model_dump(), query=request.query)
+            for candidate in fallback_artifact.candidates
+        ]
+        page_results = [
+            result for result in fallback_results if result.coherence.overall_score >= effective_min
+        ]
+
     # Deterministic ranking: sort by overall_score descending
     page_results.sort(key=lambda pr: pr.coherence.overall_score, reverse=True)
 

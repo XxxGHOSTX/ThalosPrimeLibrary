@@ -20,7 +20,11 @@ def _hex_to_peptide(hex_str: str, length: int) -> str:
     return "".join(chars)
 
 
-def search_peptide_constraints(text: str, length: int = 10, max_results: int = 3) -> list[dict[str, Any]]:
+def search_peptide_constraints(
+    text: str,
+    length: int = 10,
+    max_results: int = 3,
+) -> list[dict[str, Any]]:
     """Return deterministic peptide candidates for the input text."""
     seed_hex = query_to_hex(text)
     candidates: list[dict[str, Any]] = []

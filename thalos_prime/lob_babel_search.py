@@ -40,8 +40,9 @@ def _fetch_url(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
         url,
         headers={"User-Agent": "ThalosPrimeBabel/1.0"},
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
-        return response.read().decode("utf-8", errors="replace")
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        payload = response.read()
+    return str(payload.decode("utf-8", errors="replace"))
 
 
 def _extract_book_links(html: str, base_url: str) -> list[str]:

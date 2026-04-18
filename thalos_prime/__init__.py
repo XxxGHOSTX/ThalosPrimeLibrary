@@ -53,6 +53,7 @@ from thalos_prime.constraints.symbolic_engine import (
     VariableDeclaration,
     VariableSort,
 )
+from thalos_prime.core.engine import EngineConfig, ThalosEngine
 
 # Graph-RAG Add-on (standalone module)
 from thalos_prime.graph_rag.interfaces import (
@@ -81,7 +82,6 @@ from thalos_prime.lob_babel_enumerator import (
     enumerate_addresses,
     query_to_addresses,
 )
-from thalos_prime.core.engine import EngineConfig, ThalosEngine
 
 # Export main components for easy access
 from thalos_prime.lob_babel_generator import (

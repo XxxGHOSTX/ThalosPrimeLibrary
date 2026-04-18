@@ -17,6 +17,15 @@ from thalos_prime.pipeline import (
 )
 
 
+def _as_float(value: object) -> float:
+    if isinstance(value, (float, int)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value)
+    msg = f"Unsupported numeric value type: {type(value)!r}"
+    raise TypeError(msg)
+
+
 @dataclass(frozen=True)
 class EngineConfig:
     """Configuration for canonical engine execution."""
@@ -65,7 +74,7 @@ class ThalosEngine:
                 {
                     "cycle": cycle_index,
                     "selected_id": selected_id,
-                    "selected_score": float(selected["score"]),
+                    "selected_score": _as_float(selected["score"]),
                     "mode": config.mode,
                 },
             )
@@ -77,7 +86,9 @@ class ThalosEngine:
             "hash": sha256(":".join(cycle_selected_ids).encode("utf-8")).hexdigest(),
         }
 
-        artifact_candidates = [ArtifactCandidate.model_validate(candidate) for candidate in cycle_candidates]
+        artifact_candidates = [
+            ArtifactCandidate.model_validate(candidate) for candidate in cycle_candidates
+        ]
         selected_candidate = artifact_candidates[0]
         plan = build_plan(
             selected_candidate=selected_candidate.model_dump(),

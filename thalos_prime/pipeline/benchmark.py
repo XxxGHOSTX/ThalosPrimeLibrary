@@ -9,9 +9,18 @@ from thalos_prime.lob_babel_generator import address_to_page, text_to_address
 from thalos_prime.lob_decoder import score_coherence
 
 
+def _as_float(value: object) -> float:
+    if isinstance(value, (float, int)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value)
+    msg = f"Unsupported numeric value type: {type(value)!r}"
+    raise TypeError(msg)
+
+
 def _baseline_scores(input_text: str) -> dict[str, float]:
     direct_address = text_to_address(input_text)
-    hash_address = sha256(f"baseline:{input_text}".encode("utf-8")).hexdigest()
+    hash_address = sha256(f"baseline:{input_text}".encode()).hexdigest()
 
     direct_page = address_to_page(direct_address)
     hash_page = address_to_page(hash_address)
@@ -35,8 +44,8 @@ def score_candidates(
     scored: list[dict[str, object]] = []
 
     for candidate in candidates:
-        coherence = float(candidate["coherence_score"])
-        constraint = float(candidate["constraint_score"])
+        coherence = _as_float(candidate["coherence_score"])
+        constraint = _as_float(candidate["constraint_score"])
         purity = max(0.0, min(100.0, (coherence * 0.7) + (constraint * 0.3)))
         score = max(0.0, min(100.0, (coherence * 0.75) + (constraint * 0.25)))
         scored.append(
@@ -47,8 +56,11 @@ def score_candidates(
             },
         )
 
-    scored.sort(key=lambda item: (float(item["score"]), str(item["candidate_id"])), reverse=True)
-    selected_score = float(scored[0]["score"]) if scored else 0.0
+    scored.sort(
+        key=lambda item: (_as_float(item["score"]), str(item["candidate_id"])),
+        reverse=True,
+    )
+    selected_score = _as_float(scored[0]["score"]) if scored else 0.0
 
     purity_metrics = {
         "selected_score": selected_score,

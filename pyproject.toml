@@ -282,6 +282,9 @@ disable_error_code = ["misc", "untyped-decorator"]
 "thalos_prime/lob_decoder.py" = ["PLR2004", "FBT001", "FBT002", "ARG002", "D401"]
 "thalos_prime/lob_babel_generator.py" = ["PLC0415", "SLF001", "D205", "D401"]
 "thalos_prime/lob_babel_enumerator.py" = ["PLR2004", "PLW2901", "D205", "D401"]
+"thalos_prime/core/execution_graph.py" = ["D102", "D107"]
+"thalos_prime/lob_babel_search.py" = ["D103", "S310", "SLF001", "PLR2004", "E501"]
+"thalos_prime/lob_shard_manager/**/*.py" = ["D102", "D107", "TC001"]
 # Infra-synthesis modules: T201 (print in CLI), S324 (sha256 is intentional), E501 (long lines ok)
 "thalos_prime/infra_synthesis/**/*.py" = [
     "T201", "S324", "E501", "PLR2004", "PLC0415",

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 _DEF_TOKENS = ("define", "what is", "meaning", "explain")
 _SEARCH_TOKENS = ("search", "find", "lookup", "discover")
 _DESIGN_TOKENS = ("design", "invent", "build", "plan")

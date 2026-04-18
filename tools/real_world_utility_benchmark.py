@@ -65,7 +65,7 @@ class ScenarioAggregate:
 
 
 def _deterministic_hex(seed_text: str, index: int) -> str:
-    return sha256(f"{seed_text}:{index}".encode("utf-8")).hexdigest()
+    return sha256(f"{seed_text}:{index}".encode()).hexdigest()
 
 
 def _token_jaccard(text_a: str, text_b: str) -> float:
@@ -138,7 +138,41 @@ def _scenario_thalos(query: str, max_results: int) -> list[str]:
         query,
         EngineConfig(max_candidates=max_results, mode="generative", intent_override="search"),
     )
-    return [candidate.address for candidate in artifact.candidates[:max_results]]
+    return [candidate.text for candidate in artifact.candidates[:max_results]]
+
+
+def _evaluate_texts(
+    *,
+    query: str,
+    scenario: str,
+    texts: list[str],
+    threshold: float,
+) -> ScenarioMetrics:
+    """Evaluate deterministic text results directly (used by canonical engine)."""
+    started = perf_counter()
+    scores = [float(score_coherence(text, query).overall_score) for text in texts]
+    snippets = [text[:160] for text in texts]
+    elapsed_ms = (perf_counter() - started) * 1000.0
+    if not scores:
+        return ScenarioMetrics(
+            query=query,
+            scenario=scenario,
+            avg_score=0.0,
+            best_score=0.0,
+            hit_rate=0.0,
+            diversity=0.0,
+            latency_ms=elapsed_ms,
+        )
+    hit_count = sum(1 for value in scores if value >= threshold)
+    return ScenarioMetrics(
+        query=query,
+        scenario=scenario,
+        avg_score=mean(scores),
+        best_score=max(scores),
+        hit_rate=hit_count / len(scores),
+        diversity=_diversity(snippets),
+        latency_ms=elapsed_ms,
+    )
 
 
 def _scenario_direct_hash(query: str, max_results: int) -> list[str]:
@@ -179,10 +213,10 @@ def run_benchmark(
         random_addresses = _scenario_randomish(query, max_results=max_results)
 
         scenario_details["thalos_pipeline"].append(
-            _evaluate_addresses(
+            _evaluate_texts(
                 query=query,
                 scenario="thalos_pipeline",
-                addresses=thalos_results,
+                texts=thalos_results,
                 threshold=threshold,
             ),
         )

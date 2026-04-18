@@ -23,8 +23,8 @@ class BenchmarkRow:
 
 
 def _baseline_scores(query: str) -> tuple[float, float]:
-    addr_a = sha256(f"baseline-a:{query}".encode("utf-8")).hexdigest()
-    addr_b = sha256(f"baseline-b:{query}".encode("utf-8")).hexdigest()
+    addr_a = sha256(f"baseline-a:{query}".encode()).hexdigest()
+    addr_b = sha256(f"baseline-b:{query}".encode()).hexdigest()
     score_a = float(score_coherence(address_to_page(addr_a), query).overall_score)
     score_b = float(score_coherence(address_to_page(addr_b), query).overall_score)
     return score_a, score_b
@@ -63,8 +63,12 @@ def run_comparative_benchmark(*, seed: int = 2026, perturbation: int = 0) -> dic
         "baseline_text_to_address_mean": mean(row.baseline_text_to_address for row in rows),
         "baseline_sha256_chain_mean": mean(row.baseline_sha256_chain for row in rows),
     }
-    summary["engine_vs_baseline_text_to_address"] = summary["engine_mean"] - summary["baseline_text_to_address_mean"]
-    summary["engine_vs_baseline_sha256_chain"] = summary["engine_mean"] - summary["baseline_sha256_chain_mean"]
+    summary["engine_vs_baseline_text_to_address"] = (
+        summary["engine_mean"] - summary["baseline_text_to_address_mean"]
+    )
+    summary["engine_vs_baseline_sha256_chain"] = (
+        summary["engine_mean"] - summary["baseline_sha256_chain_mean"]
+    )
 
     return {
         "benchmark": "latent_pattern_recovery",

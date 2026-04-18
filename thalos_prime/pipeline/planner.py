@@ -10,6 +10,12 @@ def build_plan(
     constraints: dict[str, object],
 ) -> list[dict[str, object]]:
     """Build a deterministic execution plan for the selected candidate."""
+    hard_constraints_raw = constraints.get("hard", [])
+    hard_constraints = (
+        [str(item) for item in hard_constraints_raw]
+        if isinstance(hard_constraints_raw, list)
+        else []
+    )
     return [
         {
             "step": 1,
@@ -19,7 +25,7 @@ def build_plan(
         {
             "step": 2,
             "action": "apply_constraints",
-            "hard_constraints": list(constraints.get("hard", [])),
+            "hard_constraints": hard_constraints,
         },
         {
             "step": 3,

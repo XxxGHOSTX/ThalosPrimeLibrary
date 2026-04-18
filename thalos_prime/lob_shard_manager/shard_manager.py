@@ -65,3 +65,40 @@ class ShardManager:
             if shard is not None:
                 stats.append({"id": shard_id, "size": shard.size()})
         return stats
+
+    # Lifecycle contract methods
+    def initialize(self) -> None:
+        """Initialize shard manager state."""
+        if not hasattr(self, "store"):
+            self.store = ShardStore()
+        if not hasattr(self, "index"):
+            self.index = {}
+
+    def validate(self) -> bool:
+        """Validate shard manager invariants."""
+        return self.capacity > 0
+
+    def operate(self) -> list[dict[str, object]]:
+        """Operate by returning current shard statistics."""
+        return self.shard_stats()
+
+    def reconcile(self) -> None:
+        """Reconcile index entries with existing shards."""
+        existing_shards = set(self.store.list_shards())
+        self.index = {
+            key: shard_id for key, shard_id in self.index.items() if shard_id in existing_shards
+        }
+
+    def checkpoint(self) -> dict[str, object]:
+        """Return serializable state checkpoint."""
+        return {
+            "capacity": self.capacity,
+            "shard_prefix": self.shard_prefix,
+            "next_id": self._next_id,
+            "index": dict(self.index),
+            "shards": self.shard_stats(),
+        }
+
+    def terminate(self) -> None:
+        """Terminate manager state by clearing in-memory indexes."""
+        self.index.clear()

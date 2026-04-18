@@ -9,8 +9,16 @@ from thalos_prime.lob_babel_enumerator import enumerate_addresses
 from thalos_prime.lob_babel_generator import address_to_page
 from thalos_prime.lob_decoder import score_coherence
 
-
 _ALLOWED_MODES = {"local", "hybrid", "generative", "remote"}
+
+
+def _as_float(value: object) -> float:
+    if isinstance(value, (float, int)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value)
+    msg = f"Unsupported numeric value type: {type(value)!r}"
+    raise TypeError(msg)
 
 
 def generate_candidates(
@@ -56,7 +64,7 @@ def generate_candidates(
         )
 
     if not candidates:
-        fallback_address = sha256(f"{input_text}:{cycle_index}".encode("utf-8")).hexdigest()
+        fallback_address = sha256(f"{input_text}:{cycle_index}".encode()).hexdigest()
         page = address_to_page(fallback_address)
         coherence = score_coherence(page, input_text)
         candidates.append(
@@ -71,7 +79,11 @@ def generate_candidates(
         )
 
     candidates.sort(
-        key=lambda item: (float(item["coherence_score"]), str(item["address"]), str(item["candidate_id"])),
+        key=lambda item: (
+            _as_float(item["coherence_score"]),
+            str(item["address"]),
+            str(item["candidate_id"]),
+        ),
         reverse=True,
     )
     return candidates[:max_candidates]
