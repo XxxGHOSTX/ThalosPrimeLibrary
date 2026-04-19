@@ -11,6 +11,7 @@ router = APIRouter()
 _THIS_FILE = Path(__file__).resolve()
 _REPO_ROOT = _THIS_FILE.parents[3]
 _UI_TEMPLATE_INDEX = _REPO_ROOT / "thalos_prime" / "ui" / "templates" / "index.html"
+_UI_TEMPLATE_CHAT = _REPO_ROOT / "thalos_prime" / "ui" / "templates" / "chat.html"
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -52,6 +53,24 @@ async def root() -> Response:
     """)
 
 
+@router.get("/chat", response_class=HTMLResponse)
+async def chat_ui() -> Response:
+    """Serve chat-first UI page."""
+    if _UI_TEMPLATE_CHAT.exists():
+        return FileResponse(path=str(_UI_TEMPLATE_CHAT), media_type="text/html")
+
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html>
+    <head><title>Thalos Prime Chat</title></head>
+    <body>
+        <h1>THALOS PRIME CHAT</h1>
+        <p>Chat UI is unavailable. Open <a href="/">main UI</a> or <a href="/docs">API docs</a>.</p>
+    </body>
+    </html>
+    """)
+
+
 @router.get("/api/v1/status")
 async def api_status() -> dict[str, Any]:
     """Get API status.
@@ -62,6 +81,7 @@ async def api_status() -> dict[str, Any]:
         "status": "online",
         "message": "Thalos Prime API is operational",
         "endpoints": {
+            "chat_ui": "/chat",
             "docs": "/docs",
             "chat": "/api/v1/chat",
             "chat_high_coherence": "/api/v1/chat/high_coherence",

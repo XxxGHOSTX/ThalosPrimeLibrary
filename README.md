@@ -22,7 +22,10 @@ deployment artifacts from YAML schemas.
    `pip install -e ".[dev]"` (or `pip install .` for production-only install).
 4. Start the API/UI locally:
    `python run_thalos.py`
-5. Open `http://localhost:8000` (UI) or `http://localhost:8000/docs` (API docs).
+5. Open one of:
+   - `http://localhost:8000` (full workspace UI)
+   - `http://localhost:8000/chat` (chat-first UI, ko2bot-style flow)
+   - `http://localhost:8000/docs` (API docs)
 
 ## Ownership & Rights Notice
 
