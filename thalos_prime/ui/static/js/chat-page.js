@@ -1,3 +1,6 @@
+const MAX_HISTORY_MESSAGES = 20;
+const ADDRESS_DISPLAY_LENGTH = 32;
+
 class ChatPage {
     constructor() {
         this.form = document.getElementById('chat-form');
@@ -25,7 +28,9 @@ class ChatPage {
         this.maxResultsInput?.addEventListener('change', () => this.persistControlState());
 
         this.addMessage('system', 'Ready. Loading session history...');
-        void this.loadHistory();
+        this.loadHistory().catch((error) => {
+            this.addMessage('error', `History load failed: ${error.message}`);
+        });
     }
 
     persistControlState() {
@@ -45,7 +50,7 @@ class ChatPage {
 
     async loadHistory() {
         try {
-            const history = await apiClient.getChatHistory(20);
+            const history = await apiClient.getChatHistory(MAX_HISTORY_MESSAGES);
             if (!history.history || history.history.length === 0) {
                 this.addMessage('system', 'No previous messages in this session.');
                 return;
@@ -53,7 +58,9 @@ class ChatPage {
 
             this.messages.innerHTML = '';
             history.history.forEach((item) => {
-                this.addMessage(item.role || 'system', String(item.content || ''), false);
+                const content = String(item.content || '').trim();
+                if (!content) return;
+                this.addMessage(item.role || 'system', content, false);
             });
         } catch (error) {
             this.addMessage('error', `History load failed: ${error.message}`);
@@ -129,7 +136,13 @@ class ChatPage {
             const score = Number(result?.coherence?.overall_score ?? 0);
             const address = String(result?.address?.hex_address ?? '');
             const snippet = String(result?.snippet ?? '');
-            card.textContent = `#${index + 1} score=${score.toFixed(1)} addr=${address.slice(0, 32)}… ${snippet}`;
+            const displayAddress = address
+                ? `${address.slice(0, ADDRESS_DISPLAY_LENGTH)}…`
+                : '[none]';
+            const displaySnippet = snippet.trim();
+            card.textContent = displaySnippet
+                ? `#${index + 1} score=${score.toFixed(1)} addr=${displayAddress} ${displaySnippet}`
+                : `#${index + 1} score=${score.toFixed(1)} addr=${displayAddress}`;
             list.appendChild(card);
         });
 
