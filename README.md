@@ -713,6 +713,10 @@ docker compose -f infra/docker-compose.yml up
 |----------|-------------|
 | [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Full system architecture and layer descriptions |
 | [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) | Deterministic architecture blueprint and MNN pipeline spec |
+| [ADR-CHATBOT-FIRST-CANONICAL-SPINE.md](docs/guides/ADR-CHATBOT-FIRST-CANONICAL-SPINE.md) | Canonical chatbot-first product/runtime contract |
+| [PR_CONVERGENCE_MATRIX.md](docs/guides/PR_CONVERGENCE_MATRIX.md) | Keep/merge/remove convergence plan for major PR capability streams |
+| [CHATBOT_CAPABILITY_MAP.md](docs/guides/CHATBOT_CAPABILITY_MAP.md) | Unified chatbot modes and shared response schema |
+| [CONVERGENCE_RELEASE_CRITERIA.md](docs/guides/CONVERGENCE_RELEASE_CRITERIA.md) | Release gates for determinism, evidence quality, and UX simplicity |
 | [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) | Complete deployment guide |
 | [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
 | [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
