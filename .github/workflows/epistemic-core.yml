@@ -12,6 +12,7 @@ on:
       - "tests/test_epistemic_v3.py"
       - "tests/test_counterfactual.py"
       - "tests/test_epistemic_transaction.py"
+      - "tests/test_decision_compiler.py"
       - ".github/workflows/epistemic-core.yml"
   push:
     branches:
@@ -27,6 +28,7 @@ on:
       - "tests/test_epistemic_v3.py"
       - "tests/test_counterfactual.py"
       - "tests/test_epistemic_transaction.py"
+      - "tests/test_decision_compiler.py"
       - ".github/workflows/epistemic-core.yml"
 
 permissions:
@@ -64,4 +66,5 @@ jobs:
             tests/test_persistent_epistemic_runtime.py \
             tests/test_epistemic_v3.py \
             tests/test_counterfactual.py \
-            tests/test_epistemic_transaction.py
+            tests/test_epistemic_transaction.py \
+            tests/test_decision_compiler.py
