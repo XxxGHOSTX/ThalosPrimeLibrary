@@ -21,6 +21,7 @@
       "thalos.v3.claim.compile",
       "thalos.v3.challenge.plan",
       "thalos.v3.belief.classify",
+      "thalos.v3.decision.compile",
       "thalos.v3.program.run",
       "thalos.v3.witness.analyze",
       "thalos.v3.warrant.transform",
