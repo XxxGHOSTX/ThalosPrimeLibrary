@@ -1,6 +1,6 @@
 ---
 name: epistemic-v3-investigation
-description: Execute a Thalos Prime v3 investigation using Claim IR, Witness Calculus, falsification challenges, warrant transformations, belief-lattice classification, stability testing, and counterfactual evidence analysis before any durable belief commit.
+description: Execute a Thalos Prime v3 investigation using Claim IR, Witness Calculus, falsification challenges, warrant transformations, belief-lattice classification, decision compilation, stability testing, counterfactual evidence analysis, and immutable transaction assembly before any durable belief commit.
 ---
 
 # Thalos Prime Epistemic v3 Investigation
@@ -23,8 +23,9 @@ Use this workflow when the task requires more than retrieving sources. The objec
 12. Classify the evidence using `thalos.v3.belief.classify`.
 13. Run `thalos.v3.stability.analyze` to test sensitivity to valid perturbations.
 14. Run `thalos.v3.counterfactual.analyze` to identify minimal evidence sets that would flip the decision.
-15. Build a complete epistemic transaction record containing all intermediate identities and fingerprints.
-16. Only then pass the transaction to the durable ledger commit path.
+15. Compile the final policy decision with `thalos.v3.decision.compile`.
+16. Build the immutable transaction with `thalos.v3.transaction.build`, including the final Decision Artifact.
+17. Only then pass the transaction to the durable ledger commit path.
 
 ## Epistemic rules
 
@@ -38,6 +39,8 @@ Use this workflow when the task requires more than retrieving sources. The objec
 - A provisional or disputed conclusion must not be presented as settled fact.
 - An unresolved challenge is part of the epistemic state and must be reported.
 - A stable conclusion must still preserve its falsification conditions.
+- The final Decision Artifact is a policy result, not a claim of metaphysical truth.
+- The immutable transaction must contain the decision artifact that was compiled from the exact stability and counterfactual analyses used to justify it.
 - Durable belief changes require the existing authorization and approval boundary.
 
 ## Output contract
@@ -55,7 +58,8 @@ Return:
 - belief-lattice position
 - stability report
 - counterfactual report
-- epistemic transaction ID/fingerprint
+- final Decision Artifact and reason codes
+- immutable epistemic transaction ID/fingerprint
 - durable ledger state only if a separately authorized commit occurred
 
 Do not reduce the entire transaction to one confidence score.
