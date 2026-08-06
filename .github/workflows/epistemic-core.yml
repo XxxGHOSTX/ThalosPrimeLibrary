@@ -4,20 +4,29 @@ on:
   pull_request:
     paths:
       - "thalos_prime/epistemic_core.py"
+      - "thalos_prime/epistemic_v3/**"
       - "thalos_prime/mcp/**"
       - "thalos_prime/persistence/**"
       - "tests/test_epistemic_core.py"
       - "tests/test_persistent_epistemic_runtime.py"
+      - "tests/test_epistemic_v3.py"
+      - "tests/test_counterfactual.py"
+      - "tests/test_epistemic_transaction.py"
       - ".github/workflows/epistemic-core.yml"
   push:
     branches:
       - "agent/epistemic-core-mcp-foundation"
+      - "agent/epistemic-v3-foundations"
     paths:
       - "thalos_prime/epistemic_core.py"
+      - "thalos_prime/epistemic_v3/**"
       - "thalos_prime/mcp/**"
       - "thalos_prime/persistence/**"
       - "tests/test_epistemic_core.py"
       - "tests/test_persistent_epistemic_runtime.py"
+      - "tests/test_epistemic_v3.py"
+      - "tests/test_counterfactual.py"
+      - "tests/test_epistemic_transaction.py"
       - ".github/workflows/epistemic-core.yml"
 
 permissions:
@@ -44,11 +53,15 @@ jobs:
         run: |
           python -m compileall -q \
             thalos_prime/epistemic_core.py \
+            thalos_prime/epistemic_v3 \
             thalos_prime/mcp \
             thalos_prime/persistence
 
-      - name: Run epistemic core tests
+      - name: Run epistemic core and v3 tests
         run: |
           python -m pytest -q \
             tests/test_epistemic_core.py \
-            tests/test_persistent_epistemic_runtime.py
+            tests/test_persistent_epistemic_runtime.py \
+            tests/test_epistemic_v3.py \
+            tests/test_counterfactual.py \
+            tests/test_epistemic_transaction.py
