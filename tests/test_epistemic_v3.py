@@ -59,8 +59,18 @@ def test_witness_calculus_detects_derived_source_correlation() -> None:
 
 
 def test_witness_calculus_rejects_genealogy_cycles() -> None:
-    first = Witness.create("src:first", WitnessKind.DERIVED, parent_witness_ids=["wit:second"])
-    second = Witness.create("src:second", WitnessKind.DERIVED, parent_witness_ids=[first.witness_id])
+    first = Witness(
+        witness_id="wit:first",
+        artifact_id="src:first",
+        kind=WitnessKind.DERIVED,
+        parent_witness_ids=("wit:second",),
+    )
+    second = Witness(
+        witness_id="wit:second",
+        artifact_id="src:second",
+        kind=WitnessKind.DERIVED,
+        parent_witness_ids=("wit:first",),
+    )
     try:
         WitnessCalculus([first, second])
     except ValueError as exc:
