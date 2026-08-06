@@ -1,7 +1,7 @@
 {
   "name": "thalos-prime",
-  "version": "0.2.0-alpha",
-  "description": "Sovereign epistemic workflows for deterministic retrieval, evidence binding, belief-state evaluation, provenance tracing, and replay.",
+  "version": "0.3.0-alpha",
+  "description": "Sovereign epistemic computing workflows for claim compilation, witness genealogy, challenge-driven verification, warrant conservation, belief lattices, deterministic replay, provenance, and proof export.",
   "mcp": {
     "server": "thalos-prime"
   },
@@ -16,7 +16,14 @@
       "thalos.search",
       "thalos.belief.get",
       "thalos.audit.trace",
-      "thalos.proof.export"
+      "thalos.proof.export",
+      "thalos.v3.claim.compile",
+      "thalos.v3.challenge.plan",
+      "thalos.v3.belief.classify",
+      "thalos.v3.program.run",
+      "thalos.v3.witness.analyze",
+      "thalos.v3.warrant.transform",
+      "thalos.v3.stability.analyze"
     ],
     "write": [
       "thalos.artifact.ingest",
