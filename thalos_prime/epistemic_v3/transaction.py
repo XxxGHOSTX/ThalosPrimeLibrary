@@ -11,18 +11,19 @@ import hashlib
 import json
 from typing import Any, Mapping
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from thalos_prime.epistemic_v3.claim_ir import ClaimIR
 from thalos_prime.epistemic_v3.counterfactual import CounterfactualReport
-from thalos_prime.epistemic_v3.lattice import BeliefPosition
+from thalos_prime.epistemic_v3.decision import DecisionArtifact
+from thalos_prime.epistemic_v3.lattice import BeliefPosition, DecisionState
 from thalos_prime.epistemic_v3.stability import StabilityReport
 from thalos_prime.epistemic_v3.warrant import Warrant
 from thalos_prime.epistemic_v3.witness import WitnessAnalysis
 
 
 class EpistemicTransaction(BaseModel):
-    """Content-addressed aggregate representing one epistemic computation."""
+    """Content-addressed aggregate representing one complete epistemic computation."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -32,12 +33,13 @@ class EpistemicTransaction(BaseModel):
     witness_analysis: Mapping[str, Any]
     warrant: Warrant
     belief_position: BeliefPosition
+    decision_artifact: DecisionArtifact
     stability_report: StabilityReport
     counterfactual_report: CounterfactualReport
     source_snapshot_id: str | None = None
     run_id: str | None = None
     proof_bundle_id: str | None = None
-    compiler_version: str = "epistemic-transaction-v1"
+    compiler_version: str = "epistemic-transaction-v2"
     committed_event_id: str | None = None
 
     @classmethod
@@ -49,12 +51,22 @@ class EpistemicTransaction(BaseModel):
         witness_analysis: WitnessAnalysis | Mapping[str, Any],
         warrant: Warrant,
         belief_position: BeliefPosition,
+        decision_artifact: DecisionArtifact,
         stability_report: StabilityReport,
         counterfactual_report: CounterfactualReport,
         source_snapshot_id: str | None = None,
         run_id: str | None = None,
         proof_bundle_id: str | None = None,
     ) -> "EpistemicTransaction":
+        if decision_artifact.claim_id != claim.claim_id:
+            raise ValueError("decision artifact does not belong to claim")
+        if decision_artifact.input_decision is not belief_position.decision:
+            raise ValueError("decision artifact input decision does not match belief position")
+        if stability_report.baseline_decision != belief_position.decision.value:
+            raise ValueError("stability baseline does not match belief position decision")
+        if counterfactual_report.baseline_decision != belief_position.decision.value:
+            raise ValueError("counterfactual baseline does not match belief position decision")
+
         if isinstance(witness_analysis, WitnessAnalysis):
             witness_payload: Mapping[str, Any] = {
                 "eligible_witness_ids": witness_analysis.eligible_witness_ids,
@@ -72,12 +84,13 @@ class EpistemicTransaction(BaseModel):
             "witness_analysis": witness_payload,
             "warrant": warrant.model_dump(mode="json"),
             "belief_position": belief_position.model_dump(mode="json"),
+            "decision_artifact": decision_artifact.model_dump(mode="json"),
             "stability_report": stability_report.model_dump(mode="json"),
             "counterfactual_report": counterfactual_report.model_dump(mode="json"),
             "source_snapshot_id": source_snapshot_id,
             "run_id": run_id,
             "proof_bundle_id": proof_bundle_id,
-            "compiler_version": "epistemic-transaction-v1",
+            "compiler_version": "epistemic-transaction-v2",
         }
         digest = hashlib.sha256(
             json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -89,6 +102,7 @@ class EpistemicTransaction(BaseModel):
             witness_analysis=witness_payload,
             warrant=warrant,
             belief_position=belief_position,
+            decision_artifact=decision_artifact,
             stability_report=stability_report,
             counterfactual_report=counterfactual_report,
             source_snapshot_id=source_snapshot_id,
@@ -98,7 +112,7 @@ class EpistemicTransaction(BaseModel):
 
     @property
     def fingerprint(self) -> str:
-        """Return a stable fingerprint of the complete transaction state."""
+        """Return a stable fingerprint of the complete computational transaction."""
         payload = self.model_dump(mode="json", exclude={"committed_event_id"})
         return hashlib.sha256(
             json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -109,6 +123,8 @@ class EpistemicTransaction(BaseModel):
         """Whether the computation is structurally complete enough for policy review."""
         return (
             self.belief_position.unresolved_challenges == 0
+            and self.decision_artifact.final_decision in {DecisionState.ACCEPTED, DecisionState.HISTORICAL_ACCEPTED}
+            and self.decision_artifact.final_decision is self.belief_position.decision
             and self.stability_report.baseline_decision == self.belief_position.decision.value
             and self.counterfactual_report.baseline_decision == self.belief_position.decision.value
         )
