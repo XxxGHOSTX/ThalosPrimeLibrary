@@ -8,7 +8,7 @@ from typing import Any
 from thalos_prime.epistemic_v3.challenge import ChallengeEngine
 from thalos_prime.epistemic_v3.claim_ir import ClaimCompiler, ClaimIR, ClaimType
 from thalos_prime.epistemic_v3.counterfactual import CounterfactualEngine, CounterfactualReport
-from thalos_prime.epistemic_v3.decision import DecisionCompiler
+from thalos_prime.epistemic_v3.decision import DecisionArtifact, DecisionCompiler
 from thalos_prime.epistemic_v3.lattice import BeliefLattice, BeliefPosition
 from thalos_prime.epistemic_v3.stability import StabilityAnalyzer, StabilityReport
 from thalos_prime.epistemic_v3.transaction import EpistemicTransaction
@@ -195,6 +195,7 @@ class ThalosV3Runtime:
         witness_analysis: dict[str, Any],
         warrant: dict[str, Any],
         belief_position: dict[str, Any],
+        decision_artifact: dict[str, Any],
         stability_report: dict[str, Any],
         counterfactual_report: dict[str, Any],
         source_snapshot_id: str | None = None,
@@ -207,6 +208,7 @@ class ThalosV3Runtime:
             witness_analysis=witness_analysis,
             warrant=Warrant.model_validate(warrant),
             belief_position=BeliefPosition.model_validate(belief_position),
+            decision_artifact=DecisionArtifact.model_validate(decision_artifact),
             stability_report=StabilityReport.model_validate(stability_report),
             counterfactual_report=CounterfactualReport.model_validate(counterfactual_report),
             source_snapshot_id=source_snapshot_id,
