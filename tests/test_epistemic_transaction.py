@@ -5,6 +5,7 @@ from __future__ import annotations
 from thalos_prime.epistemic_v3.challenge import ChallengeEngine
 from thalos_prime.epistemic_v3.claim_ir import ClaimCompiler
 from thalos_prime.epistemic_v3.counterfactual import CounterfactualEngine
+from thalos_prime.epistemic_v3.decision import DecisionCompiler
 from thalos_prime.epistemic_v3.lattice import BeliefLattice
 from thalos_prime.epistemic_v3.stability import StabilityAnalyzer
 from thalos_prime.epistemic_v3.transaction import EpistemicTransaction
@@ -51,12 +52,18 @@ def test_transaction_fingerprint_is_content_addressed() -> None:
         baseline_decision=belief.decision.value,
         decide=decide,
     )
+    decision_artifact = DecisionCompiler().compile(
+        belief=belief,
+        stability=stability,
+        counterfactual=counterfactual,
+    )
     first = EpistemicTransaction.create(
         claim=claim,
         challenge_plan_id=plan.plan_id,
         witness_analysis=witness_analysis,
         warrant=warrant,
         belief_position=belief,
+        decision_artifact=decision_artifact,
         stability_report=stability,
         counterfactual_report=counterfactual,
     )
@@ -66,6 +73,7 @@ def test_transaction_fingerprint_is_content_addressed() -> None:
         witness_analysis=witness_analysis,
         warrant=warrant,
         belief_position=belief,
+        decision_artifact=decision_artifact,
         stability_report=stability,
         counterfactual_report=counterfactual,
     )
@@ -106,15 +114,22 @@ def test_transaction_commit_binding_changes_only_commit_reference() -> None:
         baseline_decision=belief.decision.value,
         decide=lambda _: belief.decision.value,
     )
+    decision_artifact = DecisionCompiler().compile(
+        belief=belief,
+        stability=stability,
+        counterfactual=counterfactual,
+    )
     txn = EpistemicTransaction.create(
         claim=claim,
         challenge_plan_id=plan.plan_id,
         witness_analysis={},
         warrant=warrant,
         belief_position=belief,
+        decision_artifact=decision_artifact,
         stability_report=stability,
         counterfactual_report=counterfactual,
     )
+    assert txn.ready_for_commit is False
     bound = txn.bind_commit("evt:123")
     assert txn.transaction_id == bound.transaction_id
     assert txn.fingerprint == bound.fingerprint
