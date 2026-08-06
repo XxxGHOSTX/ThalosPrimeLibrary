@@ -1,0 +1,31 @@
+{
+  "name": "thalos-prime",
+  "version": "0.2.0-alpha",
+  "description": "Sovereign epistemic workflows for deterministic retrieval, evidence binding, belief-state evaluation, provenance tracing, and replay.",
+  "mcp": {
+    "server": "thalos-prime"
+  },
+  "skills": [
+    "skills/epistemic-investigation/SKILL.md",
+    "skills/source-verification/SKILL.md",
+    "skills/forensic-analysis/SKILL.md",
+    "skills/epistemic-audit/SKILL.md"
+  ],
+  "capabilities": {
+    "read": [
+      "thalos.search",
+      "thalos.belief.get",
+      "thalos.audit.trace",
+      "thalos.proof.export"
+    ],
+    "write": [
+      "thalos.artifact.ingest",
+      "thalos.snapshot.create",
+      "thalos.run.create",
+      "thalos.claim.register",
+      "thalos.evidence.bind",
+      "thalos.claim.evaluate",
+      "thalos.belief.commit"
+    ]
+  }
+}
