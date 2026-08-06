@@ -7,6 +7,7 @@
   },
   "skills": [
     "skills/epistemic-investigation/SKILL.md",
+    "skills/epistemic-v3-investigation/SKILL.md",
     "skills/source-verification/SKILL.md",
     "skills/forensic-analysis/SKILL.md",
     "skills/epistemic-audit/SKILL.md"
@@ -23,7 +24,8 @@
       "thalos.v3.program.run",
       "thalos.v3.witness.analyze",
       "thalos.v3.warrant.transform",
-      "thalos.v3.stability.analyze"
+      "thalos.v3.stability.analyze",
+      "thalos.v3.counterfactual.analyze"
     ],
     "write": [
       "thalos.artifact.ingest",
