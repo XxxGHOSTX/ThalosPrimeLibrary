@@ -25,7 +25,8 @@
       "thalos.v3.witness.analyze",
       "thalos.v3.warrant.transform",
       "thalos.v3.stability.analyze",
-      "thalos.v3.counterfactual.analyze"
+      "thalos.v3.counterfactual.analyze",
+      "thalos.v3.transaction.build"
     ],
     "write": [
       "thalos.artifact.ingest",
