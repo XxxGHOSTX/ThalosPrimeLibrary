@@ -22,6 +22,7 @@ from thalos_prime.epistemic_core import (
     ThalosEpistemicEngine,
     TrustClass,
 )
+from thalos_prime.mcp.v3_tools import ThalosV3Runtime, register_v3_tools
 
 try:  # Optional dependency; the core remains usable without MCP installed.
     from mcp.server.fastmcp import FastMCP
@@ -46,6 +47,7 @@ class ThalosMcpRuntime:
     evaluations: dict[str, EvidenceEvaluation] = field(default_factory=dict)
     manifests: dict[str, RunManifest] = field(default_factory=dict)
     provenance: ProvenanceGraph = field(default_factory=ProvenanceGraph)
+    v3: ThalosV3Runtime = field(default_factory=ThalosV3Runtime)
 
     def ingest_artifact(
         self,
@@ -316,6 +318,8 @@ def create_mcp_server(runtime: ThalosMcpRuntime | None = None) -> Any:
     mcp.tool(name="thalos.belief.get")(state.get_belief)
     mcp.tool(name="thalos.audit.trace")(state.trace_claim)
     mcp.tool(name="thalos.proof.export")(state.export_proof)
+
+    register_v3_tools(mcp, state.v3)
     return mcp
 
 
