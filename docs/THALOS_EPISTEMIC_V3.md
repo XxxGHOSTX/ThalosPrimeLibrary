@@ -37,7 +37,16 @@ Witness Calculus     Challenge Engine
         +-------+--------+
                 |
                 v
-        Epistemic VM
+         Decision Compiler
+                |
+                v
+      Epistemic Transaction
+                |
+                v
+        Epistemic VM / Replay
+                |
+                v
+        Proof + Provenance
                 |
                 v
         Transactional Ledger
@@ -96,7 +105,20 @@ Thalos does not reduce the epistemic state to a single confidence number. It kee
 - stability
 - reversibility
 
-The decision state is a policy outcome over those dimensions, not a claim about metaphysical truth.
+The belief state is not itself the final authority. The Decision Compiler applies explicit policy over the belief state plus stability and counterfactual analysis.
+
+### Decision compilation
+
+The Decision Compiler converts a computed belief state into a policy artifact with explicit reason codes.
+
+It can downgrade an apparently accepted claim to provisional when:
+
+- required challenges remain unresolved
+- the decision is fragile under perturbation
+- a small critical evidence set can flip the decision
+- contradiction is present
+
+The compiler also produces `safe_to_state_as_fact`, which is intentionally stricter than `accepted`.
 
 ### Counterfactual decision analysis
 
@@ -119,6 +141,26 @@ This produces:
 The result answers a more useful question than confidence:
 
 > What would have to change for this conclusion to change?
+
+### Immutable epistemic transaction
+
+The complete pre-commit computational state is represented by an `EpistemicTransaction` containing:
+
+- canonical Claim IR
+- challenge-plan identity
+- witness analysis
+- warrant state
+- belief-lattice position
+- final Decision Artifact
+- perturbation stability report
+- counterfactual report
+- source snapshot identity
+- run identity
+- proof-bundle identity
+
+The transaction is content-addressed. Its fingerprint excludes only the later durable commit-event reference, so committing the transaction does not alter the identity of the computation that produced it.
+
+The final decision artifact is part of the transaction itself. The transaction cannot be considered ready for commit unless its decision, stability baselines, counterfactual baselines, and unresolved-challenge state agree.
 
 ### Replayable epistemic VM
 
@@ -143,11 +185,13 @@ The v3 MCP tools are computational adapters, not the authority:
 thalos.v3.claim.compile
 thalos.v3.challenge.plan
 thalos.v3.belief.classify
+thalos.v3.decision.compile
 thalos.v3.program.run
 thalos.v3.witness.analyze
 thalos.v3.warrant.transform
 thalos.v3.stability.analyze
 thalos.v3.counterfactual.analyze
+thalos.v3.transaction.build
 ```
 
 None of these tools directly commits durable belief state.
@@ -169,8 +213,10 @@ Durable commitment remains behind the existing transactional ledger and approval
 10. Classify the claim in the Belief Lattice.
 11. Run perturbation stability analysis.
 12. Run counterfactual evidence analysis.
-13. Generate proof and provenance package.
-14. Commit to durable ledger only through policy-controlled transaction.
+13. Compile the final policy Decision Artifact.
+14. Build the immutable Epistemic Transaction containing the Decision Artifact.
+15. Generate proof and provenance package.
+16. Commit to durable ledger only through policy-controlled transaction and authorization.
 ```
 
 ## What v3 does not claim
@@ -194,7 +240,7 @@ The next safe extensions are:
 3. Temporal interval algebra with explicit uncertainty bounds.
 4. Evidence replacement and substitution counterfactuals.
 5. Signed transparency logs over committed epistemic events.
-6. Independent proof-bundle verification for v3 lattice and counterfactual outputs.
-7. Benchmark datasets for stability, witness correlation, and appropriate abstention.
+6. Independent proof-bundle verification for v3 lattice, decision, and counterfactual outputs.
+7. Benchmark datasets for stability, witness correlation, appropriate abstention, and decision sensitivity.
 
 Advanced cryptographic proofs, distributed consensus, and learned semantic retrieval should remain downstream of these primitives rather than defining them.
