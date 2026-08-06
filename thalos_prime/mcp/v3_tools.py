@@ -7,9 +7,9 @@ from typing import Any
 
 from thalos_prime.epistemic_v3.challenge import ChallengeEngine
 from thalos_prime.epistemic_v3.claim_ir import ClaimCompiler, ClaimIR, ClaimType
-from thalos_prime.epistemic_v3.counterfactual import CounterfactualEngine
-from thalos_prime.epistemic_v3.lattice import BeliefLattice
-from thalos_prime.epistemic_v3.stability import StabilityAnalyzer
+from thalos_prime.epistemic_v3.counterfactual import CounterfactualEngine, CounterfactualReport
+from thalos_prime.epistemic_v3.lattice import BeliefLattice, BeliefPosition
+from thalos_prime.epistemic_v3.stability import StabilityAnalyzer, StabilityReport
 from thalos_prime.epistemic_v3.transaction import EpistemicTransaction
 from thalos_prime.epistemic_v3.vm import DEFAULT_INVESTIGATION_PROGRAM, EpistemicVM
 from thalos_prime.epistemic_v3.warrant import Warrant, WarrantAlgebra, WarrantOperation
@@ -37,10 +37,7 @@ class ThalosV3Runtime:
         if claim_type is not None:
             kwargs["claim_type"] = ClaimType(claim_type)
         result = ClaimCompiler.compile(text, **kwargs)
-        return {
-            "claim": result.claim.model_dump(mode="json"),
-            "warnings": result.warnings,
-        }
+        return {"claim": result.claim.model_dump(mode="json"), "warnings": result.warnings}
 
     def build_challenge_plan(self, *, claim: dict[str, Any]) -> dict[str, Any]:
         compiled = ClaimIR.model_validate(claim)
@@ -192,7 +189,7 @@ class ThalosV3Runtime:
             challenge_plan_id=challenge_plan_id,
             witness_analysis=witness_analysis,
             warrant=Warrant.model_validate(warrant),
-            belief_position=self.lattice.model_validate(belief_position) if hasattr(self.lattice, "model_validate") else _belief_position(belief_position),
+            belief_position=BeliefPosition.model_validate(belief_position),
             stability_report=StabilityReport.model_validate(stability_report),
             counterfactual_report=CounterfactualReport.model_validate(counterfactual_report),
             source_snapshot_id=source_snapshot_id,
@@ -200,12 +197,6 @@ class ThalosV3Runtime:
             proof_bundle_id=proof_bundle_id,
         )
         return transaction.model_dump(mode="json")
-
-
-def _belief_position(value: dict[str, Any]) -> Any:
-    from thalos_prime.epistemic_v3.lattice import BeliefPosition
-
-    return BeliefPosition.model_validate(value)
 
 
 def register_v3_tools(mcp: Any, runtime: ThalosV3Runtime | None = None) -> ThalosV3Runtime:
