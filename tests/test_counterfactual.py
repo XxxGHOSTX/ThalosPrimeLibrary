@@ -37,5 +37,7 @@ def test_counterfactual_engine_reports_no_flip_for_redundant_evidence() -> None:
         baseline_decision="accepted",
         decide=decide,
     )
-    assert report.minimal_flip_cases
-    assert report.critical_evidence == ("a", "b", "c")
+    assert report.flip_cases == ()
+    assert report.minimal_flip_cases == ()
+    assert report.critical_evidence == ()
+    assert report.robust_evidence == ("a", "b", "c")
