@@ -8,6 +8,7 @@ from typing import Any
 from thalos_prime.epistemic_v3.challenge import ChallengeEngine
 from thalos_prime.epistemic_v3.claim_ir import ClaimCompiler, ClaimIR, ClaimType
 from thalos_prime.epistemic_v3.counterfactual import CounterfactualEngine, CounterfactualReport
+from thalos_prime.epistemic_v3.decision import DecisionCompiler
 from thalos_prime.epistemic_v3.lattice import BeliefLattice, BeliefPosition
 from thalos_prime.epistemic_v3.stability import StabilityAnalyzer, StabilityReport
 from thalos_prime.epistemic_v3.transaction import EpistemicTransaction
@@ -23,14 +24,16 @@ class ThalosV3Runtime:
     It deliberately does not commit beliefs or mutate the authoritative event
     ledger. The existing transactional runtime remains responsible for durable
     state changes; this layer computes claims, challenges, warrant transforms,
-    lattice positions, stability reports, counterfactual sensitivity, and
-    immutable transaction aggregates that can be fed into those writes.
+    lattice positions, decision artifacts, stability reports,
+    counterfactual sensitivity, and immutable transaction aggregates that can
+    be fed into those writes.
     """
 
     vm: EpistemicVM = field(default_factory=EpistemicVM)
     lattice: BeliefLattice = field(default_factory=BeliefLattice)
     stability: StabilityAnalyzer = field(default_factory=StabilityAnalyzer)
     counterfactual: CounterfactualEngine = field(default_factory=CounterfactualEngine)
+    decision: DecisionCompiler = field(default_factory=DecisionCompiler)
 
     def compile_claim(self, *, text: str, claim_type: str | None = None) -> dict[str, Any]:
         kwargs: dict[str, Any] = {}
@@ -60,6 +63,20 @@ class ThalosV3Runtime:
             failed_challenge_count=failed_challenge_count,
         )
         return position.model_dump(mode="json")
+
+    def compile_decision(
+        self,
+        *,
+        belief_position: dict[str, Any],
+        stability_report: dict[str, Any],
+        counterfactual_report: dict[str, Any],
+    ) -> dict[str, Any]:
+        artifact = self.decision.compile(
+            belief=BeliefPosition.model_validate(belief_position),
+            stability=StabilityReport.model_validate(stability_report),
+            counterfactual=CounterfactualReport.model_validate(counterfactual_report),
+        )
+        return artifact.model_dump(mode="json")
 
     def run_program(self, *, query: str, warrant: dict[str, Any], challenge_count: int = 0) -> dict[str, Any]:
         result = self.vm.execute(
@@ -205,6 +222,7 @@ def register_v3_tools(mcp: Any, runtime: ThalosV3Runtime | None = None) -> Thalo
     mcp.tool(name="thalos.v3.claim.compile")(state.compile_claim)
     mcp.tool(name="thalos.v3.challenge.plan")(state.build_challenge_plan)
     mcp.tool(name="thalos.v3.belief.classify")(state.classify_belief)
+    mcp.tool(name="thalos.v3.decision.compile")(state.compile_decision)
     mcp.tool(name="thalos.v3.program.run")(state.run_program)
     mcp.tool(name="thalos.v3.witness.analyze")(state.analyze_witnesses)
     mcp.tool(name="thalos.v3.warrant.transform")(state.transform_warrant)
