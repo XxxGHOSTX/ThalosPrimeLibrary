@@ -10,6 +10,7 @@ from thalos_prime.epistemic_v3.claim_ir import ClaimCompiler, ClaimIR, ClaimType
 from thalos_prime.epistemic_v3.counterfactual import CounterfactualEngine
 from thalos_prime.epistemic_v3.lattice import BeliefLattice
 from thalos_prime.epistemic_v3.stability import StabilityAnalyzer
+from thalos_prime.epistemic_v3.transaction import EpistemicTransaction
 from thalos_prime.epistemic_v3.vm import DEFAULT_INVESTIGATION_PROGRAM, EpistemicVM
 from thalos_prime.epistemic_v3.warrant import Warrant, WarrantAlgebra, WarrantOperation
 from thalos_prime.epistemic_v3.witness import Witness, WitnessCalculus
@@ -22,8 +23,8 @@ class ThalosV3Runtime:
     It deliberately does not commit beliefs or mutate the authoritative event
     ledger. The existing transactional runtime remains responsible for durable
     state changes; this layer computes claims, challenges, warrant transforms,
-    lattice positions, stability reports, and counterfactual sensitivity that
-    can be fed into those writes.
+    lattice positions, stability reports, counterfactual sensitivity, and
+    immutable transaction aggregates that can be fed into those writes.
     """
 
     vm: EpistemicVM = field(default_factory=EpistemicVM)
@@ -172,6 +173,40 @@ class ThalosV3Runtime:
         )
         return report.model_dump(mode="json")
 
+    def build_transaction(
+        self,
+        *,
+        claim: dict[str, Any],
+        challenge_plan_id: str,
+        witness_analysis: dict[str, Any],
+        warrant: dict[str, Any],
+        belief_position: dict[str, Any],
+        stability_report: dict[str, Any],
+        counterfactual_report: dict[str, Any],
+        source_snapshot_id: str | None = None,
+        run_id: str | None = None,
+        proof_bundle_id: str | None = None,
+    ) -> dict[str, Any]:
+        transaction = EpistemicTransaction.create(
+            claim=ClaimIR.model_validate(claim),
+            challenge_plan_id=challenge_plan_id,
+            witness_analysis=witness_analysis,
+            warrant=Warrant.model_validate(warrant),
+            belief_position=self.lattice.model_validate(belief_position) if hasattr(self.lattice, "model_validate") else _belief_position(belief_position),
+            stability_report=StabilityReport.model_validate(stability_report),
+            counterfactual_report=CounterfactualReport.model_validate(counterfactual_report),
+            source_snapshot_id=source_snapshot_id,
+            run_id=run_id,
+            proof_bundle_id=proof_bundle_id,
+        )
+        return transaction.model_dump(mode="json")
+
+
+def _belief_position(value: dict[str, Any]) -> Any:
+    from thalos_prime.epistemic_v3.lattice import BeliefPosition
+
+    return BeliefPosition.model_validate(value)
+
 
 def register_v3_tools(mcp: Any, runtime: ThalosV3Runtime | None = None) -> ThalosV3Runtime:
     """Register v3 computational tools on an existing FastMCP server."""
@@ -184,4 +219,5 @@ def register_v3_tools(mcp: Any, runtime: ThalosV3Runtime | None = None) -> Thalo
     mcp.tool(name="thalos.v3.warrant.transform")(state.transform_warrant)
     mcp.tool(name="thalos.v3.stability.analyze")(state.stability_report)
     mcp.tool(name="thalos.v3.counterfactual.analyze")(state.counterfactual_report)
+    mcp.tool(name="thalos.v3.transaction.build")(state.build_transaction)
     return state
