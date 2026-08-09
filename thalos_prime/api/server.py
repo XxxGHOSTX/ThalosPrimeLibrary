@@ -96,6 +96,13 @@ async def initialize_services() -> None:
     # Initialize worker queues
     logger.info("Initializing worker queues...")
 
+    # Auto-start the autonomous background orchestrator (zero-configuration)
+    from thalos_prime.autonomous.orchestrator import start_orchestrator
+
+    orch = start_orchestrator(seed=0)
+    validation = orch.validate()
+    logger.info("Autonomous orchestrator started: %s", validation.message)
+
     logger.info("Service initialization complete")
 
 
@@ -105,6 +112,14 @@ async def cleanup_services() -> None:
         get_engine().terminate()
     except RuntimeError:
         logger.info("Runtime engine was not configured at shutdown")
+
+    # Stop the autonomous orchestrator if running
+    from thalos_prime.autonomous.orchestrator import get_orchestrator
+
+    orch = get_orchestrator()
+    if orch is not None:
+        orch.terminate()
+        logger.info("Autonomous orchestrator terminated")
 
     # Close database connections
     logger.info("Closing database connections...")

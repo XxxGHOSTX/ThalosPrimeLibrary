@@ -56,10 +56,16 @@ _DEFAULT_PORT = 8000
 _WORKER_QUEUE_MAX: int = 64  # bounded queue for background tasks
 _CONFIG_HASH_ENV_VAR = "THALOS_CONFIG_HASH"
 
+# Coherence eviction threshold for coherence_amplification worker
+_COHERENCE_EVICTION_THRESHOLD: float = 55.0
+
 # Background worker intervals (seconds)
 _INDEX_REFRESH_INTERVAL_S: float = 300.0   # every 5 minutes
 _CACHE_WARM_INTERVAL_S: float = 600.0      # every 10 minutes
 _SESSION_MAINT_INTERVAL_S: float = 900.0   # every 15 minutes
+_COHERENCE_AMP_INTERVAL_S: float = 120.0   # every 2 minutes
+_SELF_HEAL_INTERVAL_S: float = 450.0       # every 7.5 minutes
+_PERF_METRICS_INTERVAL_S: float = 60.0    # every 1 minute
 
 
 # ---------------------------------------------------------------------------
@@ -232,11 +238,102 @@ def _run_session_maintenance(task: WorkerTask) -> None:
     )
 
 
-_WORKER_HANDLERS: dict[str, Callable[[WorkerTask], None]] = {
-    "index_refresh": _run_index_refresh,
-    "cache_warm": _run_cache_warm,
-    "session_maintenance": _run_session_maintenance,
-}
+def _run_coherence_amplification(task: WorkerTask) -> None:
+    """Re-score SEARCH_CACHE entries and evict those below coherence threshold.
+
+    Applies BabelDecoder re-scoring to all cached pages.  Entries whose overall
+    coherence score is below 55.0 are considered stale and evicted so the cache
+    only serves high-quality Babel pages to end users.
+    Logs eviction counts with step, seed, and config hash.
+    """
+    from thalos_prime.api.routes.search import SEARCH_CACHE
+    from thalos_prime.lob_decoder import BabelDecoder
+
+    decoder = BabelDecoder()
+    before_count = len(SEARCH_CACHE)
+    low_quality_keys = [
+        key
+        for key, (result, _ts) in list(SEARCH_CACHE.items())
+        if (
+            (page := str(result.get("page", "")))
+            and decoder.score_coherence(page, str(result.get("query", "")) or None).overall_score
+            < _COHERENCE_EVICTION_THRESHOLD
+        )
+    ]
+    for key in low_quality_keys:
+        del SEARCH_CACHE[key]
+    logger.info(
+        "coherence_amplification: step=%d seed=%d evicted=%d (%d→%d)",
+        task.step,
+        task.seed,
+        len(low_quality_keys),
+        before_count,
+        len(SEARCH_CACHE),
+    )
+
+
+def _run_self_healing(task: WorkerTask) -> None:
+    """Reconcile RuntimeEngine and SESSION_STORE to a consistent state.
+
+    Performs two reconciliation passes:
+    1. Re-validates the RuntimeEngine and logs its health status.
+    2. Removes session history entries whose ``sequence`` counter has drifted
+       below the recorded ``history`` length (indicator of a replay gap).
+    Logs counts with step and seed for deterministic audit.
+    """
+    from thalos_runtime.core.deps import get_engine
+    from thalos_runtime.plugins.chat_task import SESSION_STORE
+
+    # Pass 1: engine health re-validation
+    engine = get_engine()
+    validation = engine.validate()
+    logger.info(
+        "self_healing: step=%d seed=%d engine_valid=%s msg=%s",
+        task.step,
+        task.seed,
+        validation.valid,
+        validation.message,
+    )
+
+    # Pass 2: session sequence drift repair
+    repaired = 0
+    for session in SESSION_STORE.sessions.values():
+        history = session.get("history", [])
+        seq = int(session.get("sequence", 0))
+        if seq < len(history):
+            session["sequence"] = len(history)
+            repaired += 1
+    logger.info(
+        "self_healing: step=%d seed=%d repaired_sessions=%d",
+        task.step,
+        task.seed,
+        repaired,
+    )
+
+
+def _run_performance_metrics(task: WorkerTask) -> None:
+    """Sample CPU and memory usage and record in task extra dict.
+
+    Uses :mod:`psutil` to capture instantaneous CPU percentage and resident
+    set size in MiB.  Results are stored in ``task.extra`` for later retrieval
+    via status endpoints.  Logs at DEBUG level to avoid flooding INFO output.
+    """
+    import psutil
+
+    proc = psutil.Process(os.getpid())
+    mem = proc.memory_info()
+    cpu = proc.cpu_percent(interval=0.05)
+    task.extra["cpu_percent"] = cpu
+    task.extra["mem_rss_mib"] = mem.rss / (1024 * 1024)
+    logger.debug(
+        "performance_metrics: step=%d cpu=%.1f%% mem=%.1fMiB",
+        task.step,
+        cpu,
+        task.extra["mem_rss_mib"],
+    )
+
+
+
 
 
 def _execute_worker_safely(
@@ -260,6 +357,16 @@ def _execute_worker_safely(
     except Exception as exc:  # re-raised immediately as BackgroundTaskError below
         msg = f"Task {task.name!r} step {task.step} failed: {exc}"
         raise BackgroundTaskError(msg) from exc
+
+
+_WORKER_HANDLERS: dict[str, Callable[[WorkerTask], None]] = {
+    "index_refresh": _run_index_refresh,
+    "cache_warm": _run_cache_warm,
+    "session_maintenance": _run_session_maintenance,
+    "coherence_amplification": _run_coherence_amplification,
+    "self_healing": _run_self_healing,
+    "performance_metrics": _run_performance_metrics,
+}
 
 
 class BackgroundScheduler:
@@ -409,11 +516,24 @@ def main() -> None:
             ("index_refresh", _INDEX_REFRESH_INTERVAL_S),
             ("cache_warm", _CACHE_WARM_INTERVAL_S),
             ("session_maintenance", _SESSION_MAINT_INTERVAL_S),
+            ("coherence_amplification", _COHERENCE_AMP_INTERVAL_S),
+            ("self_healing", _SELF_HEAL_INTERVAL_S),
+            ("performance_metrics", _PERF_METRICS_INTERVAL_S),
         ]:
             seed_input = f"{config_hash}:{task_name}".encode("utf-8")
             seed = int(hashlib.sha256(seed_input).hexdigest()[:8], 16)
             scheduler.add_task(WorkerTask(name=task_name, interval_s=interval_s, seed=seed))
         scheduler.start()
+
+        # Step 3b: Auto-start the autonomous orchestrator
+        logger.info("Starting autonomous background orchestrator...")
+        from thalos_prime.autonomous.orchestrator import start_orchestrator
+
+        orch_seed_input = f"{config_hash}:orchestrator".encode("utf-8")
+        orch_seed = int(hashlib.sha256(orch_seed_input).hexdigest()[:8], 16)
+        orch = start_orchestrator(seed=orch_seed)
+        orch_validation = orch.validate()
+        logger.info("Autonomous orchestrator: %s", orch_validation.message)
 
     # Step 4: Start the API server (blocks until shutdown)
     print(f"\nStarting API server on http://{args.host}:{args.port}")
