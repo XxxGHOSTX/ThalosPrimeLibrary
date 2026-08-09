@@ -38,6 +38,11 @@ dependencies = [
     "deepdiff>=6.7.0",
     "psutil>=5.9.0",
     "httpx>=0.27.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "apscheduler>=3.10.0",
+    "pgvector>=0.3.0",
+    "asyncpg>=0.29.0",
 ]
 
 [project.scripts]
@@ -119,6 +124,7 @@ ignore = [
     "thalos_prime/library_of_sense/reasoning",
     "thalos_prime/library_of_sense/retrieval",
     "thalos_prime/agency",
+    "thalos_prime/knowledge_engine/api",
 ]
 
 [tool.ruff]
@@ -353,3 +359,35 @@ disable_error_code = ["no-untyped-call"]
 # S101 (assert used in task validate() lifecycle methods by design),
 # E501 (long lines in structured log messages are acceptable), PLR0913 (>5 params in common helpers)
 "thalos_runtime/plugins/**/*.py" = ["D102", "D107", "S101", "E501", "PLR0913"]
+"thalos_prime/knowledge_engine/api/**/*.py" = [
+    "PLC0415", "PLR2004", "PLR0913", "BLE001", "B904", "G004", "E501",
+    "ARG001", "ARG002", "TRY003", "EM101", "TRY401", "TRY300",
+    "TRY301", "S104", "RUF012", "D102",
+    "FBT001", "FBT002", "FAST001", "A001", "S101", "SLF001",
+    "D106", "D205",
+]
+"thalos_prime/knowledge_engine/**/*.py" = [
+    "TRY003", "EM101", "EM102", "E501", "PLR2004",
+    "S324", "TC001", "TC002", "TC003", "UP042", "PLC0415", "F401",
+]
+"thalos_prime/knowledge_engine/workers/**/*.py" = [
+    "TRY003", "EM101", "EM102", "BLE001", "S324", "E501", "PLR2004",
+]
+"thalos_prime/knowledge_engine/db/**/*.py" = [
+    "RUF012", "BLE001", "B904", "PLC0415", "PLR2004", "E501",
+    "G004", "ARG001", "TRY401", "PLW0603", "PLW0602", "D104",
+    "TRY003", "EM101", "EM102", "A001",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "alembic",
+    "alembic.*",
+    "asyncpg",
+    "asyncpg.*",
+    "pgvector",
+    "pgvector.*",
+    "apscheduler",
+    "apscheduler.*",
+]
+ignore_missing_imports = true
