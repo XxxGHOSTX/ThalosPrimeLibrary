@@ -1,5 +1,7 @@
 """Tests for the main package."""
 
+from typing import Any, cast
+
 import pytest
 
 import thalos_prime
@@ -45,7 +47,6 @@ def test_get_babel_endpoints() -> None:
 
 def test_deep_synthesis_structure() -> None:
     """Deep synthesis returns semantic decomposition and nexus views."""
-    from typing import Any, cast
     result = cast(
         "dict[str, Any]",
         thalos_prime.deep_synthesis("Find antimicrobial peptide in genomic space"),
@@ -57,6 +58,30 @@ def test_deep_synthesis_structure() -> None:
     assert views == {"Physical/Chemical", "Logical/Mathematical", "Linguistic/Narrative"}
     coordinates = result["nexus_result"][0]["coordinates_hint"]
     assert coordinates["search_api"] == "https://libraryofbabel.info/search.cgi"
+
+
+def test_deep_synthesis_chemical_modality() -> None:
+    """deep_synthesis detects Chemical modality from compound/molecule keywords."""
+    result = cast("dict[str, Any]", thalos_prime.deep_synthesis("analyze the chemical compound structure"))
+    assert "Chemical" in result["semantic_decomposition"]["modalities"]
+
+
+def test_deep_synthesis_logical_modality() -> None:
+    """deep_synthesis detects Logical/Mathematical modality from math keywords."""
+    result = cast("dict[str, Any]", thalos_prime.deep_synthesis("prove the axiom using logic and theorem"))
+    assert "Logical/Mathematical" in result["semantic_decomposition"]["modalities"]
+
+
+def test_deep_synthesis_linguistic_modality() -> None:
+    """deep_synthesis detects Linguistic/Narrative modality from narrative keywords."""
+    result = cast("dict[str, Any]", thalos_prime.deep_synthesis("write a story with narrative poem"))
+    assert "Linguistic/Narrative" in result["semantic_decomposition"]["modalities"]
+
+
+def test_deep_synthesis_general_modality() -> None:
+    """deep_synthesis falls back to General modality when no keywords match."""
+    result = cast("dict[str, Any]", thalos_prime.deep_synthesis("find something unknown"))
+    assert "General" in result["semantic_decomposition"]["modalities"]
 
 
 def test_package_local_library_path(monkeypatch: pytest.MonkeyPatch) -> None:
