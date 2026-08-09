@@ -238,7 +238,7 @@ disable_error_code = ["no-untyped-call"]
     # inline exception messages in tests for clarity
     "TRY003", "EM101",
     # type-only imports: tests use annotations with runtime imports
-    "TC001", "TC003",
+    "TC001", "TC002", "TC003",
 ]
 # Babel subsystem: retain strict correctness checks while allowing incremental
 # documentation hardening without blocking CI.
