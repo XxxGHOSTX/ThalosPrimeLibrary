@@ -42,6 +42,7 @@ dependencies = [
 
 [project.scripts]
 thalos = "thalos_prime.infra_synthesis.cli.main:main"
+thalos-prime = "thalos_prime.cli.commands:main"
 thalos-desktop = "thalos_prime.desktop_launcher:main"
 
 [project.optional-dependencies]

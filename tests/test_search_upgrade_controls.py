@@ -7,8 +7,9 @@ from thalos_prime.api.routes.search import (
     _intent_profile,
     _is_remote_allowed,
     _rank_score,
+    _search_cache_key,
 )
-from thalos_prime.models.api_models import RemoteAccessPolicy, SearchRequest
+from thalos_prime.models.api_models import RemoteAccessPolicy, SearchMode, SearchRequest
 
 
 def test_intent_profile_definition_bias() -> None:
@@ -84,3 +85,28 @@ def test_adaptive_lambda_exploratory_balances_diversity() -> None:
     profile = _intent_profile(request.query)
     effective = _effective_diversity_lambda(request, profile, query_term_count=5)
     assert effective < request.diversity_lambda
+
+
+def test_cache_key_changes_when_request_controls_change() -> None:
+    base = SearchRequest(
+        query="deterministic benchmark cache key",
+        max_results=5,
+        mode=SearchMode.HYBRID,
+        min_score=79.0,
+        remote_access_policy=RemoteAccessPolicy.CONSENT_REQUIRED,
+        remote_consent=False,
+        enable_query_expansion=False,
+        enable_diversity_rerank=False,
+        enable_adaptive_optimization=False,
+        diversity_lambda=0.7,
+    )
+    stricter_threshold = base.model_copy(update={"min_score": 90.0})
+    changed_diversity = base.model_copy(update={"enable_diversity_rerank": True, "diversity_lambda": 0.2})
+    changed_remote = base.model_copy(
+        update={"remote_access_policy": RemoteAccessPolicy.ALWAYS_ALLOW, "remote_consent": True},
+    )
+
+    base_key = _search_cache_key(base)
+    assert _search_cache_key(stricter_threshold) != base_key
+    assert _search_cache_key(changed_diversity) != base_key
+    assert _search_cache_key(changed_remote) != base_key

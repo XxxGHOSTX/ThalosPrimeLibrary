@@ -108,3 +108,73 @@ async def delete_session(session_id: str) -> dict[str, str]:
         return {"message": "Session deleted successfully"}
 
     raise HTTPException(status_code=404, detail="Session not found")
+
+
+@router.get("/benchmark/tasks")
+async def benchmark_tasks() -> dict[str, Any]:
+    """List available latent pattern recovery benchmark tasks."""
+    from thalos_prime.benchmarks.latent_pattern_recovery import list_tasks
+
+    tasks = list_tasks()
+    return {
+        "benchmark": "latent_pattern_recovery_v1",
+        "tasks": tasks,
+        "count": len(tasks),
+    }
+
+
+@router.post("/benchmark/run")
+async def run_benchmark(
+    task_id: str,
+    seed: Annotated[int, QueryParam(ge=0)] = 2026,
+    perturbation: Annotated[int, QueryParam(ge=0)] = 0,
+) -> dict[str, Any]:
+    """Run a deterministic benchmark task via chat API surface.
+
+    This endpoint allows the chatbot UI to execute the operational compiler
+    benchmark and return a concrete inspectable artifact.
+    """
+    from thalos_prime.benchmarks.latent_pattern_recovery import run_latent_pattern_recovery
+
+    try:
+        artifact = run_latent_pattern_recovery(
+            task_id=task_id,
+            seed=seed,
+            perturbation=perturbation,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    selected = artifact["selected_answer"]
+    return {
+        "benchmark": artifact["benchmark"],
+        "task_id": artifact["input"]["task_id"],
+        "seed": artifact["seed"],
+        "perturbation": artifact["perturbation"],
+        "selected_candidate": selected["candidate_id"],
+        "selected_query": selected["query"],
+        "selected_address": selected["search_top_result"]["address"],
+        "constraints_pass": selected["constraints_pass"],
+        "stabilized": artifact["stabilization_result"]["stabilized"],
+        "artifact": artifact,
+    }
+
+
+@router.post("/benchmark/compare")
+async def compare_benchmark(
+    seed: Annotated[int, QueryParam(ge=0)] = 2026,
+    perturbation: Annotated[int, QueryParam(ge=0)] = 0,
+) -> dict[str, Any]:
+    """Run comparative benchmark report (operational vs baselines)."""
+    from thalos_prime.benchmarks.latent_pattern_recovery import run_comparative_benchmark
+
+    report = run_comparative_benchmark(seed=seed, perturbation=perturbation)
+    summary = report["summary"]
+    return {
+        "benchmark": report["benchmark"],
+        "seed": report["seed"],
+        "perturbation": report["perturbation"],
+        "task_count": report["task_count"],
+        "summary": summary,
+        "report": report,
+    }

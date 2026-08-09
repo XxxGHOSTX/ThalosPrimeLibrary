@@ -7,6 +7,7 @@ needed; in practice Stage 1 (GenerativeEngine corpus) always resolves queries
 in under one second.
 """
 
+import json
 import time
 from typing import Annotated, Any
 
@@ -14,6 +15,7 @@ from fastapi import APIRouter
 from fastapi import Query as QueryParam
 
 from thalos_prime.adaptive_search import AdaptiveResult, adaptive_search
+from thalos_prime.individuation import build_individuation_profile
 from thalos_prime.models.api_models import (
     AddressInfo,
     CoherenceInfo,
@@ -32,6 +34,13 @@ _MIN_COHERENCE_SCORE: float = 79.0
 # Simple in-memory cache (replace with Redis in production)
 SEARCH_CACHE: dict[str, tuple[dict[str, Any], float]] = {}
 CACHE_TTL = 3600  # 1 hour
+
+# Purity functional weights (sum of positive terms is 1.0 by convention).
+_PURITY_ALPHA = 0.35  # coherence
+_PURITY_BETA = 0.20  # determinism
+_PURITY_GAMMA = 0.20  # constraint satisfaction
+_PURITY_DELTA = 0.25  # provenance integrity
+_PURITY_LAMBDA = 0.15  # entropy leak penalty
 
 
 def _intent_profile(query: str) -> dict[str, Any]:
@@ -136,15 +145,153 @@ def _expand_query_variants(query: str) -> list[str]:
     return ordered
 
 
-def _token_jaccard(text_a: str, text_b: str) -> float:
-    tokens_a = set(text_a.lower().split())
-    tokens_b = set(text_b.lower().split())
+def _tokenize(text: str) -> set[str]:
+    """Extract unique lowercase tokens from whitespace-split text.
+
+    Empty input (or whitespace-only input) returns an empty set.
+    """
+    return set(text.lower().split())
+
+
+def _token_jaccard_tokens(tokens_a: set[str], tokens_b: set[str]) -> float:
+    """Compute Jaccard similarity in [0.0, 1.0] for two token sets.
+
+    Returns 0.0 when either token set is empty.
+    """
     if not tokens_a or not tokens_b:
         return 0.0
     union = tokens_a | tokens_b
-    if not union:
-        return 0.0
     return len(tokens_a & tokens_b) / len(union)
+
+
+def _token_jaccard(text_a: str, text_b: str) -> float:
+    return _token_jaccard_tokens(_tokenize(text_a), _tokenize(text_b))
+
+
+def _clamp01(value: float) -> float:
+    return min(1.0, max(0.0, value))
+
+
+def _query_coverage(text: str, query: str) -> float:
+    query_terms = {token for token in query.lower().split() if token}
+    if not query_terms:
+        return 0.0
+    text_terms = set(text.lower().split())
+    if not text_terms:
+        return 0.0
+    return len(query_terms & text_terms) / len(query_terms)
+
+
+def _entropy_leak(text: str, query: str) -> float:
+    """Estimate entropy leak as ungrounded lexical variance in [0,1]."""
+    tokens = [token for token in text.lower().split() if token]
+    if not tokens:
+        return 1.0
+    unique_ratio = len(set(tokens)) / len(tokens)
+    groundedness = _query_coverage(text, query)
+    return _clamp01(unique_ratio * (1.0 - groundedness))
+
+
+def _provenance_integrity(result: PageResult) -> float:
+    prov = result.provenance
+    checks = [
+        bool(prov.address),
+        bool(prov.source),
+        bool(prov.query),
+        prov.timestamp > 0,
+    ]
+    return sum(1.0 for check in checks if check) / float(len(checks))
+
+
+def _constraint_satisfaction(result: PageResult, effective_min: float) -> float:
+    if result.coherence.overall_score < effective_min:
+        return 0.0
+    return 1.0
+
+
+def _novelty(result: PageResult, peers: list[PageResult], token_sets: dict[int, set[str]]) -> float:
+    result_tokens = token_sets[id(result)]
+    max_similarity = max(
+        (
+            _token_jaccard_tokens(result_tokens, token_sets[id(peer)])
+            for peer in peers
+            if peer.address.hex_address != result.address.hex_address
+        ),
+        default=0.0,
+    )
+    return _clamp01(1.0 - max_similarity)
+
+
+def _compute_purity_metrics(
+    result: PageResult,
+    *,
+    peers: list[PageResult],
+    query: str,
+    effective_min: float,
+    token_sets: dict[int, set[str]],
+) -> dict[str, float]:
+    """Compute deterministic objective and purity functional components."""
+    utility = _clamp01((result.coherence.overall_score / 100.0 + _query_coverage(result.text, query)) / 2.0)
+    novelty = _novelty(result, peers, token_sets)
+    feasibility = _constraint_satisfaction(result, effective_min)
+    determinism = 1.0  # Adaptive search uses deterministic seeded generation.
+    provenance = _provenance_integrity(result)
+    explainability = _clamp01((determinism + provenance) / 2.0)
+    entropy = _entropy_leak(result.text, query)
+
+    objective = utility * novelty * feasibility * explainability
+    purity = (
+        (_PURITY_ALPHA * (result.coherence.overall_score / 100.0))
+        + (_PURITY_BETA * determinism)
+        + (_PURITY_GAMMA * feasibility)
+        + (_PURITY_DELTA * provenance)
+        - (_PURITY_LAMBDA * entropy)
+    )
+
+    return {
+        "utility": utility,
+        "novelty": novelty,
+        "feasibility": feasibility,
+        "explainability": explainability,
+        "determinism": determinism,
+        "provenance_integrity": provenance,
+        "entropy_leak": entropy,
+        "objective_score": _clamp01(objective),
+        "purity_score": _clamp01(purity),
+    }
+
+
+def _annotate_purity_metrics(
+    results: list[PageResult],
+    *,
+    query: str,
+    effective_min: float,
+    loop_cycle: int,
+) -> None:
+    """Attach purity metrics to each result without mutating ranking order."""
+    token_sets = {id(result): _tokenize(result.text) for result in results}
+    for result in results:
+        purity = _compute_purity_metrics(
+            result,
+            peers=results,
+            query=query,
+            effective_min=effective_min,
+            token_sets=token_sets,
+        )
+        result.coherence.metrics["purity"] = {
+            "loop_cycle": loop_cycle,
+            **purity,
+        }
+
+
+def _purity_mean(results: list[PageResult]) -> float:
+    if not results:
+        return 0.0
+    scores = [
+        float(result.coherence.metrics.get("purity", {}).get("purity_score", 0.0))
+        for result in results
+    ]
+    return sum(scores) / len(scores)
 
 
 def _diversify_results(
@@ -159,16 +306,23 @@ def _diversify_results(
 
     effective_lambda = min(1.0, max(0.0, diversity_lambda))
     selected: list[PageResult] = [results[0]]
-    remaining = list(results[1:])
+    selected_token_sets: list[set[str]] = [_tokenize(results[0].text)]
+    remaining: list[tuple[PageResult, set[str]]] = [
+        (result, _tokenize(result.text))
+        for result in results[1:]
+    ]
 
     while remaining and len(selected) < max_results:
         best_idx = 0
         best_score = float("-inf")
 
-        for idx, candidate in enumerate(remaining):
+        for idx, (candidate, candidate_tokens) in enumerate(remaining):
             base_score = float(candidate.coherence.metrics.get("combined_score", candidate.coherence.overall_score))
             max_similarity = max(
-                (_token_jaccard(candidate.text, prior.text) for prior in selected),
+                (
+                    _token_jaccard_tokens(candidate_tokens, prior_token_set)
+                    for prior_token_set in selected_token_sets
+                ),
                 default=0.0,
             )
             mmr_score = ((1.0 - effective_lambda) * base_score) - (effective_lambda * max_similarity * 100.0)
@@ -176,7 +330,9 @@ def _diversify_results(
                 best_score = mmr_score
                 best_idx = idx
 
-        selected.append(remaining.pop(best_idx))
+        chosen, chosen_tokens = remaining.pop(best_idx)
+        selected.append(chosen)
+        selected_token_sets.append(chosen_tokens)
 
     return selected[:max_results]
 
@@ -195,6 +351,23 @@ def get_cached_search(cache_key: str) -> dict[str, Any] | None:
 def cache_search(cache_key: str, data: dict[str, Any]) -> None:
     """Cache search results."""
     SEARCH_CACHE[cache_key] = (data, time.time())
+
+
+def _search_cache_key(request: SearchRequest) -> str:
+    """Build a deterministic cache key from all behavior-affecting controls."""
+    cache_key_payload = {
+        "query": request.query,
+        "max_results": request.max_results,
+        "mode": request.mode.value,
+        "min_score": request.min_score,
+        "remote_access_policy": request.remote_access_policy.value,
+        "remote_consent": request.remote_consent,
+        "enable_query_expansion": request.enable_query_expansion,
+        "enable_diversity_rerank": request.enable_diversity_rerank,
+        "enable_adaptive_optimization": request.enable_adaptive_optimization,
+        "diversity_lambda": request.diversity_lambda,
+    }
+    return f"adaptive:{json.dumps(cache_key_payload, sort_keys=True, separators=(',', ':'))}"
 
 
 def _adaptive_result_to_page_result(ar: AdaptiveResult) -> PageResult:
@@ -218,7 +391,7 @@ def _adaptive_result_to_page_result(ar: AdaptiveResult) -> PageResult:
         ngram_score=cs.ngram_score,
         exact_match_score=cs.exact_match_score,
         confidence_level=cs.confidence_level,  # type: ignore[arg-type]
-        metrics=cs.metrics,
+        metrics=dict(cs.metrics),
     )
     provenance = ProvenanceInfo(
         address=ar.address,
@@ -253,13 +426,28 @@ async def search(request: SearchRequest) -> SearchResponse:
         SearchResponse with results, all scoring >= 79.0
 
     """
-    cache_key = f"adaptive:{request.query}:{request.max_results}:{request.mode}"
-    cached_result = get_cached_search(cache_key)
-    if cached_result:
-        cached_response = SearchResponse.model_validate(cached_result)
-        metadata = dict(cached_response.metadata)
-        metadata["cache_hit"] = True
-        return cached_response.model_copy(update={"cached": True, "metadata": metadata})
+    return execute_search_request(request, use_cache=True)
+
+
+def execute_search_request(request: SearchRequest, *, use_cache: bool = True) -> SearchResponse:
+    """Execute the operational compiler search pipeline for a request.
+
+    Args:
+        request: Search request with query, mode, and scoring controls.
+        use_cache: Whether to read/write the in-memory search cache.
+
+    Returns:
+        Fully scored SearchResponse with operational compiler metadata.
+
+    """
+    cache_key = _search_cache_key(request)
+    if use_cache:
+        cached_result = get_cached_search(cache_key)
+        if cached_result:
+            cached_response = SearchResponse.model_validate(cached_result)
+            metadata = dict(cached_response.metadata)
+            metadata["cache_hit"] = True
+            return cached_response.model_copy(update={"cached": True, "metadata": metadata})
 
     # Run adaptive search — guaranteed >= 79.0 on all results
     adaptive_results = adaptive_search(
@@ -268,7 +456,13 @@ async def search(request: SearchRequest) -> SearchResponse:
         timeout_seconds=1800.0,
     )
 
+    query_profile = build_individuation_profile(request.query)
     page_results = [_adaptive_result_to_page_result(ar) for ar in adaptive_results]
+
+    # Apply individuation metadata consistently to each result.
+    for result in page_results:
+        result_profile = build_individuation_profile(request.query, result.text)
+        result.coherence.metrics["individuation"] = result_profile.as_metadata()
 
     # Apply any user-requested min_score filter (only raises the bar further)
     effective_min = max(_MIN_COHERENCE_SCORE, request.min_score)
@@ -290,6 +484,32 @@ async def search(request: SearchRequest) -> SearchResponse:
             diversity_lambda=lam,
         )
 
+    # Operational purity compiler loop:
+    # 1) annotate purity metrics, 2) optionally optimize selection by purity,
+    # 3) re-annotate as a deterministic feedback cycle.
+    _annotate_purity_metrics(
+        page_results,
+        query=request.query,
+        effective_min=effective_min,
+        loop_cycle=1,
+    )
+    cycle1_mean = _purity_mean(page_results)
+
+    if request.enable_adaptive_optimization and len(page_results) > 1:
+        page_results.sort(
+            key=lambda result: float(result.coherence.metrics.get("purity", {}).get("purity_score", 0.0)),
+            reverse=True,
+        )
+
+    _annotate_purity_metrics(
+        page_results,
+        query=request.query,
+        effective_min=effective_min,
+        loop_cycle=2,
+    )
+    cycle2_mean = _purity_mean(page_results)
+    stabilized = abs(cycle2_mean - cycle1_mean) <= 1e-9
+
     response = SearchResponse(
         query=request.query,
         results=page_results,
@@ -299,9 +519,27 @@ async def search(request: SearchRequest) -> SearchResponse:
         metadata={
             "min_coherence_enforced": _MIN_COHERENCE_SCORE,
             "mode": request.mode.value,
+            "individuation": query_profile.as_metadata(),
+            "operational_compiler": {
+                "objective": "argmax U*N*F*E subject to K<=0",
+                "purity_functional": {
+                    "alpha": _PURITY_ALPHA,
+                    "beta": _PURITY_BETA,
+                    "gamma": _PURITY_GAMMA,
+                    "delta": _PURITY_DELTA,
+                    "lambda": _PURITY_LAMBDA,
+                },
+                "feedback": {
+                    "cycles": 2,
+                    "cycle1_purity_mean": cycle1_mean,
+                    "cycle2_purity_mean": cycle2_mean,
+                    "stabilized": stabilized,
+                },
+            },
         },
     )
-    cache_search(cache_key, response.model_dump())
+    if use_cache:
+        cache_search(cache_key, response.model_dump())
     return response
 
 

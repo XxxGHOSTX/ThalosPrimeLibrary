@@ -68,6 +68,7 @@ from thalos_prime.ingest import (
     compute_meaning_hash,
     ingest_fragment,
 )
+from thalos_prime.individuation import IndividuationProfile, build_individuation_profile
 from thalos_prime.knowledge_graph.neo4j_graph import (
     CypherQuery,
     Neo4jKnowledgeGraph,
@@ -205,4 +206,7 @@ __all__ = [
     "ReasoningControlPlane",
     "ReasoningRequest",
     "ReasoningResponse",
+    # Individuation policy
+    "IndividuationProfile",
+    "build_individuation_profile",
 ]

@@ -19,8 +19,10 @@ from thalos_prime.individuation import (
     IndividuationEngine,
     IndividuationPhase,
     IndividuationResult,
+    build_individuation_profile,
     get_individuation_summary,
     individuate_page,
+    policy_version,
 )
 
 # ---------------------------------------------------------------------------
@@ -253,7 +255,8 @@ def test_reconcile_deduplicates_pool() -> None:
     engine.initialize()
     engine.validate()
 
-    # Manually populate pool with duplicates (bypass add helper)
+    # Intentional private-state setup to create duplicate pool entries and
+    # verify reconcile() deduplicates them deterministically.
     engine._pre_individual_pool = ["x", "y", "x", "z", "y"]
     engine.reconcile()
 
@@ -290,7 +293,8 @@ def test_operate_requires_validate() -> None:
     """operate() raises RuntimeError if validate() was not called."""
     engine = IndividuationEngine(seed=0)
     engine.initialize()
-    # Deliberately skip validate()
+    # Intentional private-flag override to assert operate() enforces
+    # validate() as a lifecycle precondition.
     engine._validated = False
     try:
         engine.operate()
@@ -417,3 +421,28 @@ def test_result_is_not_successful_zero_coherence() -> None:
 
     result = engine.individuate("bad", "zzzzzzz", "q", 0.0)
     assert not result.is_successful()
+
+
+# ---------------------------------------------------------------------------
+# Deterministic policy profile helpers
+# ---------------------------------------------------------------------------
+
+
+def test_profile_has_expected_keys() -> None:
+    profile = build_individuation_profile(
+        "deterministic global reliability and policy compliance",
+        "safe governance with validation and checkpoint review",
+    )
+    metadata = profile.as_metadata()
+
+    assert metadata["policy_version"] == "individuation-v1"
+    assert 0.0 <= float(metadata["distinctness"]) <= 1.0
+    assert 0.0 <= float(metadata["identity_continuity"]) <= 1.0
+    assert 0.0 <= float(metadata["contextual_integrity"]) <= 1.0
+    assert 0.0 <= float(metadata["collective_coupling"]) <= 1.0
+    assert 0.0 <= float(metadata["privacy_singling_risk"]) <= 1.0
+    assert 0.0 <= float(metadata["recursive_refinement"]) <= 1.0
+
+
+def test_policy_version_export() -> None:
+    assert policy_version() == "individuation-v1"

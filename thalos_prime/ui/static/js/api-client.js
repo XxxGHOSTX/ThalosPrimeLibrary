@@ -76,6 +76,24 @@ class APIClient {
     async getChatHistory(limit = 20) {
         return this.request(`/chat/history/${this.sessionId}?limit=${limit}`);
     }
+
+    async getBenchmarkTasks() {
+        return this.request('/chat/benchmark/tasks');
+    }
+
+    async runBenchmark(taskId, seed = 2026, perturbation = 0) {
+        const query = `task_id=${encodeURIComponent(taskId)}&seed=${encodeURIComponent(seed)}&perturbation=${encodeURIComponent(perturbation)}`;
+        return this.request(`/chat/benchmark/run?${query}`, {
+            method: 'POST',
+        });
+    }
+
+    async compareBenchmark(seed = 2026, perturbation = 0) {
+        const query = `seed=${encodeURIComponent(seed)}&perturbation=${encodeURIComponent(perturbation)}`;
+        return this.request(`/chat/benchmark/compare?${query}`, {
+            method: 'POST',
+        });
+    }
     
     // Search endpoints
     async search(query, maxResults = 10, mode = SEARCH_MODES.HYBRID, minScore = 0) {

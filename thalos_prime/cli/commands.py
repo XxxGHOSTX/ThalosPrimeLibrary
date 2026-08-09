@@ -7,6 +7,7 @@ subcommands:
 - ``enumerate`` — enumerate candidate addresses for a query
 - ``decode``    — score coherence of a page at a given address
 - ``search``    — full pipeline: enumerate → generate → decode → rank
+- ``latent-benchmark`` — latent pattern recovery benchmark artifact generation
 - ``serve``     — start the FastAPI server
 
 All subcommands delegate to the real Thalos Prime modules (BabelGenerator,
@@ -23,6 +24,7 @@ import argparse
 import json
 import logging
 import sys
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="D",
         help="Search depth — higher values produce more address variants (default: 1)",
     )
+    enum_parser.add_argument(
+        "--output",
+        default=None,
+        help="Path to write JSON results (default: stdout)",
+    )
 
     # ------------------------------------------------------------------
     # decode
@@ -139,6 +146,41 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # ------------------------------------------------------------------
+    # latent-benchmark
+    # ------------------------------------------------------------------
+    bench_parser = subparsers.add_parser(
+        "latent-benchmark",
+        help="Run latent pattern recovery benchmark task and emit artifact JSON",
+    )
+    bench_parser.add_argument(
+        "--task-id",
+        default="latent-03",
+        help="Benchmark task id (default: latent-03)",
+    )
+    bench_parser.add_argument(
+        "--seed",
+        type=int,
+        default=1337,
+        help="Deterministic seed (default: 1337)",
+    )
+    bench_parser.add_argument(
+        "--perturbation",
+        type=int,
+        default=0,
+        help="Controlled perturbation index (default: 0)",
+    )
+    bench_parser.add_argument(
+        "--list-tasks",
+        action="store_true",
+        help="List available benchmark tasks and exit",
+    )
+    bench_parser.add_argument(
+        "--output",
+        default=None,
+        help="Path to write benchmark artifact JSON (default: stdout)",
+    )
+
+    # ------------------------------------------------------------------
     # serve
     # ------------------------------------------------------------------
     serve_parser = subparsers.add_parser(
@@ -173,7 +215,9 @@ def _write_output(content: str, path: str | None) -> None:
         if not content.endswith("\n"):
             sys.stdout.write("\n")
     else:
-        with open(path, "w", encoding="utf-8") as fh:
+        output_path = Path(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("w", encoding="utf-8") as fh:
             fh.write(content)
         logger.info("Output written to %s", path)
 
@@ -215,7 +259,7 @@ def _handle_enumerate(args: argparse.Namespace) -> int:
         depth=args.depth,
     )
     output = json.dumps(candidates, indent=2)
-    _write_output(output, None)
+    _write_output(output, args.output)
     return 0
 
 
@@ -317,11 +361,40 @@ def _handle_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_latent_benchmark(args: argparse.Namespace) -> int:
+    """Handle latent-benchmark subcommand.
+
+    Args:
+        args: Parsed arguments containing task id, seed, perturbation, and output.
+
+    Returns:
+        Exit code (0 on success, 1 on error).
+
+    """
+    from thalos_prime.benchmarks.latent_pattern_recovery import (
+        list_tasks,
+        run_latent_pattern_recovery,
+    )
+
+    if bool(args.list_tasks):
+        _write_output(json.dumps(list_tasks(), indent=2), args.output)
+        return 0
+
+    artifact = run_latent_pattern_recovery(
+        task_id=str(args.task_id),
+        seed=int(args.seed),
+        perturbation=int(args.perturbation),
+    )
+    _write_output(json.dumps(artifact, indent=2), args.output)
+    return 0
+
+
 _DISPATCH: dict[str, Any] = {
     "generate": _handle_generate,
     "enumerate": _handle_enumerate,
     "decode": _handle_decode,
     "search": _handle_search,
+    "latent-benchmark": _handle_latent_benchmark,
     "serve": _handle_serve,
 }
 
@@ -355,3 +428,12 @@ def run_cli(argv: list[str] | None = None) -> int:
         logger.error("Command %r failed: %s", args.command, exc)
         sys.stderr.write(f"Error: {exc}\n")
         return 1
+
+
+def main() -> None:
+    """CLI process entrypoint."""
+    raise SystemExit(run_cli())
+
+
+if __name__ == "__main__":
+    main()
