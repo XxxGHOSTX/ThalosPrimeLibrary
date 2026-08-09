@@ -61,6 +61,9 @@
                     <button class="nav-btn active" data-view="console">
                         <span class="icon">▶</span> Console
                     </button>
+                    <button class="nav-btn" data-view="pipeline">
+                        <span class="icon">🔗</span> Pipeline
+                    </button>
                     <button class="nav-btn" data-view="search">
                         <span class="icon">🔍</span> Search
                     </button>
@@ -76,8 +79,11 @@
                     <button class="nav-btn" data-view="history">
                         <span class="icon">📜</span> History
                     </button>
+                    <button class="nav-btn" data-view="workers">
+                        <span class="icon">⚙</span> Workers
+                    </button>
                     <button class="nav-btn" data-view="settings">
-                        <span class="icon">⚙</span> Settings
+                        <span class="icon">🛠</span> Settings
                     </button>
                     <button class="nav-btn" data-view="docs">
                         <span class="icon">📚</span> Docs
@@ -224,6 +230,147 @@
                     </div>
                 </div>
                 
+                <!-- Pipeline View -->
+                <div id="pipeline-view" class="view">
+                    <div class="pipeline-container">
+                        <h2>Full Pipeline: Query → Enumerate → Generate → Score → Synthesize</h2>
+                        <p class="pipeline-desc">Runs the complete Thalos Prime pipeline automatically with all optimizations active.</p>
+                        <form id="pipeline-form" class="pipeline-form">
+                            <div class="form-group">
+                                <label for="pipeline-query">Query:</label>
+                                <input type="text" id="pipeline-query" name="query"
+                                       placeholder="Enter your query to run through the full pipeline" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pipeline-max-results">Max Results:</label>
+                                    <input type="number" id="pipeline-max-results" name="maxResults"
+                                           value="5" min="1" max="20">
+                                </div>
+                                <div class="form-group">
+                                    <label for="pipeline-depth">Enum Depth:</label>
+                                    <input type="number" id="pipeline-depth" name="depth"
+                                           value="2" min="1" max="8">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-pipeline">▶ RUN PIPELINE</button>
+                        </form>
+
+                        <div id="pipeline-stages" class="pipeline-stages hidden">
+                            <div class="stage-track">
+                                <div class="stage-node" id="stage-query">
+                                    <div class="stage-icon">Q</div>
+                                    <div class="stage-label">QUERY</div>
+                                    <div class="stage-status" id="stage-query-status">PENDING</div>
+                                </div>
+                                <div class="stage-arrow">→</div>
+                                <div class="stage-node" id="stage-enumerate">
+                                    <div class="stage-icon">E</div>
+                                    <div class="stage-label">ENUMERATE</div>
+                                    <div class="stage-status" id="stage-enumerate-status">PENDING</div>
+                                </div>
+                                <div class="stage-arrow">→</div>
+                                <div class="stage-node" id="stage-generate">
+                                    <div class="stage-icon">G</div>
+                                    <div class="stage-label">GENERATE</div>
+                                    <div class="stage-status" id="stage-generate-status">PENDING</div>
+                                </div>
+                                <div class="stage-arrow">→</div>
+                                <div class="stage-node" id="stage-score">
+                                    <div class="stage-icon">S</div>
+                                    <div class="stage-label">SCORE</div>
+                                    <div class="stage-status" id="stage-score-status">PENDING</div>
+                                </div>
+                                <div class="stage-arrow">→</div>
+                                <div class="stage-node" id="stage-synthesize">
+                                    <div class="stage-icon">Σ</div>
+                                    <div class="stage-label">SYNTHESIZE</div>
+                                    <div class="stage-status" id="stage-synthesize-status">PENDING</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pipeline-results" class="pipeline-results hidden">
+                            <div class="pipeline-result-section" id="pipeline-enum-section">
+                                <h3>▸ Enumerated Addresses</h3>
+                                <div id="pipeline-enum-output" class="pipeline-output mono-output"></div>
+                            </div>
+                            <div class="pipeline-result-section" id="pipeline-pages-section">
+                                <h3>▸ Generated Pages &amp; Coherence Scores</h3>
+                                <div id="pipeline-pages-output" class="pipeline-output"></div>
+                            </div>
+                            <div class="pipeline-result-section" id="pipeline-synth-section">
+                                <h3>▸ Synthesis Output</h3>
+                                <div id="pipeline-synth-output" class="pipeline-output"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workers View -->
+                <div id="workers-view" class="view">
+                    <div class="workers-container">
+                        <h2>Background Workers &amp; System Status</h2>
+                        <p class="workers-desc">All advanced capabilities run automatically in background workers — no manual activation required.</p>
+                        <div class="workers-grid">
+                            <div class="worker-card" id="wcard-index_refresh">
+                                <div class="worker-header">
+                                    <span class="worker-name">Index Refresh</span>
+                                    <span class="worker-badge badge-active">ACTIVE</span>
+                                </div>
+                                <div class="worker-detail">Interval: 5 min — evicts stale cache entries</div>
+                                <div class="worker-last-run" id="wlast-index_refresh">Last run: —</div>
+                            </div>
+                            <div class="worker-card" id="wcard-cache_warm">
+                                <div class="worker-header">
+                                    <span class="worker-name">Cache Warm</span>
+                                    <span class="worker-badge badge-active">ACTIVE</span>
+                                </div>
+                                <div class="worker-detail">Interval: 10 min — pre-warms top-5 queries</div>
+                                <div class="worker-last-run" id="wlast-cache_warm">Last run: —</div>
+                            </div>
+                            <div class="worker-card" id="wcard-coherence_floor_enforcer">
+                                <div class="worker-header">
+                                    <span class="worker-name">Coherence Floor Enforcer</span>
+                                    <span class="worker-badge badge-active">ACTIVE</span>
+                                </div>
+                                <div class="worker-detail">Interval: 2 min — enforces ≥79.0 on all cached results</div>
+                                <div class="worker-last-run" id="wlast-coherence_floor_enforcer">Last run: —</div>
+                            </div>
+                            <div class="worker-card" id="wcard-benchmark_reporter">
+                                <div class="worker-header">
+                                    <span class="worker-name">Benchmark Reporter</span>
+                                    <span class="worker-badge badge-active">ACTIVE</span>
+                                </div>
+                                <div class="worker-detail">Interval: 30 min — regression benchmark on 3 probe queries</div>
+                                <div class="worker-last-run" id="wlast-benchmark_reporter">Last run: —</div>
+                            </div>
+                            <div class="worker-card" id="wcard-audit_health_check">
+                                <div class="worker-header">
+                                    <span class="worker-name">Audit Health Check</span>
+                                    <span class="worker-badge badge-active">ACTIVE</span>
+                                </div>
+                                <div class="worker-detail">Interval: 5 min — verifies audit trail integrity</div>
+                                <div class="worker-last-run" id="wlast-audit_health_check">Last run: —</div>
+                            </div>
+                            <div class="worker-card" id="wcard-session_maintenance">
+                                <div class="worker-header">
+                                    <span class="worker-name">Session Maintenance</span>
+                                    <span class="worker-badge badge-active">ACTIVE</span>
+                                </div>
+                                <div class="worker-detail">Interval: 15 min — prunes abandoned ghost sessions</div>
+                                <div class="worker-last-run" id="wlast-session_maintenance">Last run: —</div>
+                            </div>
+                        </div>
+                        <div class="worker-always-on-notice">
+                            <span class="notice-icon">✅</span>
+                            All workers are always-on — adaptive search, coherence amplification,
+                            floor enforcement, benchmarking, and audit health run automatically
+                            as background processes on every server start. No manual flags required.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- History View -->
                 <div id="history-view" class="view">
                     <div class="history-container">
@@ -347,16 +494,29 @@
                         <div class="docs-content">
                             <section>
                                 <h3>Getting Started</h3>
-                                <p>Thalos Prime is a symbiotic intelligence framework that extracts coherent information from high-entropy data spaces.</p>
+                                <p>Thalos Prime is a symbiotic intelligence framework that extracts coherent information from high-entropy data spaces. All advanced capabilities are <strong>always-on</strong> — no manual flags required.</p>
                             </section>
                             <section>
                                 <h3>Features</h3>
                                 <ul>
                                     <li><strong>Console:</strong> Interactive chat interface for queries</li>
-                                    <li><strong>Search:</strong> Advanced search with filtering and scoring</li>
+                                    <li><strong>Pipeline:</strong> Full end-to-end query → enumerate → generate → score → synthesize visual pipeline</li>
+                                    <li><strong>Search:</strong> Advanced adaptive search with automatic optimization, diversity reranking, and query expansion</li>
                                     <li><strong>Generate:</strong> Deterministic page generation from addresses</li>
                                     <li><strong>Enumerate:</strong> Query-to-address mapping</li>
                                     <li><strong>Decode:</strong> Coherence analysis and scoring</li>
+                                    <li><strong>Workers:</strong> Background worker status — coherence floor enforcement, benchmarking, audit health</li>
+                                </ul>
+                            </section>
+                            <section>
+                                <h3>Always-On Background Processes</h3>
+                                <ul>
+                                    <li><strong>Adaptive Search:</strong> Intent-aware optimization active on all searches by default</li>
+                                    <li><strong>Coherence Floor Enforcement:</strong> Minimum 79.0 score enforced every 2 minutes</li>
+                                    <li><strong>Benchmark Reporter:</strong> Regression benchmarks run every 30 minutes</li>
+                                    <li><strong>Audit Health Check:</strong> Audit trail verified every 5 minutes</li>
+                                    <li><strong>Cache Warm:</strong> Top queries pre-warmed every 10 minutes</li>
+                                    <li><strong>Index Refresh:</strong> Stale cache evicted every 5 minutes</li>
                                 </ul>
                             </section>
                             <section>
@@ -392,6 +552,7 @@
     <script src="/static/js/api-client.js"></script>
     <script src="/static/js/ui-manager.js"></script>
     <script src="/static/js/console-handler.js"></script>
+    <script src="/static/js/pipeline.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

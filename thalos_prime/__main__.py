@@ -57,9 +57,12 @@ _WORKER_QUEUE_MAX: int = 64  # bounded queue for background tasks
 _CONFIG_HASH_ENV_VAR = "THALOS_CONFIG_HASH"
 
 # Background worker intervals (seconds)
-_INDEX_REFRESH_INTERVAL_S: float = 300.0   # every 5 minutes
-_CACHE_WARM_INTERVAL_S: float = 600.0      # every 10 minutes
-_SESSION_MAINT_INTERVAL_S: float = 900.0   # every 15 minutes
+_INDEX_REFRESH_INTERVAL_S: float = 300.0        # every 5 minutes
+_CACHE_WARM_INTERVAL_S: float = 600.0           # every 10 minutes
+_SESSION_MAINT_INTERVAL_S: float = 900.0        # every 15 minutes
+_COHERENCE_FLOOR_INTERVAL_S: float = 120.0      # every 2 minutes
+_BENCHMARK_REPORTER_INTERVAL_S: float = 1800.0  # every 30 minutes
+_AUDIT_HEALTH_INTERVAL_S: float = 300.0         # every 5 minutes
 
 
 # ---------------------------------------------------------------------------
@@ -232,10 +235,122 @@ def _run_session_maintenance(task: WorkerTask) -> None:
     )
 
 
+def _run_coherence_floor_enforcer(task: WorkerTask) -> None:
+    """Enforce minimum coherence floor on all SEARCH_CACHE entries.
+
+    Evicts any cached SearchResponse payload in which the minimum
+    ``coherence.overall_score`` across its ``results`` list is below the
+    enforced minimum (79.0).  Cached payloads are ``SearchResponse.model_dump()``
+    objects whose schema is ``{"results": [{"coherence": {"overall_score": …}}]}``.
+
+    A snapshot of the cache is taken before iteration to avoid
+    ``RuntimeError: dictionary changed size during iteration`` under concurrent
+    access from FastAPI request handlers.  Individual entries are removed with
+    ``pop()`` so concurrent additions after the snapshot are never deleted.
+    """
+    from thalos_prime.api.routes.search import SEARCH_CACHE
+
+    floor_threshold: float = 79.0
+    before_count = len(SEARCH_CACHE)
+    # Snapshot to avoid RuntimeError from concurrent mutation by request handlers.
+    cache_items_snapshot = list(SEARCH_CACHE.items())
+
+    def _min_score(payload: dict[str, Any]) -> float:
+        """Return the minimum result coherence score in a SearchResponse payload."""
+        results = payload.get("results")
+        if not isinstance(results, list) or not results:
+            return 0.0
+        scores = [
+            float(r["coherence"]["overall_score"])
+            for r in results
+            if isinstance(r, dict)
+            and isinstance(r.get("coherence"), dict)
+            and isinstance(r["coherence"].get("overall_score"), (int, float))
+        ]
+        return min(scores) if scores else 0.0
+
+    violating_keys = [
+        k
+        for k, (payload, _ts) in cache_items_snapshot
+        if _min_score(payload) < floor_threshold
+    ]
+    evicted_count = 0
+    for k in violating_keys:
+        if SEARCH_CACHE.pop(k, None) is not None:
+            evicted_count += 1
+    after_count = len(SEARCH_CACHE)
+    logger.info(
+        "coherence_floor_enforcer: step=%d seed=%d — evicted %d sub-floor entries (%d → %d)",
+        task.step,
+        task.seed,
+        evicted_count,
+        before_count,
+        after_count,
+    )
+
+
+def _run_benchmark_reporter(task: WorkerTask) -> None:
+    """Run a lightweight deterministic benchmark and log the results.
+
+    Executes a fixed set of canonical queries through the adaptive search
+    engine and logs coherence scores.  A 30-second timeout is passed to each
+    query so the scheduler thread is never blocked longer than 90 seconds
+    total.  Stage 1 of the adaptive engine (GenerativeEngine corpus) always
+    resolves in under one second, so the timeout is a safety bound only.
+    """
+    from thalos_prime.adaptive_search import adaptive_search
+
+    # Short per-query budget; Stage 1 always resolves immediately.
+    probe_timeout_s: float = 30.0
+    probe_queries: list[str] = [
+        "deterministic knowledge extraction",
+        "language coherence scoring benchmark",
+        "library of babel information retrieval",
+    ]
+    scores: list[float] = []
+    for query in probe_queries:
+        results = adaptive_search(query, max_results=1, timeout_seconds=probe_timeout_s)
+        if results:
+            scores.append(results[0].coherence.overall_score)
+    avg = sum(scores) / len(scores) if scores else 0.0
+    min_score = min(scores) if scores else 0.0
+    logger.info(
+        "benchmark_reporter: step=%d seed=%d — probes=%d avg_score=%.2f min_score=%.2f",
+        task.step,
+        task.seed,
+        len(scores),
+        avg,
+        min_score,
+    )
+
+
+def _run_audit_health_check(task: WorkerTask) -> None:
+    """Check the shared audit trail health and log authoritative event counts.
+
+    Queries the module-level ``_audit_trail`` instance from
+    ``thalos_prime.api.routes.artifacts`` — the same trail used by all
+    artifact epistemic operations — so the reported event count reflects
+    real system activity rather than an empty in-memory instance.
+    Does not alter any state.
+    """
+    from thalos_prime.api.routes.artifacts import _audit_trail
+
+    events = _audit_trail.get_events()
+    logger.info(
+        "audit_health_check: step=%d seed=%d — total_audit_events=%d",
+        task.step,
+        task.seed,
+        len(events),
+    )
+
+
 _WORKER_HANDLERS: dict[str, Callable[[WorkerTask], None]] = {
     "index_refresh": _run_index_refresh,
     "cache_warm": _run_cache_warm,
     "session_maintenance": _run_session_maintenance,
+    "coherence_floor_enforcer": _run_coherence_floor_enforcer,
+    "benchmark_reporter": _run_benchmark_reporter,
+    "audit_health_check": _run_audit_health_check,
 }
 
 
@@ -409,6 +524,9 @@ def main() -> None:
             ("index_refresh", _INDEX_REFRESH_INTERVAL_S),
             ("cache_warm", _CACHE_WARM_INTERVAL_S),
             ("session_maintenance", _SESSION_MAINT_INTERVAL_S),
+            ("coherence_floor_enforcer", _COHERENCE_FLOOR_INTERVAL_S),
+            ("benchmark_reporter", _BENCHMARK_REPORTER_INTERVAL_S),
+            ("audit_health_check", _AUDIT_HEALTH_INTERVAL_S),
         ]:
             seed_input = f"{config_hash}:{task_name}".encode("utf-8")
             seed = int(hashlib.sha256(seed_input).hexdigest()[:8], 16)

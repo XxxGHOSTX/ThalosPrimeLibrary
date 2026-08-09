@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Thalos Prime
+GenericName=Symbiotic Intelligence Framework
+Comment=Deterministic Library of Babel knowledge extraction with always-on adaptive search and coherence enforcement
+Exec=bash -c 'cd "$(dirname %k)" && bash setup.sh --action serve'
+Icon=thalos_prime
+Terminal=true
+Categories=Science;Education;Utility;
+Keywords=library;babel;knowledge;coherence;search;ai;
+StartupNotify=true
