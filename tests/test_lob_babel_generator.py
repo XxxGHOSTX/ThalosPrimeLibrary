@@ -1,6 +1,6 @@
 import unittest
 
-from src.lob_babel_generator import address_to_page, query_to_hex
+from thalos_prime.lob_babel_generator import address_to_page, query_to_hex
 
 
 class TestBabelGenerator(unittest.TestCase):

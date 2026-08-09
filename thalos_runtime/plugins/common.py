@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from thalos_prime.models.api_models import ChatRequest, CoherenceInfo, PageResult
 
+HIGH_CONFIDENCE_FLOOR = 80.0
+
 
 @dataclass(frozen=True)
 class ExecutionContext:

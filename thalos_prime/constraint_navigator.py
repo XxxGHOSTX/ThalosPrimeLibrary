@@ -1,15 +1,14 @@
-import re
-from typing import Dict, Optional
+"""Deterministic natural-language constraint navigator."""
 
+from __future__ import annotations
+
+import re
 
 MAX_PEPTIDE_LENGTH = 30
 
 
-def translate_constraints(text: str) -> Optional[Dict]:
-    """
-    Lightweight translator: turn natural language into domain + parameters.
-    Currently recognizes peptide/AA queries and extracts a target length.
-    """
+def translate_constraints(text: str) -> dict[str, object] | None:
+    """Translate lightweight peptide constraints from natural language."""
     if not text:
         return None
 
@@ -22,5 +21,4 @@ def translate_constraints(text: str) -> Optional[Dict]:
             "length": max(1, min(length, MAX_PEPTIDE_LENGTH)),
             "raw": text,
         }
-
     return None

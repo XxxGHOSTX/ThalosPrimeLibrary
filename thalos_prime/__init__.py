@@ -53,6 +53,7 @@ from thalos_prime.constraints.symbolic_engine import (
     VariableDeclaration,
     VariableSort,
 )
+from thalos_prime.core.engine import EngineConfig, ThalosEngine
 
 # Graph-RAG Add-on (standalone module)
 from thalos_prime.graph_rag.interfaces import (
@@ -87,6 +88,7 @@ from thalos_prime.lob_babel_generator import (
     BabelGenerator,
     address_to_page,
     normalize_text,
+    query_to_hex,
     text_to_address,
 )
 from thalos_prime.lob_decoder import (
@@ -159,6 +161,10 @@ __all__ = [
     "query_to_addresses",
     "score_coherence",
     "text_to_address",
+    "query_to_hex",
+    # Canonical engine
+    "ThalosEngine",
+    "EngineConfig",
     # Lifecycle
     "BaseLifecycleComponent",
     "LifecycleProtocol",

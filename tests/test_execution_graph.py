@@ -1,6 +1,6 @@
 import unittest
 
-from src.core.execution_graph import execute_graph
+from thalos_prime.core.execution_graph import execute_graph
 
 
 class TestExecutionGraph(unittest.TestCase):

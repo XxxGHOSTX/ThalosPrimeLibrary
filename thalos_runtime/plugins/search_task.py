@@ -6,11 +6,17 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from thalos_prime.lob_babel_enumerator import enumerate_addresses
-from thalos_prime.lob_babel_generator import address_to_page
-from thalos_prime.lob_decoder import decode_page
-from thalos_prime.models.api_models import PageResult, SearchRequest, SearchResponse
-from thalos_runtime.plugins.common import ExecutionContext, build_coherence_info, build_page_result
+from thalos_prime.core.engine import EngineConfig, ThalosEngine
+from thalos_prime.models.api_models import (
+    AddressInfo,
+    CoherenceInfo,
+    ConfidenceLevel,
+    PageResult,
+    ProvenanceInfo,
+    SearchRequest,
+    SearchResponse,
+)
+from thalos_runtime.plugins.common import HIGH_CONFIDENCE_FLOOR, ExecutionContext
 
 if TYPE_CHECKING:
     from thalos_runtime.core.engine import RuntimeEngine
@@ -42,31 +48,20 @@ class SearchTask:
     def operate(self) -> SearchResponse:
         assert self._request is not None
         assert self._context is not None
-        results: list[PageResult] = []
-        addresses_enumerated = 0
-        if self._request.mode.value in {"local", "hybrid"}:
-            addresses = enumerate_addresses(
-                self._request.query,
-                max_results=self._request.max_results * 2,
-                depth=2,
-            )
-            addresses_enumerated = len(addresses)
-            for addr_info in addresses:
-                address = str(addr_info["address"])
-                page_text = address_to_page(address)
-                decoded = decode_page(address=address, text=page_text, query=self._request.query, source="local")
-                coherence_info = build_coherence_info(decoded)
-                if coherence_info.overall_score >= self._request.min_score:
-                    results.append(
-                        build_page_result(
-                            address=address,
-                            raw_text=decoded.raw_text,
-                            query=self._request.query,
-                            source=decoded.source,
-                            timestamp=decoded.timestamp,
-                            coherence=coherence_info,
-                        )
-                    )
+        artifact = ThalosEngine().run(
+            self._request.query,
+            EngineConfig(
+                seed=self._context.seed,
+                max_candidates=self._request.max_results,
+                mode=self._request.mode.value,
+                intent_override="search",
+            ),
+        )
+        results = [
+            self._candidate_to_page_result(candidate.model_dump(), query=self._request.query)
+            for candidate in artifact.candidates
+            if float(candidate.coherence_score) >= self._request.min_score
+        ]
 
         results.sort(key=lambda item: item.coherence.overall_score, reverse=True)
         results = results[: self._request.max_results]
@@ -80,11 +75,52 @@ class SearchTask:
             metadata={
                 "query_time_ms": elapsed_ms,
                 "cache_hit": False,
-                "addresses_enumerated": addresses_enumerated,
+                "addresses_enumerated": len(artifact.research.get("notes", [])),
                 "task": self.name,
                 "seed": self._context.seed,
                 "payload_hash": self._context.payload_hash,
+                "stabilization": artifact.stabilization,
+                "purity_metrics": artifact.purity_metrics,
             },
+        )
+
+    def _candidate_to_page_result(self, candidate: dict[str, Any], *, query: str) -> PageResult:
+        """Convert canonical engine candidates to API ``PageResult`` records."""
+        score = float(candidate["coherence_score"])
+        confidence = ConfidenceLevel.HIGH if score >= HIGH_CONFIDENCE_FLOOR else ConfidenceLevel.MEDIUM
+        return PageResult(
+            address=AddressInfo(
+                hex_address=str(candidate["address"]),
+                wall=None,
+                shelf=None,
+                volume=None,
+                page=None,
+                url=f"https://libraryofbabel.info/book.cgi?hex={candidate['address']}",
+            ),
+            text=str(candidate["text"]),
+            snippet=str(candidate["text"])[:200],
+            normalized_text=None,
+            coherence=CoherenceInfo(
+                overall_score=score,
+                language_score=score,
+                structure_score=score,
+                ngram_score=score,
+                exact_match_score=score,
+                confidence_level=confidence,
+                metrics={
+                    "constraint_score": float(candidate["constraint_score"]),
+                    "purity_score": float(candidate["purity_score"]),
+                    "combined_score": float(candidate["score"]),
+                },
+            ),
+            provenance=ProvenanceInfo(
+                address=str(candidate["address"]),
+                source=str(candidate["source"]),
+                query=query,
+                timestamp=time.time(),
+                normalized=False,
+                llm_provider=None,
+            ),
         )
 
     def reconcile(self, response: SearchResponse) -> SearchResponse:
@@ -121,4 +157,3 @@ class SearchTaskPlugin:
     def register(self, engine: RuntimeEngine) -> None:
         engine.register_module(_TASK_NAME, SearchTask())
         logger.info("SearchTaskPlugin: registered %s", _TASK_NAME)
-

@@ -1,6 +1,6 @@
 import unittest
 
-from src.peptide_space import search_peptide_constraints
+from thalos_prime.peptide_space import search_peptide_constraints
 
 
 class TestPeptideSpace(unittest.TestCase):

@@ -466,6 +466,40 @@ The root `app.py` is the ASGI entrypoint compatible with Vercel and any ASGI hos
 uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
+### Canonical Chatbot Interface (Single Engine Spine)
+
+Run the API server and UI:
+
+```bash
+uvicorn thalos_prime.api.server:app --reload
+```
+
+- UI: `http://localhost:8000/`
+- Chat endpoint: `POST /api/v1/chat`
+- Search endpoint (thin wrapper over the same engine): `POST /api/v1/search`
+
+### Canonical Benchmark (Deterministic)
+
+Run the latent pattern recovery comparative benchmark (engine vs two deterministic baselines):
+
+```bash
+python - <<'PY'
+from pathlib import Path
+import json
+from thalos_prime.benchmarks.latent_pattern_recovery import run_comparative_benchmark
+
+Path(\"data/benchmark\").mkdir(parents=True, exist_ok=True)
+report = run_comparative_benchmark(seed=2026, perturbation=0)
+Path(\"data/benchmark/latent_pattern_recovery_seed2026.json\").write_text(
+    json.dumps(report, indent=2),
+    encoding=\"utf-8\",
+)
+print(\"wrote data/benchmark/latent_pattern_recovery_seed2026.json\")
+PY
+```
+
+Determinism reproduction: use the same `seed` and `perturbation` values to reproduce identical benchmark output.
+
 ---
 
 ## Infrastructure Synthesis CLI

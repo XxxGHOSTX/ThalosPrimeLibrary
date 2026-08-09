@@ -27,7 +27,7 @@ from statistics import mean
 from time import perf_counter
 
 from thalos_prime import address_to_page, score_coherence, text_to_address
-from thalos_prime.adaptive_search import AdaptiveResult, adaptive_search
+from thalos_prime.core.engine import EngineConfig, ThalosEngine
 
 QUERY_SUITE = [
     "deterministic language coherence retrieval",
@@ -65,7 +65,7 @@ class ScenarioAggregate:
 
 
 def _deterministic_hex(seed_text: str, index: int) -> str:
-    return sha256(f"{seed_text}:{index}".encode("utf-8")).hexdigest()
+    return sha256(f"{seed_text}:{index}".encode()).hexdigest()
 
 
 def _token_jaccard(text_a: str, text_b: str) -> float:
@@ -132,25 +132,28 @@ def _evaluate_addresses(
     )
 
 
-def _evaluate_adaptive(
+def _scenario_thalos(query: str, max_results: int) -> list[str]:
+    """Thalos pipeline baseline using the canonical ``ThalosEngine``."""
+    artifact = ThalosEngine().run(
+        query,
+        EngineConfig(max_candidates=max_results, mode="generative", intent_override="search"),
+    )
+    return [candidate.text for candidate in artifact.candidates[:max_results]]
+
+
+def _evaluate_texts(
     *,
     query: str,
     scenario: str,
-    results: list[AdaptiveResult],
+    texts: list[str],
     threshold: float,
 ) -> ScenarioMetrics:
-    """Evaluate a list of AdaptiveResults against a query.
-
-    All AdaptiveResults carry pre-computed coherence scores from the engine
-    (guaranteed >= 79.0).  We re-use those scores directly for efficiency.
-    """
+    """Evaluate deterministic text results directly (used by canonical engine)."""
     started = perf_counter()
-    scores = [float(r.coherence.overall_score) for r in results]
-    snippets = [r.text[:160] for r in results]
+    scores = [float(score_coherence(text, query).overall_score) for text in texts]
+    snippets = [text[:160] for text in texts]
     elapsed_ms = (perf_counter() - started) * 1000.0
-
     if not scores:
-        # Unreachable by design — AdaptiveCoherenceSearch never returns empty.
         return ScenarioMetrics(
             query=query,
             scenario=scenario,
@@ -160,7 +163,6 @@ def _evaluate_adaptive(
             diversity=0.0,
             latency_ms=elapsed_ms,
         )
-
     hit_count = sum(1 for value in scores if value >= threshold)
     return ScenarioMetrics(
         query=query,
@@ -171,16 +173,6 @@ def _evaluate_adaptive(
         diversity=_diversity(snippets),
         latency_ms=elapsed_ms,
     )
-
-
-def _scenario_thalos(query: str, max_results: int) -> list[AdaptiveResult]:
-    """Thalos pipeline: AdaptiveCoherenceSearch guarantees >= 79.0 on every result.
-
-    Runs the four-stage SLCA protocol (GenerativeEngine → enumeration →
-    batch expansion → amplification failsafe).  Always returns max_results
-    results, all with overall_score >= 79.0.
-    """
-    return adaptive_search(query, max_results=max_results)
 
 
 def _scenario_direct_hash(query: str, max_results: int) -> list[str]:
@@ -221,10 +213,10 @@ def run_benchmark(
         random_addresses = _scenario_randomish(query, max_results=max_results)
 
         scenario_details["thalos_pipeline"].append(
-            _evaluate_adaptive(
+            _evaluate_texts(
                 query=query,
                 scenario="thalos_pipeline",
-                results=thalos_results,
+                texts=thalos_results,
                 threshold=threshold,
             ),
         )
