@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "thalos-prime": {
+      "command": "python",
+      "args": ["-m", "thalos_prime.mcp.server"],
+      "env": {
+        "THALOS_DATA_DIR": "${THALOS_DATA_DIR:-./var/data}",
+        "THALOS_INDEX_DIR": "${THALOS_INDEX_DIR:-./var/index}",
+        "THALOS_CACHE_DIR": "${THALOS_CACHE_DIR:-./var/cache}",
+        "THALOS_CONFIG": "${THALOS_CONFIG:-./config/thalos.yaml}",
+        "THALOS_SOURCE_REGISTRY": "${THALOS_SOURCE_REGISTRY:-./config/sources.yaml}"
+      }
+    }
+  }
+}
