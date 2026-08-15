@@ -1,0 +1,32 @@
+name: Evolution V2 Check
+
+on:
+  pull_request:
+    paths:
+      - "thalos_prime/evolution/**"
+      - "tests/test_evolution_v2.py"
+      - "docs/EVOLUTION_V2.md"
+  push:
+    branches: [evolution-v2]
+
+permissions:
+  contents: read
+
+jobs:
+  evolution-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Compile evolution package
+        run: python -m compileall -q thalos_prime/evolution
+      - name: Evolution V2 tests
+        run: python -m pytest tests/test_evolution_v2.py -q
+      - name: Full evolution regression tests
+        run: python -m pytest tests/test_evolution_engine.py tests/test_evolution_observation.py -q
