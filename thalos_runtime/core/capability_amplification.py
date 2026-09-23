@@ -510,7 +510,11 @@ class CapabilityAmplifier:
             },
             replayable=(selected_provider is not None
                         and next(
-                            (p.replayable for p in candidates if p.provider_id == selected_provider),
+                            (
+                                provider.replayable
+                                for provider in candidates
+                                if provider.provider_id == selected_provider
+                            ),
                             False,
                         )),
         )
