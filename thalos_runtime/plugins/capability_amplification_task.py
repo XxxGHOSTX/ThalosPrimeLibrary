@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any
 from thalos_runtime.core.capability_amplification import (
     Capability,
     CapabilityAmplifier,
-    CapabilityRouter,
     CallableCapabilityProvider,
     TaskContract,
 )
@@ -30,20 +29,10 @@ class CapabilityAmplificationTask:
     def run(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Execute a task contract against registered runtime capabilities."""
         contract = TaskContract.model_validate(payload)
-        router = CapabilityRouter()
-
-        router.register(
-            CallableCapabilityProvider(
-                provider_id="runtime.search.v1",
-                capabilities=frozenset({Capability.RETRIEVE}),
-                operation=lambda operation_payload: self._engine.execute(
-                    "search.v1.query",
-                    operation_payload,
-                ),
-            )
+        amplifier = CapabilityAmplifier(
+            self._engine.capability_router,
+            validators=self._engine.capability_validators(),
         )
-
-        amplifier = CapabilityAmplifier(router)
         result = amplifier.run(contract)
         return result.model_dump(mode="json")
 
@@ -59,6 +48,17 @@ class CapabilityAmplificationTaskPlugin:
     def register(self, engine: RuntimeEngine) -> None:
         """Register the amplification task after core runtime tasks."""
         engine.register_module(_TASK_NAME, CapabilityAmplificationTask(engine))
+        engine.register_capability_provider(
+            CallableCapabilityProvider(
+                provider_id="runtime.search.v1",
+                capabilities=frozenset({Capability.RETRIEVE}),
+                replayable=False,
+                operation=lambda operation_payload: engine.execute(
+                    "search.v1.query",
+                    operation_payload,
+                ),
+            )
+        )
         logger.info("CapabilityAmplificationTaskPlugin: registered %s", _TASK_NAME)
 
 
