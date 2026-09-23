@@ -27,6 +27,11 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from thalos_prime.lifecycle import BaseLifecycleComponent
+from thalos_runtime.core.capability_amplification import (
+    CapabilityProvider,
+    CapabilityRouter,
+    CapabilityValidator,
+)
 from thalos_runtime.core.executor import TaskExecutor
 from thalos_runtime.core.memory import ExecutionMemory
 from thalos_runtime.core.registry import TaskHandler, TaskRegistry
@@ -80,6 +85,8 @@ class RuntimeEngine(BaseLifecycleComponent):
         self._registry: TaskRegistry = TaskRegistry()
         self._executor: TaskExecutor = TaskExecutor(self._registry)
         self._memory: ExecutionMemory = ExecutionMemory()
+        self._capability_router = CapabilityRouter()
+        self._capability_validators: dict[str, CapabilityValidator] = {}
 
     def register_module(self, name: str, handler: TaskHandler) -> None:
         """Register a task module with the engine registry.
@@ -123,6 +130,42 @@ class RuntimeEngine(BaseLifecycleComponent):
 
         """
         return self._registry.names()
+
+    @property
+    def capability_router(self) -> CapabilityRouter:
+        """Return the process-local capability provider registry."""
+        return self._capability_router
+
+    def register_capability_provider(self, provider: CapabilityProvider) -> None:
+        """Register a concrete provider with the capability router."""
+        self._capability_router.register(provider)
+        self._emit_event(
+            "register_capability_provider",
+            f"provider={provider.provider_id}",
+        )
+
+    def register_capability_validator(self, validator: CapabilityValidator) -> None:
+        """Register an independent validator by stable identifier."""
+        if validator.validator_id in self._capability_validators:
+            raise ValueError(
+                f"capability validator already registered: {validator.validator_id}"
+            )
+        self._capability_validators[validator.validator_id] = validator
+        self._emit_event(
+            "register_capability_validator",
+            f"validator={validator.validator_id}",
+        )
+
+    def capability_validators(self) -> tuple[CapabilityValidator, ...]:
+        """Return validators in deterministic identifier order."""
+        return tuple(
+            self._capability_validators[name]
+            for name in sorted(self._capability_validators)
+        )
+
+    def capability_provider_ids(self) -> list[str]:
+        """Return registered capability providers in deterministic order."""
+        return self._capability_router.provider_ids()
 
     # ------------------------------------------------------------------ #
     # LifecycleProtocol implementation                                     #
@@ -204,6 +247,10 @@ class RuntimeEngine(BaseLifecycleComponent):
             "initialized": self._initialized,
             "registry": self._registry.checkpoint(),
             "memory": self._memory.checkpoint(),
+            "capabilities": {
+                "providers": self.capability_provider_ids(),
+                "validators": sorted(self._capability_validators),
+            },
             "events": [e.to_dict() for e in self.get_events()],
         }
 

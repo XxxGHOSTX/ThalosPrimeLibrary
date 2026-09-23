@@ -37,3 +37,18 @@ def test_execution_graph_schema_minimum_shape() -> None:
     assert {"node_id", "type"}.issubset(node_props.keys())
     assert schema["properties"]["metadata"]["properties"]["provenance"]["type"] == "object"
 
+
+
+def test_task_contract_schema_is_v2() -> None:
+    """Task contract schema is the executable v2 contract."""
+    schema = _load_schema("task_contract.schema.json")
+    assert schema["title"] == "Thalos Prime Task Contract"
+    assert schema["properties"]["schema_version"]["const"] == "2.0.0"
+    assert set(schema["required"]) == {
+        "schema_version",
+        "task_id",
+        "objective",
+        "payload",
+        "required_capabilities",
+        "acceptance_criteria",
+    }

@@ -107,6 +107,7 @@ class PluginLoader:
         from thalos_runtime.plugins.babel_decode_task import BabelDecodeTaskPlugin
         from thalos_runtime.plugins.babel_enumerate_task import BabelEnumerateTaskPlugin
         from thalos_runtime.plugins.babel_generate_task import BabelGenerateTaskPlugin
+        from thalos_runtime.plugins.capability_amplification_task import CapabilityAmplificationTaskPlugin
         from thalos_runtime.plugins.chat_high_coherence_task import ChatHighCoherenceTaskPlugin
         from thalos_runtime.plugins.chat_task import ChatTaskPlugin
         from thalos_runtime.plugins.legacy_adapter import LegacyPlugin
@@ -114,6 +115,7 @@ class PluginLoader:
 
         return [
             LegacyPlugin(),
+            CapabilityAmplificationTaskPlugin(),
             ChatTaskPlugin(),
             ChatHighCoherenceTaskPlugin(),
             SearchTaskPlugin(),
