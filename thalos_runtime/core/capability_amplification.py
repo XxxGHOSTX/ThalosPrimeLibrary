@@ -45,6 +45,7 @@ class FailureCode(StrEnum):
     """Machine-readable failure classes used by the corrective loop."""
 
     CAPABILITY_UNAVAILABLE = "capability_unavailable"
+    CONTRACT_INVALID = "contract_invalid"
     EXECUTION_FAILED = "execution_failed"
     VALIDATION_UNAVAILABLE = "validation_unavailable"
     VALIDATION_FAILED = "validation_failed"
@@ -323,8 +324,8 @@ class CapabilityAmplifier:
                 result_id=result_id,
                 task_id="invalid",
                 status=AmplificationStatus.REJECTED,
-                failures=(FailureCode.OUTPUT_INVALID,),
-                provenance={"stage": "contract_validation"},
+                failures=(FailureCode.CONTRACT_INVALID,),
+                provenance={"stage": "contract_validation", "detail": type(exc).__name__},
                 replayable=True,
             )
 
@@ -383,13 +384,37 @@ class CapabilityAmplifier:
                 continue
 
             output_hash = self._stable_hash(output)
-            checks = tuple(
-                validator.validate(contract, output)
-                for validator in self._validators
-            )
+            checks: list[ValidationCheck] = []
+            validator_failure = False
+            for validator in self._validators:
+                try:
+                    checks.append(validator.validate(contract, output))
+                except Exception as exc:
+                    validator_failure = True
+                    checks.append(
+                        ValidationCheck(
+                            validator=validator.validator_id,
+                            passed=False,
+                            blocking=True,
+                            detail=type(exc).__name__,
+                        )
+                    )
+
+            known = {check.validator for check in checks}
+            for criterion in contract.acceptance_criteria:
+                if criterion not in known:
+                    checks.append(
+                        ValidationCheck(
+                            validator=criterion,
+                            passed=False,
+                            blocking=True,
+                            detail="required acceptance criterion has no validator",
+                        )
+                    )
+
             report = ValidationReport(
-                checks=checks,
-                passed=all(check.passed for check in checks),
+                checks=tuple(checks),
+                passed=not validator_failure and all(check.passed for check in checks),
                 blocking_failure=any(
                     not check.passed and check.blocking for check in checks
                 ),
@@ -408,6 +433,27 @@ class CapabilityAmplifier:
                     failure=None if report.passed else FailureCode.VALIDATION_FAILED,
                 )
             )
+
+            if validator_failure:
+                return AmplificationResult(
+                    result_id=result_id,
+                    task_id=contract.task_id,
+                    status=AmplificationStatus.HALTED,
+                    provider_id=provider.provider_id,
+                    output=output,
+                    attempts=tuple(records),
+                    validation=report,
+                    failures=tuple(failures + [FailureCode.VALIDATION_UNAVAILABLE]),
+                    provenance={
+                        "objective": contract.objective,
+                        "input_hash": input_hash,
+                        "selected_provider": provider.provider_id,
+                        "validator_ids": [
+                            validator.validator_id for validator in self._validators
+                        ],
+                    },
+                    replayable=provider.replayable,
+                )
 
             if report.passed:
                 return AmplificationResult(
