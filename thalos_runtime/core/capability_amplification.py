@@ -100,6 +100,7 @@ class OperationRecord(BaseModel):
     output_hash: str | None = None
     status: str
     failure: FailureCode | None = None
+    detail: str = ""
 
 
 class AmplificationResult(BaseModel):
@@ -132,6 +133,11 @@ class CapabilityProvider(Protocol):
         """Return the atomic capabilities implemented by this provider."""
         ...
 
+    @property
+    def replayable(self) -> bool:
+        """Return whether identical inputs can be replayed faithfully."""
+        ...
+
     def execute(self, payload: dict[str, Any]) -> Any:
         """Execute the bounded operation."""
         ...
@@ -144,6 +150,7 @@ class CallableCapabilityProvider:
     provider_id: str
     capabilities: frozenset[Capability]
     operation: Callable[[dict[str, Any]], Any]
+    replayable: bool = True
 
     def execute(self, payload: dict[str, Any]) -> Any:
         """Execute the wrapped callable."""
@@ -360,7 +367,7 @@ class CapabilityAmplifier:
 
             try:
                 output = provider.execute(dict(contract.payload))
-            except Exception:
+            except Exception as exc:
                 failures.append(FailureCode.EXECUTION_FAILED)
                 records.append(
                     OperationRecord(
@@ -370,6 +377,7 @@ class CapabilityAmplifier:
                         input_hash=input_hash,
                         status="failed",
                         failure=FailureCode.EXECUTION_FAILED,
+                        detail=type(exc).__name__,
                     )
                 )
                 continue
@@ -419,7 +427,7 @@ class CapabilityAmplifier:
                             validator.validator_id for validator in self._validators
                         ],
                     },
-                    replayable=True,
+                    replayable=provider.replayable,
                 )
 
             failures.append(FailureCode.VALIDATION_FAILED)
@@ -454,7 +462,11 @@ class CapabilityAmplifier:
                     validator.validator_id for validator in self._validators
                 ],
             },
-            replayable=True,
+            replayable=(selected_provider is not None
+                        and next(
+                            (p.replayable for p in candidates if p.provider_id == selected_provider),
+                            False,
+                        )),
         )
 
 
