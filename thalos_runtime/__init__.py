@@ -18,6 +18,19 @@ Version:
 
 from __future__ import annotations
 
+from thalos_runtime.core.capability_amplification import (
+    AmplificationResult,
+    AmplificationStatus,
+    Capability,
+    CapabilityAmplifier,
+    CapabilityRouter,
+    CapabilityValidator,
+    FailureCode,
+    OperationRecord,
+    TaskContract,
+    ValidationCheck,
+    ValidationReport,
+)
 from thalos_runtime.core.engine import EngineInitializationError, RuntimeEngine
 from thalos_runtime.core.executor import ExecutionError, TaskExecutor
 from thalos_runtime.core.memory import ExecutionMemory, ExecutionRecord
@@ -25,10 +38,19 @@ from thalos_runtime.core.registry import RegistryError, TaskHandler, TaskRegistr
 from thalos_runtime.plugins.loader import PluginInterface, PluginLoader, PluginLoadError
 
 __all__ = [
+    "AmplificationResult",
+    "AmplificationStatus",
+    "Capability",
+    "CapabilityAmplifier",
+    "CapabilityRouter",
+    "CapabilityValidator",
     "EngineInitializationError",
     "ExecutionError",
     "ExecutionMemory",
     "ExecutionRecord",
+    "FailureCode",
+    "OperationRecord",
+    "TaskContract",
     "PluginInterface",
     "PluginLoadError",
     "PluginLoader",
@@ -37,6 +59,8 @@ __all__ = [
     "TaskExecutor",
     "TaskHandler",
     "TaskRegistry",
+    "ValidationCheck",
+    "ValidationReport",
 ]
 
 _RUNTIME_VERSION: str = "1.0"
