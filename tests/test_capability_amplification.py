@@ -190,3 +190,14 @@ def test_non_replayable_provider_marks_result_non_replayable() -> None:
 
     assert result.status is AmplificationStatus.COMPLETED_VERIFIED
     assert result.replayable is False
+
+
+def test_plugin_is_first_class_runtime_capability() -> None:
+    from thalos_runtime.core.engine import RuntimeEngine
+    from thalos_runtime.plugins.capability_amplification_task import CapabilityAmplificationTaskPlugin
+
+    engine = RuntimeEngine()
+    CapabilityAmplificationTaskPlugin().register(engine)
+
+    assert "capability.v1.execute" in engine.task_names()
+    assert engine.capability_provider_ids() == ["runtime.search.v1"]
