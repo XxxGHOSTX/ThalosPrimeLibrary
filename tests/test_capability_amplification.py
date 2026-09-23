@@ -26,13 +26,13 @@ def _provider(provider_id: str, value: object) -> CallableCapabilityProvider:
 def _non_empty_requirement() -> CallableValidator:
     def check(_contract: TaskContract, output: object) -> ValidationCheck:
         return ValidationCheck(
-            validator="test.non_empty",
+            validator="non_empty",
             passed=bool(output),
             blocking=True,
             detail="output truthiness",
         )
 
-    return CallableValidator("test.non_empty", check)
+    return CallableValidator("non_empty", check)
 
 
 def test_router_is_deterministic() -> None:
@@ -145,3 +145,48 @@ def test_contract_id_is_reproducible() -> None:
         acceptance_criteria=("non_empty",),
     )
     assert first.task_id == second.task_id
+
+
+def test_missing_validator_for_acceptance_criterion_is_rejected() -> None:
+    router = CapabilityRouter()
+    router.register(_provider("provider", "usable"))
+    amplifier = CapabilityAmplifier(router)
+    contract = amplifier.build_contract(
+        objective="retrieve data",
+        payload={"query": "x"},
+        required_capabilities=(Capability.RETRIEVE,),
+        acceptance_criteria=("required.primary",),
+    )
+
+    result = amplifier.run(contract)
+
+    assert result.status is AmplificationStatus.REJECTED
+    assert result.validation is not None
+    assert any(
+        check.validator == "required.primary" and not check.passed
+        for check in result.validation.checks
+    )
+
+
+def test_non_replayable_provider_marks_result_non_replayable() -> None:
+    router = CapabilityRouter()
+    router.register(
+        CallableCapabilityProvider(
+            provider_id="external",
+            capabilities=frozenset({Capability.RETRIEVE}),
+            replayable=False,
+            operation=lambda _payload: "usable",
+        )
+    )
+    amplifier = CapabilityAmplifier(router, validators=(_non_empty_requirement(),))
+    contract = amplifier.build_contract(
+        objective="retrieve data",
+        payload={"query": "x"},
+        required_capabilities=(Capability.RETRIEVE,),
+        acceptance_criteria=("non_empty",),
+    )
+
+    result = amplifier.run(contract)
+
+    assert result.status is AmplificationStatus.COMPLETED_VERIFIED
+    assert result.replayable is False
