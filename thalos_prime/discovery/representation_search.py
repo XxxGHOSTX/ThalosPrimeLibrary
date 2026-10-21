@@ -12,7 +12,7 @@ import json
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from itertools import product
-from math import prod
+from math import isfinite, prod
 
 type Scalar = str | int | float | bool
 _OPERATORS = {"eq", "ne", "lt", "le", "gt", "ge"}
@@ -37,6 +37,9 @@ class VariableDomain:
         if any(not isinstance(value, (str, int, float, bool)) for value in self.domain):
             msg = f"domain for {self.name} must contain scalar values"
             raise ValueError(msg)
+        if any(isinstance(value, float) and not isfinite(value) for value in self.domain):
+            msg = f"domain for {self.name} must not contain non-finite values"
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +63,9 @@ class RelationConstraint:
             raise ValueError(msg)
         if self.right_variable is not None and not self.right_variable.strip():
             msg = "right_variable must not be empty"
+            raise ValueError(msg)
+        if isinstance(self.right_value, float) and not isfinite(self.right_value):
+            msg = "constraint numeric values must be finite"
             raise ValueError(msg)
 
 
