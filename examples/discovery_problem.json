@@ -1,0 +1,32 @@
+{
+  "question": "System throughput is slow and may be limited by one stage's capacity",
+  "claims": [
+    {
+      "claim_id": "claim-1",
+      "text": "Stage B has lower measured capacity than the other stages",
+      "domain": "operations",
+      "proposition_key": "stage-b-is-lowest-capacity",
+      "polarity": true,
+      "assumptions": ["All stages were measured under comparable demand"],
+      "evidence": [
+        {
+          "evidence_id": "measurement-1",
+          "statement": "Recorded capacity measurements from the same test window",
+          "evidence_kind": "measurement",
+          "independently_checked": false
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "minimum-throughput",
+      "left_variable": "throughput",
+      "operator": "ge",
+      "right_value": 10,
+      "explanation": "Service requirement: throughput must be at least 10 units per minute"
+    }
+  ],
+  "values": {"throughput": 8},
+  "max_hypotheses": 5
+}
