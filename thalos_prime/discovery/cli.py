@@ -17,8 +17,13 @@ from thalos_prime.discovery.engine import (
 )
 
 
-def _construct_input(payload: dict[str, Any]) -> dict[str, Any]:
+def _construct_input(
+    payload: dict[str, Any], cli_max_hypotheses: int | None = None,
+) -> dict[str, Any]:
     """Convert JSON-compatible input sections into typed domain objects."""
+    if not isinstance(payload.get("question"), str):
+        msg = "input JSON question must be a string"
+        raise ValueError(msg)
     parsed_claims: list[Claim] = []
     for raw_claim in payload.get("claims", []):
         claim_data = dict(raw_claim)
@@ -39,7 +44,10 @@ def _construct_input(payload: dict[str, Any]) -> dict[str, Any]:
         "constraints": constraints,
         "values": values,
         "observations": observations,
-        "max_hypotheses": int(payload.get("max_hypotheses", 5)),
+        "max_hypotheses": int(
+            cli_max_hypotheses if cli_max_hypotheses is not None
+            else payload.get("max_hypotheses", 5)
+        ),
     }
 
 
@@ -56,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         help="JSON file with question, claims, constraints, values, and observations",
     )
     parser.add_argument("--output", type=Path, help="Write report JSON to a file instead of stdout")
-    parser.add_argument("--max-hypotheses", type=int, default=5)
+    parser.add_argument("--max-hypotheses", type=int, default=None)
     args = parser.parse_args(argv)
 
     try:
@@ -64,12 +72,12 @@ def main(argv: list[str] | None = None) -> int:
             payload = json.loads(args.input.read_text(encoding="utf-8"))
             if not isinstance(payload, dict) or "question" not in payload:
                 raise ValueError("input JSON must be an object containing a question field")
-            call_args = _construct_input(payload)
+            call_args = _construct_input(payload, cli_max_hypotheses=args.max_hypotheses)
         else:
             question = " ".join(args.question).strip()
             if not question:
                 raise ValueError("provide a question or --input JSON file")
-            call_args = {"question": question, "max_hypotheses": args.max_hypotheses}
+            call_args = {"question": question, "max_hypotheses": args.max_hypotheses or 5}
         report = DiscoveryEngine().analyze(**call_args)
         rendered = json.dumps(report.to_dict(), indent=2, ensure_ascii=False) + "\n"
         if args.output is not None:
