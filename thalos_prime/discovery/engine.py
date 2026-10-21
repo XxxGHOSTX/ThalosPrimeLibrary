@@ -7,6 +7,7 @@ Generated analogies are candidates, never facts. No user-supplied code is run.
 from __future__ import annotations
 
 import json
+from math import isfinite
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 from hashlib import sha256
@@ -86,6 +87,8 @@ class Constraint:
             raise ValueError("set exactly one of right_value or right_variable")
         if self.right_variable is not None and not self.right_variable.strip():
             raise ValueError("right_variable must not be empty")
+        if isinstance(self.right_value, float) and not isfinite(self.right_value):
+            raise ValueError("constraint numeric values must be finite")
 
     def evaluate(self, values: dict[str, Scalar]) -> ConstraintResult:
         """Check the condition or mark it unknown when values are unavailable."""
@@ -177,6 +180,7 @@ class DiscoveryReport:
     question: str
     representation_choices: tuple[dict[str, str], ...]
     hypotheses: tuple[Hypothesis, ...]
+    observations: tuple[Observation, ...]
     contradictions: tuple[dict[str, str], ...]
     constraint_results: tuple[ConstraintResult, ...]
     missing_information: tuple[str, ...]
@@ -311,6 +315,8 @@ class DiscoveryEngine:
         max_hypotheses: int = 5,
     ) -> DiscoveryReport:
         """Analyze a problem and emit stable hypotheses and test instructions."""
+        if not isinstance(question, str):
+            raise ValueError("question must be a string")
         normalized = " ".join(question.split())
         if not normalized:
             raise ValueError("question must not be empty")
@@ -319,6 +325,8 @@ class DiscoveryEngine:
         supplied_values = values or {}
         if any(not isinstance(v, (str, int, float, bool)) for v in supplied_values.values()):
             raise ValueError("values must be scalar JSON-compatible values")
+        if any(isinstance(v, float) and not isfinite(v) for v in supplied_values.values()):
+            raise ValueError("constraint numeric values must be finite")
 
         lowered = normalized.casefold()
         matched: list[tuple[_Pattern, tuple[str, ...]]] = []
@@ -402,7 +410,8 @@ class DiscoveryEngine:
                 "pattern_id": pattern.pattern_id, "representation": pattern.representation,
                 "why": pattern.invariant,
             } for pattern, _ in matched),
-            hypotheses=tuple(hypotheses), contradictions=tuple(contradictions),
+            hypotheses=tuple(hypotheses), observations=observations,
+            contradictions=tuple(contradictions),
             constraint_results=constraint_results, missing_information=tuple(missing),
             unmatched_observations=unmatched,
             limitations=(
