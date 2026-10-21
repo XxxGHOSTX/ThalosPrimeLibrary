@@ -6,6 +6,7 @@ This module exports all route routers.
 from thalos_prime.api.routes.admin import router as admin_router
 from thalos_prime.api.routes.chat import router as chat_router
 from thalos_prime.api.routes.decode import router as decode_router
+from thalos_prime.api.routes.discovery import router as discovery_router
 from thalos_prime.api.routes.enumerate import router as enumerate_router
 from thalos_prime.api.routes.generate import router as generate_router
 from thalos_prime.api.routes.main import router
@@ -15,6 +16,7 @@ __all__ = [
     "admin_router",
     "chat_router",
     "decode_router",
+    "discovery_router",
     "enumerate_router",
     "generate_router",
     "router",
