@@ -83,3 +83,12 @@ def test_unknown_variables_and_duplicate_constraint_names_are_rejected() -> None
         assert "must be unique" in str(exc)
     else:
         raise AssertionError("duplicate constraint names were accepted")
+
+
+def test_nonfinite_domain_values_are_rejected() -> None:
+    try:
+        VariableDomain("x", (0.0, float("inf")))
+    except ValueError as exc:
+        assert "non-finite" in str(exc)
+    else:
+        raise AssertionError("non-finite domain value was accepted")
