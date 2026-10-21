@@ -92,3 +92,32 @@ def test_no_matching_pattern_states_that_limitation() -> None:
     report = DiscoveryEngine().analyze("Describe a purple mountain in a poem")
     assert not report.hypotheses
     assert any("No library pattern matched" in item for item in report.missing_information)
+
+
+def test_report_preserves_complete_observation_provenance() -> None:
+    first = DiscoveryEngine().analyze("capacity bottleneck").hypotheses[0]
+    observation = Observation(
+        "source-observation", first.hypothesis_id, "supports", "bench protocol v2",
+        source_uri="https://example.org/results", setup_hash="sha256:123",
+        reproducible=True, notes="Raw run log attached",
+    )
+    payload = DiscoveryEngine().analyze(
+        "capacity bottleneck", observations=(observation,),
+    ).to_dict()
+    record = payload["observations"][0]
+    assert record["source_uri"] == "https://example.org/results"
+    assert record["method"] == "bench protocol v2"
+    assert record["setup_hash"] == "sha256:123"
+    assert record["notes"] == "Raw run log attached"
+
+
+def test_nonfinite_numeric_constraints_and_values_are_rejected() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        Constraint("bad-nan", "x", "eq", right_value=float("nan"))
+    with pytest.raises(ValueError, match="finite"):
+        DiscoveryEngine().analyze("capacity bottleneck", values={"throughput": float("inf")})
+
+
+def test_non_string_question_is_rejected_cleanly() -> None:
+    with pytest.raises(ValueError, match="question must be a string"):
+        DiscoveryEngine().analyze(None)  # type: ignore[arg-type]
