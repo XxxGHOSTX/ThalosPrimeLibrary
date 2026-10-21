@@ -70,6 +70,7 @@ async def api_status() -> dict[str, Any]:
             "enumerate": "/api/v1/enumerate",
             "decode": "/api/v1/decode",
             "discovery": "/api/v1/discovery/analyze",
+            "discovery_solve": "/api/v1/discovery/solve",
             "ingest": "/api/v1/artifacts/ingest",
             "artifact": "/api/v1/artifacts/artifact/{artifact_id}",
             "derive": "/api/v1/artifacts/derive",
