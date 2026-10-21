@@ -6,7 +6,17 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
-from thalos_prime.discovery import Claim, Constraint, DiscoveryEngine, Evidence, Observation
+from thalos_prime.discovery import (
+    AdaptiveRepresentationEngine,
+    Claim,
+    Constraint,
+    DiscoveryEngine,
+    Evidence,
+    FiniteDomainProblem,
+    Observation,
+    RelationConstraint,
+    VariableDomain,
+)
 
 router = APIRouter()
 ScalarInput = str | int | float | bool
@@ -99,6 +109,51 @@ async def analyze_discovery(request: DiscoveryRequest) -> dict[str, Any]:
             values=request.values, observations=observations,
             max_hypotheses=request.max_hypotheses,
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return report.to_dict()
+
+
+
+class VariableDomainInput(BaseModel):
+    """A named finite domain in the automatically solved constraint problem."""
+    name: str
+    domain: list[ScalarInput] = Field(min_length=1, max_length=64)
+
+
+class RelationConstraintInput(BaseModel):
+    """A safe relation between a variable and either a value or another variable."""
+    name: str
+    left_variable: str
+    operator: str
+    right_value: ScalarInput | None = None
+    right_variable: str | None = None
+
+    @model_validator(mode="after")
+    def check_relation(self) -> RelationConstraintInput:
+        """Require one right operand and an allowlisted comparison operator."""
+        if (self.right_value is None) == (self.right_variable is None):
+            raise ValueError("set exactly one of right_value or right_variable")
+        if self.operator not in {"eq", "ne", "lt", "le", "gt", "ge"}:
+            raise ValueError("operator must be eq, ne, lt, le, gt, or ge")
+        return self
+
+
+class RepresentationSolveRequest(BaseModel):
+    """Typed finite-domain problem for the adaptive representation tournament."""
+    problem_id: str = Field(min_length=1, max_length=200)
+    variables: list[VariableDomainInput] = Field(min_length=1, max_length=40)
+    constraints: list[RelationConstraintInput] = Field(default_factory=list, max_length=100)
+
+
+@router.post("/solve")
+async def solve_representation(request: RepresentationSolveRequest) -> dict[str, Any]:
+    """Choose a solver representation, compare baselines, and diagnose conflicts."""
+    try:
+        variables = tuple(VariableDomain(item.name, tuple(item.domain)) for item in request.variables)
+        constraints = tuple(RelationConstraint(**item.model_dump()) for item in request.constraints)
+        problem = FiniteDomainProblem(request.problem_id, variables, constraints)
+        report = AdaptiveRepresentationEngine().solve(problem)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return report.to_dict()
