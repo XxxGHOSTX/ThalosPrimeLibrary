@@ -77,7 +77,10 @@ def main(argv: list[str] | None = None) -> int:
             question = " ".join(args.question).strip()
             if not question:
                 raise ValueError("provide a question or --input JSON file")
-            call_args = {"question": question, "max_hypotheses": args.max_hypotheses or 5}
+            call_args = {
+                "question": question,
+                "max_hypotheses": args.max_hypotheses if args.max_hypotheses is not None else 5,
+            }
         report = DiscoveryEngine().analyze(**call_args)
         rendered = json.dumps(report.to_dict(), indent=2, ensure_ascii=False) + "\n"
         if args.output is not None:
