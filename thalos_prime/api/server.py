@@ -279,6 +279,7 @@ def register_routes(app: FastAPI) -> None:
         from thalos_prime.api.routes.artifacts import router as artifacts_router
         from thalos_prime.api.routes.chat import router as chat_router
         from thalos_prime.api.routes.decode import router as decode_router
+        from thalos_prime.api.routes.discovery import router as discovery_router
         from thalos_prime.api.routes.enumerate import router as enumerate_router
         from thalos_prime.api.routes.generate import router as generate_router
         from thalos_prime.api.routes.individuation import router as individuation_router
@@ -293,6 +294,7 @@ def register_routes(app: FastAPI) -> None:
         app.include_router(generate_router, prefix="/api/v1/generate", tags=["Generate"])
         app.include_router(enumerate_router, prefix="/api/v1/enumerate", tags=["Enumerate"])
         app.include_router(decode_router, prefix="/api/v1/decode", tags=["Decode"])
+        app.include_router(discovery_router, prefix="/api/v1/discovery", tags=["Discovery"])
         app.include_router(settings_router, prefix="/api/v1/settings", tags=["Settings"])
         app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
         app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"])
