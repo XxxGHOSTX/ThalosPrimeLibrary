@@ -13,6 +13,8 @@ This is the first executable product layer for the Thalos X principle: change re
 - Evaluates a closed set of scalar constraints without executing user-supplied code.
 - Links observations to stable hypothesis IDs and labels them supported, refuted, contested or inconclusive according to submitted outcomes.
 - Produces deterministic report IDs from the supplied inputs and preserves limitations and missing information.
+- Solves declarative finite-domain constraint problems by selecting among enumeration, fixed-order search, and minimum-remaining-values search based on input structure.
+- Cross-checks strategy verdicts on bounded problems, verifies satisfying assignments, and returns deletion-minimal conflict cores with reviewable relaxation candidates for finite-domain unsatisfiability.
 
 ## What it does not claim
 
@@ -23,13 +25,20 @@ A keyword match is not semantic understanding. An analogy is not evidence. A sup
     pip install -e ".[dev]"
     python -m thalos_prime.discovery.cli "System throughput is slow because of a capacity bottleneck"
     python -m thalos_prime.discovery.cli --input examples/discovery_problem.json --output report.json
-    pytest tests/test_discovery_engine.py tests/test_api_discovery.py -q
+    python -m thalos_prime.discovery.solver_cli --input examples/representation_problem.json --output feasibility-report.json
+    pytest tests/test_discovery_engine.py tests/test_api_discovery.py tests/test_representation_search.py tests/test_api_representation_search.py tests/test_solver_cli.py -q
 
 The CLI emits JSON so reports can be stored, compared between runs, reviewed, and passed to later verification modules.
 
 ## API contract
 
-The route is registered by the main application at POST /api/v1/discovery/analyze. Send a question and optionally structured claims, constraints, values, observations, and max_hypotheses. The response includes report_id, representation choices, candidate hypotheses, contradiction pairs, constraint outcomes, missing-information notes and limitations.
+The route provides POST /api/v1/discovery/analyze for hypotheses and POST /api/v1/discovery/solve for finite-domain constraint solving. The solve request contains a problem_id, variables with explicit finite domains, and allowlisted relations. The response exposes the selected strategy, selection rationale, search-space size, constraint density, work counters for compared strategies, verified solution or unsatisfiability status, conflict core, and candidate constraints to review.
+
+## Representation selection and feasibility testing
+
+The finite-domain solver is the first measurable answer to the project’s central representation question. It chooses exhaustive enumeration for small spaces, or constraint-directed search when unary restrictions or density suggest that fail-first variable selection may prune more work. On manageable problem sizes, it runs the alternative representations and compares solution verdicts and deterministic node/assignment counts. This supports empirical measurement of computational advantage for this bounded task family; it does not establish a universal advantage on arbitrary problems.
+
+A satisfiable result includes a candidate witness checked against every input constraint. An unsatisfiable result is exhaustive only relative to the supplied finite domains and supported relation operators. The conflict core is deletion-minimal, not guaranteed unique or minimum-cardinality. Repair candidates identify constraints to review; the engine does not silently alter them.
 
 ## Evidence lifecycle
 
@@ -45,6 +54,7 @@ A production verifier should promote claims only after reproducing tests in an i
 - Retrieval connectors return source snippets, dates, and provenance instead of unattributed assertions.
 - Representation selection is benchmarked against fixed baselines on problems not used to author the patterns.
 - Every candidate has a discriminating experiment, formal obligation, or counterexample search.
+- The adaptive solver is evaluated on held-out finite-domain instances against enumeration and fixed-order baselines, with solution agreement, node counts, and adversarial no-solution cases.
 - Evaluation includes negative controls and adversarial cases, not only examples that favor the system.
 - Hypothesis scores are calibrated against external ground truth; lexical coherence is not used as a proxy for truth.
 - Results are versioned and reproducible, and a failed test leaves the prior stable implementation intact.
