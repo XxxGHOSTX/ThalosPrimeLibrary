@@ -16,6 +16,14 @@ from .engine import (
     HypothesisStatus,
     Observation,
 )
+from .representation_search import (
+    AdaptiveRepresentationEngine,
+    FiniteDomainProblem,
+    RelationConstraint,
+    RepresentationReport,
+    SolverMetrics,
+    VariableDomain,
+)
 
 __all__ = [
     "Claim",
@@ -28,4 +36,10 @@ __all__ = [
     "Hypothesis",
     "HypothesisStatus",
     "Observation",
+    "AdaptiveRepresentationEngine",
+    "FiniteDomainProblem",
+    "RelationConstraint",
+    "RepresentationReport",
+    "SolverMetrics",
+    "VariableDomain",
 ]
