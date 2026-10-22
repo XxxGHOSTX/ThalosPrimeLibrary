@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import stat
+from itertools import islice
 from collections import defaultdict
 from pathlib import Path
 from typing import ClassVar
@@ -211,6 +212,7 @@ class ProjectInventoryBuilder:
         max_total_bytes: int = 100 * 1_048_576,
         max_directories: int = 20_000,
         max_depth: int = 50,
+        max_entries_per_directory: int = 20_000,
     ) -> None:
         """Set explicit work limits for project scanning."""
         if max_files < _MIN_POSITIVE_LIMIT:
@@ -223,11 +225,14 @@ class ProjectInventoryBuilder:
             raise ValueError("max_directories must be at least 1")
         if max_depth < 0:
             raise ValueError("max_depth must not be negative")
+        if max_entries_per_directory < _MIN_POSITIVE_LIMIT:
+            raise ValueError("max_entries_per_directory must be at least 1")
         self._max_files = max_files
         self._max_file_bytes = max_file_bytes
         self._max_total_bytes = max_total_bytes
         self._max_directories = max_directories
         self._max_depth = max_depth
+        self._max_entries_per_directory = max_entries_per_directory
 
     def scan(self, root: str | Path) -> ProjectInventory:
         """Create a deterministic metadata snapshot for a local project directory."""
@@ -279,6 +284,7 @@ class ProjectInventoryBuilder:
                 "max_total_bytes": self._max_total_bytes,
                 "max_directories": self._max_directories,
                 "max_depth": self._max_depth,
+                "max_entries_per_directory": self._max_entries_per_directory,
             },
             "files": [record.model_dump(mode="json") for record in file_records],
             "language_counts": dict(sorted(language_counts.items())),
@@ -342,11 +348,22 @@ class ProjectInventoryBuilder:
             directory, depth = pending_directories.pop()
             visited_directories += 1
             try:
-                entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+                entries = list(
+                    islice(
+                        directory.iterdir(),
+                        self._max_entries_per_directory + 1,
+                    )
+                )
             except OSError as error:
                 warning_counts[f"directory_read_error:{type(error).__name__}"] += 1
                 truncated = True
                 continue
+
+            if len(entries) > self._max_entries_per_directory:
+                warning_counts["directory_entry_limit_reached"] += 1
+                truncated = True
+                continue
+            entries.sort(key=lambda entry: entry.name)
 
             directories: list[tuple[Path, int]] = []
             for entry in entries:
