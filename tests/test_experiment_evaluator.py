@@ -392,9 +392,29 @@ def test_report_artifact_requires_evidence_references_even_if_spec_is_optional()
     report = ExperimentEvaluator.compare(
         spec,
         [
-            make_run("baseline", [0.7], [1.5], evidence_refs=["artifact:baseline-test"]),
+            make_run("baseline", [0.7], [1.5], evidence_refs=[]),
             make_run("candidate", [0.9], [1.0], evidence_refs=[]),
         ],
     )
     with pytest.raises(ValueError, match="at least one real evidence reference"):
         report_to_artifact(report, timestamp_ns=10)
+
+
+def test_blank_evidence_references_are_rejected() -> None:
+    """Whitespace cannot satisfy evidence provenance requirements."""
+    with pytest.raises(ValidationError, match="must not be blank"):
+        make_run("blank-evidence", [0.9], [1.0], evidence_refs=["  "])
+
+
+def test_candidate_without_test_ids_is_not_ranked() -> None:
+    """A passing Boolean without identified test evidence is insufficient."""
+    candidate = make_run("missing-tests", [0.9], [1.0]).model_copy(
+        update={"test_ids": []}
+    )
+    report = ExperimentEvaluator.compare(
+        make_spec(),
+        [make_run("baseline", [0.7], [1.5]), candidate],
+    )
+    assessment = next(item for item in report.assessments if item.candidate_id == "missing-tests")
+    assert not assessment.eligible
+    assert "missing_test_ids" in assessment.exclusion_reasons
