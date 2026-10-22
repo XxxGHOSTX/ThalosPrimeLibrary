@@ -99,6 +99,14 @@ class WorkflowExecutionReport(BaseModel):
     timed_out_count: int = Field(ge=0)
     report_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
+    def verify_report(self) -> bool:
+        """Verify the report digest against the currently serialized contents."""
+        try:
+            body = self.model_dump(mode="json", exclude={"report_digest"})
+            return _digest(body) == self.report_digest
+        except (TypeError, ValueError, RecursionError):
+            return False
+
 
 def _canonical_json(value: object) -> bytes:
     """Encode JSON-compatible values with a stable serialization."""
