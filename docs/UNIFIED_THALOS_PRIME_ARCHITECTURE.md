@@ -80,6 +80,22 @@ A component is integrated only when its source and license are recorded; depende
 
 
 
+## Additional integrated engineering foundations
+
+### Signed directive contract
+
+`thalos_prime.experiments.directive.HumanDirectiveRecord` adapts the Human Directive Record idea from ThalosPrimeConcept. It signs a canonical payload with RSA-PSS/SHA-256, binds the signer identity to the signature, and requires every operation to be explicitly allowlisted. It is intentionally separate from scheduling and execution so that an unverified directive cannot run a stage merely by appearing in a request.
+
+### Project inventory
+
+`thalos_prime.experiments.project_inventory.ProjectInventoryBuilder` adapts the project-analysis and file-fingerprinting idea from THALOS_PRIME_CORE_INTELLIGENCE. It scans within explicit file and byte budgets; skips known secret-like paths, symlinks, ignored build/vendor directories, and binary files; hashes file bytes; indexes manifests and test paths; resolves a best-effort static Python import graph; and reports syntax failures without executing source. An inventory can be converted into a PENDING canonical artifact and passed through the existing validation workflow.
+
+### Multi-representation tournament
+
+The default plan is version 2 and branches into graph, constraint, and state-transition representations after a shared task/evidence/model phase. Each branch proposes a candidate; the shared validation stage runs only after all branches complete; the baseline-comparison stage ranks candidates by predeclared metrics. Independent branches are eligible for parallel scheduling in a future runtime, but the current plan is declarative and does not itself schedule or execute handlers.
+
+This method is useful because it makes representation a measurable variable. On the same task set and controlled environment, the system can compare the quality, runtime, cost, failure rate, and other declared criteria of each representation rather than asserting that one is generally superior.
+
 ## First integrated research substrate
 
 The `thalos_prime.experiments` package is the first concrete shared foundation in this integration branch. It combines three useful architectural ideas: human-defined task criteria, dependency-aware execution planning, and evidence-linked artifact records.
