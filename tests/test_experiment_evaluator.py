@@ -418,3 +418,18 @@ def test_candidate_without_test_ids_is_not_ranked() -> None:
     assessment = next(item for item in report.assessments if item.candidate_id == "missing-tests")
     assert not assessment.eligible
     assert "missing_test_ids" in assessment.exclusion_reasons
+
+
+def test_tampered_experiment_report_cannot_become_an_artifact() -> None:
+    """Artifact adapters must not persist a report with a stale digest."""
+    report = ExperimentEvaluator.compare(
+        make_spec(),
+        [
+            make_run("baseline", [0.7], [1.5]),
+            make_run("candidate", [0.9], [1.0]),
+        ],
+    )
+    candidate = next(item for item in report.assessments if item.candidate_id == "candidate")
+    candidate.evidence_refs.append("artifact:injected")
+    with pytest.raises(ValueError, match="report digest does not match"):
+        report_to_artifact(report, timestamp_ns=12)
