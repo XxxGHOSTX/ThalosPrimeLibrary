@@ -309,4 +309,8 @@ __all__ = [
     "MetricComparison",
     "MetricDefinition",
     "MetricDirection",
+    "MAX_EXPERIMENT_RUNS",
+    "MAX_METRICS_PER_RUN",
+    "MAX_SAMPLES_PER_METRIC",
+    "MAX_EVIDENCE_REFERENCES",
 ]
