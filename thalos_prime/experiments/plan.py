@@ -98,12 +98,12 @@ class ExperimentPlan(BaseModel):
                 "completed_stage_ids contains unknown stages: "
                 + ", ".join(sorted(unknown_completed))
             )
+        stages_by_id = {stage.stage_id: stage for stage in self.stages}
         return [
             stage_id
             for stage_id in self.topological_order()
             if stage_id not in completed_stage_ids
-            and set(next(stage for stage in self.stages if stage.stage_id == stage_id).depends_on)
-            <= completed_stage_ids
+            and set(stages_by_id[stage_id].depends_on) <= completed_stage_ids
         ]
 
 
@@ -134,14 +134,16 @@ def _resolve_order(stages: list[StageSpec]) -> list[str]:
 
 
 def default_research_plan(plan_id: str = "thalos-research-v1") -> ExperimentPlan:
-    """Return the canonical declarative research workflow.
+    """Return a multi-representation research workflow.
 
-    Operation names are identifiers only. A runtime must provide explicitly
-    registered handlers before any stage can be executed.
+    The three representation branches are independent after shared evidence
+    intake. A future scheduler can execute them concurrently under resource
+    limits, then compare their candidate solutions against one baseline.
+    Operation names are identifiers only; this function never executes them.
     """
     return ExperimentPlan(
         plan_id=plan_id,
-        version="1",
+        version="2",
         stages=[
             StageSpec(stage_id="define_task", operation="define_task"),
             StageSpec(
@@ -150,19 +152,48 @@ def default_research_plan(plan_id: str = "thalos-research-v1") -> ExperimentPlan
                 depends_on=["define_task"],
             ),
             StageSpec(
-                stage_id="construct_representations",
-                operation="construct_representations",
+                stage_id="build_problem_model",
+                operation="build_problem_model",
                 depends_on=["ingest_evidence"],
             ),
             StageSpec(
-                stage_id="generate_candidates",
-                operation="generate_candidates",
-                depends_on=["construct_representations"],
+                stage_id="represent_graph",
+                operation="represent_graph",
+                depends_on=["build_problem_model"],
+            ),
+            StageSpec(
+                stage_id="represent_constraints",
+                operation="represent_constraints",
+                depends_on=["build_problem_model"],
+            ),
+            StageSpec(
+                stage_id="represent_state_transition",
+                operation="represent_state_transition",
+                depends_on=["build_problem_model"],
+            ),
+            StageSpec(
+                stage_id="generate_graph_candidate",
+                operation="generate_graph_candidate",
+                depends_on=["represent_graph"],
+            ),
+            StageSpec(
+                stage_id="generate_constraint_candidate",
+                operation="generate_constraint_candidate",
+                depends_on=["represent_constraints"],
+            ),
+            StageSpec(
+                stage_id="generate_state_candidate",
+                operation="generate_state_candidate",
+                depends_on=["represent_state_transition"],
             ),
             StageSpec(
                 stage_id="run_validation",
                 operation="run_validation",
-                depends_on=["generate_candidates"],
+                depends_on=[
+                    "generate_graph_candidate",
+                    "generate_constraint_candidate",
+                    "generate_state_candidate",
+                ],
             ),
             StageSpec(
                 stage_id="compare_baseline",
@@ -176,6 +207,5 @@ def default_research_plan(plan_id: str = "thalos-research-v1") -> ExperimentPlan
             ),
         ],
     )
-
 
 __all__ = ["ExperimentPlan", "StageSpec", "default_research_plan"]
