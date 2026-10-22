@@ -603,19 +603,20 @@ class ProjectInventoryBuilder:
                 elif isinstance(node, ast.ImportFrom):
                     base_parts = current_package.split(".") if current_package else []
                     if node.level:
-                        trim_count = node.level - 1
-                        if trim_count > len(base_parts):
+                        if node.level > len(base_parts):
                             continue
+                        trim_count = node.level - 1
                         base_parts = base_parts[: len(base_parts) - trim_count]
                     if node.module:
-                        candidates = [".".join(base_parts + node.module.split("."))]
+                        base_module = ".".join(base_parts + node.module.split("."))
+                        candidates = [base_module]
                     else:
-                        candidates = [
-                            ".".join(base_parts + [alias.name])
-                            for alias in node.names
-                        ]
-                        if not candidates and base_parts:
-                            candidates = [".".join(base_parts)]
+                        base_module = ".".join(base_parts)
+                        candidates = [base_module] if base_module else []
+                    if base_module:
+                        candidates.extend(
+                            f"{base_module}.{alias.name}" for alias in node.names
+                        )
                 else:
                     continue
 
