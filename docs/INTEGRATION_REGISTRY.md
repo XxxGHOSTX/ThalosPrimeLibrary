@@ -35,7 +35,7 @@ This registry tracks candidate source repositories and the evidence required bef
 
 The following implementation now exists in `thalos_prime/experiments/`; the experiment comparator and DAG plan are exposed through the API, while project scanning and directive authorization are Python interfaces:
 
-- Declarative DAG planning with stable topological ordering, parallel-ready representation branches (graph, constraints, state transitions), and cycle/missing-dependency rejection. This adapts the dependency-graph idea from ThalosPrimeConcept rather than importing its raw callable executor.
+- Declarative DAG planning with stable topological ordering, representation branches (graph, constraints, state transitions), and cycle/missing-dependency rejection. A sequential registered-handler executor now runs trusted application handlers under signed-directive allowlists and approval gates; raw callable execution from ThalosPrimeConcept was not imported.
 - Signed `HumanDirectiveRecord` with RSA-PSS/SHA-256 signatures, explicit operation allowlists, deny-by-default authorization, and directive ID/digest linkage in experiment specs. Key lifecycle and public-key trust remain application responsibilities.
 - Typed experiment specifications and candidate-run records that preserve repeated metric samples, model/tool versions, implementation version, environment fingerprint, configuration digest, tests, evidence references, time, and cost.
 - Baseline comparison with explicit maximize/minimize semantics, target gates, eligibility reasons, sample counts, dispersion, stable ranking, and report/spec digests.
