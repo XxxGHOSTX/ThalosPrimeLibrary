@@ -37,6 +37,7 @@ class HumanDirectiveRecord(BaseModel):
     parameters: dict[str, object] = Field(default_factory=dict)
     success_criteria: list[str] = Field(min_length=1)
     prohibited_actions: list[str] = Field(default_factory=list)
+    prohibited_operations: list[str] = Field(default_factory=list)
     permitted_operations: list[str] = Field(default_factory=list)
     signer: str | None = None
     signature: str | None = None
@@ -66,6 +67,7 @@ class HumanDirectiveRecord(BaseModel):
         "constraints",
         "success_criteria",
         "prohibited_actions",
+        "prohibited_operations",
         "permitted_operations",
     )
     @classmethod
@@ -140,7 +142,7 @@ class HumanDirectiveRecord(BaseModel):
             raise PermissionError("operation name must not be blank")
         if not self.verify(public_key):
             raise PermissionError("directive signature is missing or invalid")
-        if normalized_operation in self.prohibited_actions:
+        if normalized_operation in self.prohibited_operations:
             raise PermissionError(f"operation {normalized_operation!r} is prohibited")
         if normalized_operation not in self.permitted_operations:
             raise PermissionError(f"operation {normalized_operation!r} is not explicitly permitted")
