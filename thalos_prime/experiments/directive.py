@@ -18,6 +18,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from thalos_prime.experiments.contracts import ExperimentSpec
+
 
 class HumanDirectiveRecord(BaseModel):
     """Human-defined task, constraints, acceptance criteria, and permissions.
@@ -148,4 +150,24 @@ class HumanDirectiveRecord(BaseModel):
             raise PermissionError(f"operation {normalized_operation!r} is not explicitly permitted")
 
 
-__all__ = ["HumanDirectiveRecord"]
+def authorize_experiment_operation(
+    spec: ExperimentSpec,
+    directive: HumanDirectiveRecord,
+    operation_name: str,
+    public_key: rsa.RSAPublicKey,
+) -> None:
+    """Authorize an operation only when the spec binds to this signed directive.
+
+    This validates the human task contract and its exact digest before
+    checking the operation allowlist. It does not execute the operation.
+    """
+    if spec.directive_id is None or spec.directive_digest is None:
+        raise PermissionError("experiment spec is not bound to a human directive")
+    if spec.directive_id != directive.directive_id:
+        raise PermissionError("experiment directive ID does not match the signed directive")
+    if spec.directive_digest != directive.directive_digest:
+        raise PermissionError("experiment directive digest does not match the signed directive")
+    directive.authorize_operation(operation_name, public_key)
+
+
+__all__ = ["HumanDirectiveRecord", "authorize_experiment_operation"]
