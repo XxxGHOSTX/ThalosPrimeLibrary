@@ -265,7 +265,11 @@ class ExperimentEvaluator:
         else:
             eligible_candidates.sort(
                 key=lambda item: (
-                    item.primary_metric_value if item.primary_metric_value is not None else float("inf"),
+                    (
+                        item.primary_metric_value
+                        if item.primary_metric_value is not None
+                        else float("inf")
+                    ),
                     item.cost_usd,
                     item.elapsed_ms,
                     item.candidate_id,
