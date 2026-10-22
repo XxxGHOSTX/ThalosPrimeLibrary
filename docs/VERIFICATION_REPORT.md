@@ -1,3 +1,5 @@
+> **Historical report notice (2026-10-22):** This report records a test snapshot from 2026-02-12. It does not verify the current `main` branch or the current integration branch. The evidence-first integration work requires a fresh test, type-check, lint, security-scan, and benchmark run before any current readiness claim.
+
 # Thalos Prime - System Verification Report
 
 **Date:** 2026-02-12  
