@@ -1,18 +1,25 @@
 # ThalosPrimeLibrary
 
-> *"In the Library of Babel, every truth already exists — Thalos Prime finds it."*
+**From proposed solution to evidence that it works.**
 
-ThalosPrimeLibrary is a deterministic, production-grade Python toolkit that integrates the
-[Library of Babel](https://libraryofbabel.info) with hybrid cognitive synthesis, symbolic reasoning,
-autonomous agency, and infrastructure-as-code generation. It is designed around strict
-**Control Plane / Data Plane** separation, enforced lifecycle contracts, and full replay
-determinism — identical inputs always produce identical outputs.
+ThalosPrimeLibrary is the canonical integration target for Thalos Prime, an AI research and engineering project intended to improve how complex problems are investigated, solutions are generated, and proposed implementations are tested.
+
+The intended workflow coordinates evidence gathering, competing candidate solutions, contradiction and implementation-error checks, executable validation, baseline comparison, and traceable reporting. The product is being developed around measurable results, not claims that it can solve every problem or exceed current scientific, mathematical, computational, or physical limits.
+
+The repository currently contains Library of Babel tooling, symbolic reasoning and planning components, retrieval-related code, infrastructure synthesis, and an API/UI. Those components are starting points, not proof that the full research workflow has been integrated or validated end to end.
 
 ## Brief Repo Description
 
-ThalosPrimeLibrary provides deterministic Library of Babel generation/search tooling, a FastAPI
-service with an interactive UI, and an infrastructure synthesis CLI (`thalos`) for generating
-deployment artifacts from YAML schemas.
+This repository is the canonical integration core. Related Thalos Prime repositories are treated as sources of candidate components. Code is adopted only after its implementation, dependencies, licensing, security boundaries, and tests are reviewed. Repository descriptions and planned capabilities are not accepted as validation evidence by themselves.
+
+**Integration documents**
+- [Unified architecture](docs/UNIFIED_THALOS_PRIME_ARCHITECTURE.md)
+- [Integration registry](docs/INTEGRATION_REGISTRY.md)
+- [Validation and benchmark plan](docs/VALIDATION_AND_BENCHMARK_PLAN.md)
+- [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md)
+- [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md)
+
+> **Verification status:** The completion and verification reports dated February 2026 describe earlier repository snapshots. They are not evidence that the current unified workflow passes its tests or is production-ready. The current integration branch requires fresh automated tests, type checks, lint, security scans, and task benchmarks before readiness claims can be made.
 
 ## ZIP Setup Walkthrough (Deploy After Downloading ZIP)
 
@@ -54,7 +61,7 @@ repository and retains associated legal rights to that original authored content
 
 ## What Is ThalosPrimeLibrary?
 
-ThalosPrimeLibrary (`thalos_prime`) is a multi-subsystem Python library that combines:
+ThalosPrimeLibrary currently contains multiple software subsystems that can support the intended evidence-oriented workflow, including:
 
 - **Library of Babel integration** — deterministic generation and coherence-scored retrieval of
   pages from [libraryofbabel.info](https://libraryofbabel.info).
@@ -67,9 +74,7 @@ ThalosPrimeLibrary (`thalos_prime`) is a multi-subsystem Python library that com
   OpenTofu, Cloudflare, GitHub Actions, Docker) with policy enforcement and drift detection.
 - **REST API & interactive UI** — FastAPI server with a Matrix-style browser interface.
 
-Every subsystem follows the same six-method lifecycle contract
-(`initialize → validate → operate → reconcile → checkpoint → terminate`) and every operation is
-fully deterministic with a seeded replay guarantee.
+Some subsystems use a shared lifecycle convention (`initialize → validate → operate → reconcile → checkpoint → terminate`). Determinism and replayability must be demonstrated for the specific execution path, inputs, dependencies, and environment being claimed; do not assume every subsystem or external interaction is deterministic.
 
 ---
 
@@ -77,18 +82,23 @@ fully deterministic with a seeded replay guarantee.
 
 | Capability | Description |
 |---|---|
-| **Deterministic page generation** | SHA-256-based generation of 3,200-character Babel pages from hex addresses |
+| **Library of Babel page generation** | SHA-256-based page generation and address mapping for the existing Babel subsystem |
 | **Query enumeration** | Map natural-language queries to candidate Babel addresses via n-gram extraction |
 | **Coherence scoring** | Four-metric scoring (language, structure, n-gram, exact match) on a 0–100 scale |
 | **Deep synthesis** | Multi-view semantic decomposition with Physical/Chemical, Logical/Mathematical, Linguistic/Narrative nexus results |
 | **Symbolic reasoning** | Z3 SMT constraint solving, incremental updates, optimization objectives |
-| **Tree of Thoughts / MCTS** | Deterministic multi-path planning with explicit thought-node representation |
+| **Multi-representation experiment planning** | Declarative DAG that prepares graph, constraint, and state-transition branches for baseline comparison |\n| **Permission-gated workflow runtime** | Invokes only explicitly registered handlers, checks signed directive allowlists and approval gates, records stage results, and bounds input/output data |
+| **Baseline candidate evaluation** | Compare recorded metric samples, test status, cost, runtime, and evidence against a declared baseline; align per-case improvements when sample IDs are supplied |
+| **Signed human directives** | RSA-PSS/SHA-256 signatures and explicit allowlists; unsigned directives cannot authorize an operation |
+| **Read-only project inventory** | Bounded file hashing, manifest/test inventory, duplicate-file grouping, and static Python import graph |
+| **Evidence artifacts** | Convert experiment reports and project inventories to PENDING canonical artifacts for downstream validation |
+| **Planning** | Tree of Thoughts / MCTS planning components where implemented; test each execution path before claiming deterministic behavior |
 | **Graph-RAG** | Hybrid knowledge graph retrieval combining BFS graph traversal and text search |
 | **Infrastructure synthesis** | YAML-schema → Terraform/OpenTofu/Cloudflare/GitHub Actions/Docker artifacts |
 | **Policy enforcement** | `require_ssl`, `limit_scaling`, and extensible policy rules |
 | **Release strategies** | `direct`, `blue_green`, `canary` deployment orchestration |
 | **Drift detection** | DeepDiff-based schema drift detection and rollback |
-| **Replay determinism** | Single seed controls all pseudo-randomness; identical inputs → identical outputs |
+| **Scoped reproducibility** | Seeded replay and stable ordering are supported by specified paths; broader guarantees require path-specific tests |
 
 ---
 
@@ -114,13 +124,13 @@ initialize() → validate() → operate() → reconcile() → checkpoint() → t
 Any invariant violation raises `DeterministicHalt` with a full state snapshot and
 JSONL event log. Silent degradation is never permitted.
 
-### Determinism Guarantees
+### Deterministic Execution and Validation
 
-- A single integer `--seed` seeds an isolated `random.Random(seed)` instance.
-- All collections are sorted with stable, deterministic keys (e.g. `score DESC, doc_id ASC`).
-- No module-level RNG state; no implicit async at the module boundary.
-- Checkpoints are blake2b-hashed, versioned, and atomic.
-- Replay: same `--seed` + `--query` always produces byte-for-byte identical output.
+- Explicit seeds can control pseudo-randomness in execution paths that use them.
+- Stable ordering and versioned checkpoints should be used where implemented.
+- Replay claims must be tested for the specific command, input, configuration, dependency set, and environment.
+- Network responses, timestamps, dependency versions, filesystem state, and concurrency can affect results unless controlled.
+- Report commands, versions, outputs, and failures; do not extrapolate narrow tests into guarantees about the full product.
 
 ### 7-Stage MNN Pipeline
 
@@ -355,8 +365,9 @@ Each run writes two files to `--workdir`:
 pytest tests/test_thalos_prime_pipeline.py -v
 ```
 
-The 64 offline tests cover halt semantics, state serialisation, BM25 scoring, volume assembly,
-traversal determinism, and a full dry-run end-to-end pass.
+The offline pipeline test module covers halt semantics, state serialization, BM25 scoring,
+volume assembly, traversal determinism, and an end-to-end dry run. Run the current test suite
+before using it as evidence of readiness.
 
 ---
 
@@ -427,6 +438,17 @@ The server starts on **http://localhost:8000** by default.
 | http://localhost:8000/docs | Swagger UI (interactive) |
 | http://localhost:8000/redoc | ReDoc (read-only) |
 | http://localhost:8000 | Matrix-style browser UI |
+
+### Experiment Evaluation Endpoints
+
+The experiment API accepts recorded candidate measurements and returns a baseline comparison report. These endpoints do not execute candidate code or automatically accept the report as verified knowledge.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/experiments/plan/default` | Return the validated declarative research workflow |
+| `POST` | `/api/v1/experiments/compare` | Compare recorded candidate results against a defined baseline |
+
+See [docs/EXPERIMENT_WORKFLOW.md](docs/EXPERIMENT_WORKFLOW.md) for the request contract, metric semantics, and safety boundaries.
 
 ### Artifact Epistemic Endpoints
 
@@ -575,6 +597,7 @@ ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`
 | `constraints/` | Z3-based symbolic constraint engine with typed variables |
 | `reasoning/` | Unified reasoning control plane (symbolic + proof + constraint) |
 | `planning/` | Tree of Thoughts and MCTS multi-path planners |
+| `experiments/` | Signed human directives, declarative DAG plans, registered-handler runtime, bounded project inventory, baseline/paired evaluation, canonical artifact adapters |
 | `simulation/` | Deterministic world-state simulation |
 | `agency/` | Perceive-plan-act agent loop with belief tracking |
 | `babel/` | Deterministic conversational pipeline and semantic orchestrator |
@@ -711,12 +734,18 @@ docker compose -f infra/docker-compose.yml up
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Full system architecture and layer descriptions |
+| [Unified architecture](docs/UNIFIED_THALOS_PRIME_ARCHITECTURE.md) | Canonical product workflow, module boundaries, and integration phases |
+| [Integration registry](docs/INTEGRATION_REGISTRY.md) | Candidate repositories, contribution hypotheses, and acceptance requirements |
+| [Validation plan](docs/VALIDATION_AND_BENCHMARK_PLAN.md) | Baselines, metrics, and experimental controls |
+| [Experiment workflow](docs/EXPERIMENT_WORKFLOW.md) | Task contracts, signed authorization, registered workflow execution, project inventory, repeated measurements, and limits |
+| [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md) | Repayment-oriented financing narrative and risk controls |
+| [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md) | Product thesis and technical/commercial validation gates |
+| [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Existing system architecture and layer descriptions |
 | [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) | Deterministic architecture blueprint and MNN pipeline spec |
 | [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) | Complete deployment guide |
 | [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
-| [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
-| [VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) | System verification and test results |
+| [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Historical implementation snapshot; not current validation |
+| [VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) | Historical February 2026 test snapshot; rerun checks for current status |
 
 ---
 

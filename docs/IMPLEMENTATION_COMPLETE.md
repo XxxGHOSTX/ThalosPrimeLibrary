@@ -1,3 +1,5 @@
+> **Historical report notice (2026-10-22):** This document describes earlier implementation phases. Its completion and production-readiness statements do not validate the current repository revision or the new unified research workflow. Use fresh CI evidence for current status.
+
 # Thalos Prime Phase 1 & 2 - Implementation Complete ✅
 
 ## Executive Summary

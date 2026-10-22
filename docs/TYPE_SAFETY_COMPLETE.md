@@ -1,3 +1,5 @@
+> **Historical report notice (2026-10-22):** The type-check statement below applies to the earlier revision tested for this report, not necessarily to the current repository or integration branch. Re-run strict type checking before relying on it.
+
 # Type Safety Completion Report
 
 ## Executive Summary
