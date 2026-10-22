@@ -464,3 +464,44 @@ def test_timeout_overrun_is_recorded_without_claiming_forced_termination() -> No
     assert report.timed_out_count == 1
     assert report.stages[0].status is StageStatus.TIMED_OUT
     assert "not forcibly interrupted" in (report.stages[0].error_message or "")
+
+
+def test_total_workflow_output_budget_is_enforced() -> None:
+    """Accumulated stage output cannot exceed the run-level memory budget."""
+    plan = ExperimentPlan(
+        plan_id="total-output-limit",
+        stages=[
+            StageSpec(stage_id="first", operation="emit"),
+            StageSpec(stage_id="second", operation="emit"),
+        ],
+    )
+    private_key, public_key = make_keypair()
+    directive = HumanDirectiveRecord(
+        directive_id="total-output-directive",
+        timestamp=datetime(2026, 10, 22, tzinfo=timezone.utc),
+        objectives=["Bound accumulated workflow data"],
+        success_criteria=["Total output budget is enforced"],
+        permitted_operations=["emit"],
+    )
+    directive.sign(private_key, "reviewer")
+    executor = WorkflowExecutor(max_total_workflow_output_bytes=30)
+    executor.register("emit", lambda _context: {"value": "x" * 10})
+    report = executor.execute(
+        plan=plan,
+        spec=make_spec(directive),
+        directive=directive,
+        public_key=public_key,
+        initial_context={},
+    )
+    assert report.succeeded_count == 1
+    assert report.failed_count == 1
+    failed = next(stage for stage in report.stages if stage.status is StageStatus.FAILED)
+    assert "total workflow output exceeds 30 bytes" in (failed.error_message or "")
+
+
+def test_duplicate_operation_handler_registration_is_rejected() -> None:
+    """The registry cannot silently replace a trusted handler."""
+    executor = WorkflowExecutor()
+    executor.register("inspect", lambda _context: {"result": "first"})
+    with pytest.raises(ValueError, match="already registered"):
+        executor.register("inspect", lambda _context: {"result": "replacement"})
