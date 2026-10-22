@@ -113,6 +113,8 @@ def _assessment(
     reasons: list[str] = []
     if not run.tests_passed:
         reasons.append("tests_failed")
+    if not run.test_ids:
+        reasons.append("missing_test_ids")
     if spec.require_evidence and not run.evidence_refs:
         reasons.append("missing_evidence")
     for name, definition in definitions.items():
@@ -226,6 +228,8 @@ class ExperimentEvaluator:
         baseline = by_id[spec.baseline_candidate_id]
         if not baseline.tests_passed:
             raise ValueError("baseline tests must pass before candidate comparison")
+        if not baseline.test_ids:
+            raise ValueError("baseline test_ids are required for traceable comparison")
         if spec.require_evidence and not baseline.evidence_refs:
             raise ValueError("baseline evidence is required by the experiment spec")
         missing_baseline = [
