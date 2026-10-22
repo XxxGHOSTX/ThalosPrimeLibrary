@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any
+from math import sqrt
 
 from thalos_prime.experiments.contracts import (
     CandidateAssessment,
@@ -21,7 +21,7 @@ from thalos_prime.experiments.contracts import (
 )
 
 
-def _canonical_digest(value: Any) -> str:
+def _canonical_digest(value: object) -> str:
     """Hash a JSON-compatible value using stable serialization."""
     encoded = json.dumps(
         value,
@@ -31,6 +31,20 @@ def _canonical_digest(value: Any) -> str:
         allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _mean(samples: list[float]) -> float:
+    """Return the arithmetic mean of a non-empty sample list."""
+    return sum(samples) / len(samples)
+
+
+def _sample_stddev(samples: list[float]) -> float | None:
+    """Return sample standard deviation, or None when there is one observation."""
+    if len(samples) < 2:
+        return None
+    average = _mean(samples)
+    variance = sum((value - average) ** 2 for value in samples) / (len(samples) - 1)
+    return sqrt(variance)
 
 
 def _meets_target(value: float, metric: MetricDefinition) -> bool | None:
@@ -43,11 +57,13 @@ def _meets_target(value: float, metric: MetricDefinition) -> bool | None:
 
 
 def _compare_metric(
-    baseline_value: float,
-    candidate_value: float,
+    baseline_samples: list[float],
+    candidate_samples: list[float],
     metric: MetricDefinition,
 ) -> MetricComparison:
-    """Compute changes with positive directed change meaning improvement."""
+    """Compare sample means while preserving sample counts and dispersion."""
+    baseline_value = _mean(baseline_samples)
+    candidate_value = _mean(candidate_samples)
     absolute_delta = candidate_value - baseline_value
     directed_improvement = (
         absolute_delta
@@ -67,6 +83,10 @@ def _compare_metric(
         relative_improvement_percent=relative_improvement,
         improved=directed_improvement > 0.0,
         meets_target=_meets_target(candidate_value, metric),
+        baseline_sample_count=len(baseline_samples),
+        candidate_sample_count=len(candidate_samples),
+        baseline_sample_stddev=_sample_stddev(baseline_samples),
+        candidate_sample_stddev=_sample_stddev(candidate_samples),
     )
 
 
@@ -83,31 +103,35 @@ def _assessment(
     if spec.require_evidence and not run.evidence_refs:
         reasons.append("missing_evidence")
     for name, definition in definitions.items():
-        if definition.required and name not in run.metrics:
+        if definition.required and name not in run.metric_samples:
             reasons.append(f"missing_required_metric:{name}")
     comparisons: dict[str, MetricComparison] = {}
-    for name, value in run.metrics.items():
-        if name in definitions and name in baseline.metrics:
+    for name, samples in run.metric_samples.items():
+        if name in definitions and name in baseline.metric_samples:
             comparisons[name] = _compare_metric(
-                baseline.metrics[name],
-                value,
+                baseline.metric_samples[name],
+                samples,
                 definitions[name],
             )
-    for name, value in run.metrics.items():
+    for name, samples in run.metric_samples.items():
         if name in definitions:
-            target_met = _meets_target(value, definitions[name])
+            target_met = _meets_target(_mean(samples), definitions[name])
             if target_met is False:
                 reasons.append(f"target_not_met:{name}")
-    primary_value = run.metrics.get(spec.primary_metric)
+    primary_samples = run.metric_samples.get(spec.primary_metric)
     primary_comparison = comparisons.get(spec.primary_metric)
     return CandidateAssessment(
+        run_id=run.run_id,
         candidate_id=run.candidate_id,
         approach=run.approach,
         representation_id=run.representation_id,
         implementation_version=run.implementation_version,
+        environment_fingerprint=run.environment_fingerprint,
+        model_versions=run.model_versions,
+        configuration_digest=run.configuration_digest,
         eligible=not reasons,
         exclusion_reasons=sorted(set(reasons)),
-        primary_metric_value=primary_value,
+        primary_metric_value=_mean(primary_samples) if primary_samples else None,
         primary_improvement=(
             primary_comparison.directed_improvement
             if primary_comparison is not None
@@ -118,8 +142,10 @@ def _assessment(
             if primary_comparison is not None
             else None
         ),
+        metric_samples=run.metric_samples,
         metric_comparisons=comparisons,
         tests_passed=run.tests_passed,
+        test_ids=sorted(set(run.test_ids)),
         evidence_refs=sorted(set(run.evidence_refs)),
         elapsed_ms=run.elapsed_ms,
         cost_usd=run.cost_usd,
@@ -143,12 +169,15 @@ class ExperimentEvaluator:
         identifiers = [run.candidate_id for run in runs]
         if len(identifiers) != len(set(identifiers)):
             raise ValueError("candidate_id values must be unique within an experiment")
+        run_ids = [run.run_id for run in runs]
+        if len(run_ids) != len(set(run_ids)):
+            raise ValueError("run_id values must be unique within an experiment")
         by_id = {run.candidate_id: run for run in runs}
         if spec.baseline_candidate_id not in by_id:
             raise ValueError("the declared baseline candidate is missing")
         definitions = {metric.name: metric for metric in spec.metrics}
         for run in runs:
-            unknown_metrics = sorted(set(run.metrics) - set(definitions))
+            unknown_metrics = sorted(set(run.metric_samples) - set(definitions))
             if unknown_metrics:
                 raise ValueError(
                     f"candidate {run.candidate_id!r} has undeclared metrics: "
@@ -161,12 +190,17 @@ class ExperimentEvaluator:
             raise ValueError("baseline evidence is required by the experiment spec")
         missing_baseline = [
             name for name, definition in definitions.items()
-            if definition.required and name not in baseline.metrics
+            if definition.required and name not in baseline.metric_samples
         ]
         if missing_baseline:
             raise ValueError(
                 "baseline is missing required metrics: " + ", ".join(sorted(missing_baseline))
             )
+        for run in runs:
+            if run.environment_fingerprint != baseline.environment_fingerprint:
+                raise ValueError(
+                    "candidate and baseline environment_fingerprint values must match"
+                )
         assessments = [
             _assessment(spec, run, baseline, definitions)
             for run in sorted(runs, key=lambda item: item.candidate_id)
@@ -179,7 +213,7 @@ class ExperimentEvaluator:
         if primary_direction is MetricDirection.MAXIMIZE:
             eligible_candidates.sort(
                 key=lambda item: (
-                    -(item.primary_metric_value if item.primary_metric_value is not None else float("-inf")),
+                    -(item.primary_metric_value if item.primary_metric_value is not None else 0.0),
                     item.cost_usd,
                     item.elapsed_ms,
                     item.candidate_id,
@@ -194,12 +228,14 @@ class ExperimentEvaluator:
                     item.candidate_id,
                 )
             )
-        spec_digest = _canonical_digest(spec.model_dump(mode="json"))
+        spec_payload = spec.model_dump(mode="json")
+        spec_digest = _canonical_digest(spec_payload)
         report_body = {
             "experiment_id": spec.experiment_id,
             "task_family": spec.task_family,
             "baseline_candidate_id": spec.baseline_candidate_id,
             "primary_metric": spec.primary_metric,
+            "spec": spec_payload,
             "spec_digest": spec_digest,
             "assessments": [item.model_dump(mode="json") for item in assessments],
             "ranked_candidate_ids": [item.candidate_id for item in eligible_candidates],
