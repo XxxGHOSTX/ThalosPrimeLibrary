@@ -1,6 +1,9 @@
 """Evidence-oriented experiment and candidate-comparison tools."""
 
-from thalos_prime.experiments.artifact_adapter import project_inventory_to_artifact, report_to_artifact
+from thalos_prime.experiments.artifact_adapter import (
+    project_inventory_to_artifact,
+    report_to_artifact,
+)
 from thalos_prime.experiments.contracts import (
     CandidateAssessment,
     CandidateRun,
