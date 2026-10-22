@@ -85,7 +85,7 @@ Some subsystems use a shared lifecycle convention (`initialize → validate → 
 | **Coherence scoring** | Four-metric scoring (language, structure, n-gram, exact match) on a 0–100 scale |
 | **Deep synthesis** | Multi-view semantic decomposition with Physical/Chemical, Logical/Mathematical, Linguistic/Narrative nexus results |
 | **Symbolic reasoning** | Z3 SMT constraint solving, incremental updates, optimization objectives |
-| **Multi-representation experiment planning** | Declarative DAG that prepares graph, constraint, and state-transition branches for baseline comparison |
+| **Multi-representation experiment planning** | Declarative DAG that prepares graph, constraint, and state-transition branches for baseline comparison |\n| **Permission-gated workflow runtime** | Invokes only explicitly registered handlers, checks signed directive allowlists and approval gates, records stage results, and bounds input/output data |
 | **Baseline candidate evaluation** | Compare recorded metric samples, test status, cost, runtime, and evidence against a declared baseline; align per-case improvements when sample IDs are supplied |
 | **Signed human directives** | RSA-PSS/SHA-256 signatures and explicit allowlists; unsigned directives cannot authorize an operation |
 | **Read-only project inventory** | Bounded file hashing, manifest/test inventory, duplicate-file grouping, and static Python import graph |
@@ -594,7 +594,7 @@ ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`
 | `constraints/` | Z3-based symbolic constraint engine with typed variables |
 | `reasoning/` | Unified reasoning control plane (symbolic + proof + constraint) |
 | `planning/` | Tree of Thoughts and MCTS multi-path planners |
-| `experiments/` | Signed human directives, declarative DAG plans, bounded project inventory, baseline evaluation, artifact adapters |
+| `experiments/` | Signed human directives, declarative DAG plans, registered-handler runtime, bounded project inventory, baseline/paired evaluation, canonical artifact adapters |
 | `simulation/` | Deterministic world-state simulation |
 | `agency/` | Perceive-plan-act agent loop with belief tracking |
 | `babel/` | Deterministic conversational pipeline and semantic orchestrator |
@@ -734,7 +734,7 @@ docker compose -f infra/docker-compose.yml up
 | [Unified architecture](docs/UNIFIED_THALOS_PRIME_ARCHITECTURE.md) | Canonical product workflow, module boundaries, and integration phases |
 | [Integration registry](docs/INTEGRATION_REGISTRY.md) | Candidate repositories, contribution hypotheses, and acceptance requirements |
 | [Validation plan](docs/VALIDATION_AND_BENCHMARK_PLAN.md) | Baselines, metrics, and experimental controls |
-| [Experiment workflow](docs/EXPERIMENT_WORKFLOW.md) | Declarative research plan, API usage, repeated measurements, and evaluation limitations |
+| [Experiment workflow](docs/EXPERIMENT_WORKFLOW.md) | Task contracts, signed authorization, registered workflow execution, project inventory, repeated measurements, and limits |
 | [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md) | Repayment-oriented financing narrative and risk controls |
 | [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md) | Product thesis and technical/commercial validation gates |
 | [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Existing system architecture and layer descriptions |
