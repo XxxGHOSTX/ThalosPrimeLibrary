@@ -28,6 +28,7 @@ from thalos_prime.experiments.plan import ExperimentPlan, StageSpec
 
 
 _MAX_INITIAL_CONTEXT_BYTES = 1_048_576
+_MAX_STAGE_INPUT_BYTES = 2_097_152
 _MAX_STAGE_OUTPUT_BYTES = 1_048_576
 _MAX_ERROR_TEXT_LENGTH = 500
 _MAX_PLAN_STAGES = 200
@@ -144,11 +145,15 @@ class WorkflowExecutor:
     def __init__(
         self,
         *,
+        max_stage_input_bytes: int = _MAX_STAGE_INPUT_BYTES,
         max_stage_output_bytes: int = _MAX_STAGE_OUTPUT_BYTES,
     ) -> None:
-        """Create an empty handler registry with an explicit output-size limit."""
+        """Create an empty registry with explicit input and output size limits."""
+        if max_stage_input_bytes < 1:
+            raise ValueError("max_stage_input_bytes must be at least 1")
         if max_stage_output_bytes < 1:
             raise ValueError("max_stage_output_bytes must be at least 1")
+        self._max_stage_input_bytes = max_stage_input_bytes
         self._max_stage_output_bytes = max_stage_output_bytes
         self._handlers: dict[str, StageHandler] = {}
 
@@ -186,6 +191,8 @@ class WorkflowExecutor:
             raise PermissionError("directive signature is missing or invalid")
 
         cloned_initial = _clone_json_mapping(initial_context, label="initial_context")
+        initial_context_bytes = len(_canonical_json(cloned_initial))
+        successful_output_sizes: dict[str, int] = {}
         approvals = approved_stage_ids or set()
         stage_specs = {stage.stage_id: stage for stage in plan.stages}
         unknown_approvals = approvals - set(stage_specs)
@@ -214,11 +221,61 @@ class WorkflowExecutor:
                 for dependency in stage.depends_on
                 if dependency in successful_outputs
             }
+            estimated_input_bytes = (
+                initial_context_bytes
+                + 64
+                + sum(
+                    successful_output_sizes[dependency] + len(dependency) + 32
+                    for dependency in dependency_outputs
+                )
+            )
+            if estimated_input_bytes > self._max_stage_input_bytes:
+                input_digest = _digest(
+                    {
+                        "initial_context_digest": _digest(cloned_initial),
+                        "dependency_output_digests": {
+                            dependency: _digest(output)
+                            for dependency, output in sorted(dependency_outputs.items())
+                        },
+                    }
+                )
+                stage_results.append(
+                    WorkflowStageResult(
+                        stage_id=stage.stage_id,
+                        operation=stage.operation,
+                        status=StageStatus.FAILED,
+                        input_digest=input_digest,
+                        elapsed_ms=0.0,
+                        error_type="StageInputTooLarge",
+                        error_message=(
+                            f"stage input exceeds estimated limit of "
+                            f"{self._max_stage_input_bytes} bytes"
+                        ),
+                    )
+                )
+                continue
             input_payload = {
                 "initial_context": cloned_initial,
                 "dependency_outputs": dependency_outputs,
             }
-            input_digest = _digest(input_payload)
+            encoded_input = _canonical_json(input_payload)
+            if len(encoded_input) > self._max_stage_input_bytes:
+                input_digest = hashlib.sha256(encoded_input).hexdigest()
+                stage_results.append(
+                    WorkflowStageResult(
+                        stage_id=stage.stage_id,
+                        operation=stage.operation,
+                        status=StageStatus.FAILED,
+                        input_digest=input_digest,
+                        elapsed_ms=0.0,
+                        error_type="StageInputTooLarge",
+                        error_message=(
+                            f"stage input exceeds {self._max_stage_input_bytes} bytes"
+                        ),
+                    )
+                )
+                continue
+            input_digest = hashlib.sha256(encoded_input).hexdigest()
 
             if dependency_failures:
                 stage_results.append(
@@ -303,7 +360,7 @@ class WorkflowExecutor:
             start = time.perf_counter()
             try:
                 handler_output = handler(context)
-                encoded_output = _canonical_json(handler_output)
+                encoded_output = _canonical_json(dict(handler_output))
                 if len(encoded_output) > self._max_stage_output_bytes:
                     raise ValueError(
                         f"stage output exceeds {self._max_stage_output_bytes} bytes"
@@ -331,6 +388,7 @@ class WorkflowExecutor:
                     )
                     continue
                 successful_outputs[stage.stage_id] = decoded_output
+                successful_output_sizes[stage.stage_id] = len(encoded_output)
                 stage_results.append(
                     WorkflowStageResult(
                         stage_id=stage.stage_id,
@@ -341,7 +399,7 @@ class WorkflowExecutor:
                         elapsed_ms=elapsed_ms,
                     )
                 )
-            except Exception as error:
+            except Exception as error:  # noqa: BLE001 - record handler failures as explicit stage results
                 elapsed_ms = (time.perf_counter() - start) * 1000.0
                 stage_results.append(
                     WorkflowStageResult(
