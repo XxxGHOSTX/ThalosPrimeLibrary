@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import pytest
+
 from thalos_prime.experiments.project_inventory import ProjectInventoryBuilder
 
 
@@ -150,26 +152,18 @@ def test_root_must_be_an_existing_directory(tmp_path: Path) -> None:
     file_path = tmp_path / "file.txt"
     file_path.write_text("x", encoding="utf-8")
     builder = ProjectInventoryBuilder()
-    try:
+    with pytest.raises(ValueError, match="directory"):
         builder.scan(file_path)
-    except ValueError as error:
-        assert "directory" in str(error)
-    else:
-        raise AssertionError("file path should not be accepted as a project root")
 
 
 def test_nonpositive_limits_are_rejected() -> None:
     """Bounds must be positive to avoid ambiguous scan behavior."""
-    for kwargs in (
-        {"max_files": 0},
-        {"max_file_bytes": 0},
-        {"max_total_bytes": 0},
-    ):
-        try:
-            ProjectInventoryBuilder(**kwargs)
-        except ValueError:
-            continue
-        raise AssertionError(f"limit must be positive: {kwargs}")
+    with pytest.raises(ValueError, match="max_files"):
+        ProjectInventoryBuilder(max_files=0)
+    with pytest.raises(ValueError, match="max_file_bytes"):
+        ProjectInventoryBuilder(max_file_bytes=0)
+    with pytest.raises(ValueError, match="max_total_bytes"):
+        ProjectInventoryBuilder(max_total_bytes=0)
 
 
 def test_binary_files_count_toward_total_read_budget(tmp_path: Path) -> None:
