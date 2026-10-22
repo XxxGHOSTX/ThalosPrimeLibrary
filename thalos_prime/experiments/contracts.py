@@ -94,6 +94,7 @@ class CandidateRun(BaseModel):
     model_versions: dict[str, str] = Field(default_factory=dict)
     configuration_digest: str | None = None
     metric_samples: dict[str, list[float]]
+    sample_ids: list[str] = Field(default_factory=list)
     tests_passed: bool
     test_ids: list[str] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)
@@ -130,6 +131,17 @@ class CandidateRun(BaseModel):
             raise ValueError("identifiers and labels must not be blank")
         return value
 
+    @field_validator("sample_ids")
+    @classmethod
+    def validate_sample_ids(cls, values: list[str]) -> list[str]:
+        """Require unique, nonblank task/trial identifiers when samples are paired."""
+        normalized = [value.strip() for value in values]
+        if any(not value for value in normalized):
+            raise ValueError("sample IDs must not be blank")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("sample IDs must be unique")
+        return normalized
+
     @field_validator("model_versions")
     @classmethod
     def validate_model_versions(cls, values: dict[str, str]) -> dict[str, str]:
@@ -138,6 +150,22 @@ class CandidateRun(BaseModel):
             if not name.strip() or not version.strip():
                 raise ValueError("model/tool names and versions must not be blank")
         return values
+
+    @model_validator(mode="after")
+    def validate_sample_alignment(self) -> CandidateRun:
+        """Align per-case measurements when sample IDs are supplied."""
+        if self.sample_ids:
+            mismatched = sorted(
+                name
+                for name, samples in self.metric_samples.items()
+                if len(samples) != len(self.sample_ids)
+            )
+            if mismatched:
+                raise ValueError(
+                    "sample_ids length must match every metric sample list: "
+                    + ", ".join(mismatched)
+                )
+        return self
 
 
 class MetricComparison(BaseModel):
@@ -156,6 +184,9 @@ class MetricComparison(BaseModel):
     candidate_sample_count: int = Field(ge=1)
     baseline_sample_stddev: float | None
     candidate_sample_stddev: float | None
+    paired_sample_count: int = Field(default=0, ge=0)
+    paired_improvement_mean: float | None = None
+    paired_improvement_stddev: float | None = None
 
 
 class CandidateAssessment(BaseModel):
@@ -177,6 +208,7 @@ class CandidateAssessment(BaseModel):
     primary_improvement: float | None
     relative_primary_improvement_percent: float | None
     metric_samples: dict[str, list[float]]
+    sample_ids: list[str]
     metric_comparisons: dict[str, MetricComparison]
     tests_passed: bool
     test_ids: list[str]
