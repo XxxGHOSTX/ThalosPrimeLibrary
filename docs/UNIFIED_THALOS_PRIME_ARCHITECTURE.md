@@ -78,5 +78,19 @@ These statuses are not interchangeable. A hash establishes identity/integrity of
 ## Definition of done
 A component is integrated only when its source and license are recorded; dependencies and interface are documented; it is called through a canonical interface; unit and integration tests pass in the target repository; failure modes and security boundaries are documented; acceptance tests demonstrate the stated effect; and product claims match validated scope.
 
+
+
+## First integrated research substrate
+
+The `thalos_prime.experiments` package is the first concrete shared foundation in this integration branch. It combines three useful architectural ideas: human-defined task criteria, dependency-aware execution planning, and evidence-linked artifact records.
+
+- `ExperimentSpec` fixes the task family, dataset version, declared metrics, baseline, and acceptance targets before candidate results are compared.
+- `ExperimentPlan` declares a directed acyclic workflow from task definition through evidence intake, representation construction, candidate generation, validation, baseline comparison, and report persistence. Topological ordering is stable; missing dependencies and cycles are rejected.
+- `CandidateRun` preserves the implementation version, environment fingerprint, model/tool versions, configuration digest, test IDs, evidence references, cost, elapsed time, and repeated metric observations.
+- `ExperimentEvaluator` computes metric means and sample dispersion, compares candidates with the baseline, excludes failed or untraceable candidates, applies declared targets, and produces a deterministic report digest.
+- `report_to_artifact` writes the report into the existing canonical artifact schema as a PENDING artifact. The existing validation and belief-ledger workflow remains responsible for downstream admission.
+
+This is an initial working substrate, not the full product. It does not dispatch model calls, execute candidate code, sandbox generated code, perform statistical significance tests, or claim that a result generalizes beyond its dataset and execution conditions. Its role is to make later integrations measurable, reproducible, and safer to compose.
+
 ## Immediate next step
 Inventory the full source trees and tests for high-priority candidate repositories. README summaries are not enough to safely copy code or assert integration. Integrate the smallest useful vertical slice first: task contract → evidence/provenance → candidate comparison → test runner → baseline report.
