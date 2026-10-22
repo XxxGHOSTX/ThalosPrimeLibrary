@@ -1,3 +1,5 @@
+> **Historical report notice (2026-10-22):** This summary describes an earlier repository snapshot and is not current verification evidence for the unified ThalosPrime workflow. Confirm current behavior with fresh checks.
+
 # Implementation Summary: Complete Automation Infrastructure
 
 **Date**: February 13, 2026  
