@@ -218,7 +218,7 @@ executor.register("define_task", lambda context: {"task": context.initial_contex
 
 Execution then requires `plan`, the matching `spec`, the signed `directive`, its trusted public key, and a JSON-compatible `initial_context`. `authorize_experiment_operation` verifies the exact directive ID/digest and checks each operation against the signed allowlist before the registered handler is invoked. A stage marked `requires_approval=True` additionally requires its stage ID in `approved_stage_ids`.
 
-The report records each stage's input and output digest, status, elapsed time, and bounded error details. An unsuccessful dependency blocks its descendants, while independent branches can still complete. Handler outputs are size-limited individually and across a workflow run, and each stage input is bounded. Outputs are passed as JSON-cloned data so that one handler cannot mutate stored prior-stage results through shared object references.
+The report records each stage's input and output digest, status, elapsed time, and bounded error details. An unsuccessful dependency blocks its descendants, while independent branches can still complete. Defaults cap an initial context at 1 MiB, each stage input at 2 MiB, each stage output at 1 MiB, accumulated outputs at 20 MiB per run, and a plan at 200 stages. These limits are configurable where exposed by the runtime. Outputs are passed as JSON-cloned data so that one handler cannot mutate stored prior-stage results through shared object references.
 
 **Execution safety boundaries:** handlers are trusted application code; registering a handler is an explicit trust decision. The executor does not sandbox a handler or forcibly terminate an in-process Python call. Its timeout field detects that a handler returned after its allotted time; a handler invoking a test runner, build system, or external tool must enforce a real process/tool timeout and isolation itself. Do not register model-generated Python or commands as handlers. Review consequential operations separately and require explicit approvals.
 
@@ -226,11 +226,11 @@ A run report can be converted into a PENDING artifact via `workflow_report_to_ar
 
 ## Next integration stages
 
-1. Add a handler registry and structured stage-run records, with explicit retry and timeout semantics.
+1. Add durable stage checkpoints, restart/recovery semantics, and a process-level cancellation mechanism. The existing in-memory handler registry and stage records do not provide crash recovery or forcibly terminate long-running in-process calls.
 2. Connect evidence intake to existing artifact and retrieval interfaces.
 3. Add safe adapters for model providers and code/test harnesses; never import callable execution from legacy execution graphs without redesigning trust boundaries.
 4. Add dataset-level benchmark runners and statistical analysis that can handle paired tasks, repeated trials, uncertainty intervals, and regression tests.
-5. Add permission-gated review and optional human approval before producing patches or deployment artifacts.
+5. Connect the existing signed-directive and stage-approval gates to a reviewed patch/output flow before generating changes or deployment artifacts.
 6. Add operational telemetry only after measuring real workloads; avoid claiming performance gains until benchmarks support them.
 
 ## Validation status
