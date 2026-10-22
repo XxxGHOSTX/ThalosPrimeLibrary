@@ -272,6 +272,8 @@ def test_report_artifact_preserves_directive_lineage() -> None:
     )
     artifact = report_to_artifact(report, timestamp_ns=10)
     assert "directive:hdr-123" in artifact.source_uris
+    assert artifact.metadata["directive_id"] == "hdr-123"
+    assert artifact.metadata["directive_digest"] == "c" * 64
 
 
 def test_report_verification_detects_nested_content_mutation() -> None:
