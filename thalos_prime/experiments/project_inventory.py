@@ -144,7 +144,7 @@ class InventoryFile(BaseModel):
 
     path: str
     size_bytes: int = Field(ge=0)
-    sha256: str = Field(min_length=64, max_length=64)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     language: str
     file_kind: str
 
@@ -183,6 +183,7 @@ class ProjectInventory(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    schema_version: int = Field(default=2, ge=1)
     root_name: str
     files: list[InventoryFile]
     language_counts: dict[str, int]
@@ -194,7 +195,7 @@ class ProjectInventory(BaseModel):
     warning_counts: dict[str, int]
     total_bytes_read: int = Field(ge=0)
     truncated_by_limits: bool
-    project_digest: str = Field(min_length=64, max_length=64)
+    project_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class ProjectInventoryBuilder:
@@ -296,6 +297,7 @@ class ProjectInventoryBuilder:
         project_digest = hashlib.sha256(digest_bytes).hexdigest()
 
         return ProjectInventory(
+            schema_version=self.schema_version,
             root_name=root_path.name,
             files=file_records,
             language_counts=dict(sorted(language_counts.items())),
