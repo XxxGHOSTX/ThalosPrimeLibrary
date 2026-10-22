@@ -200,3 +200,39 @@ def test_common_lockfiles_and_versioned_requirements_are_manifests(tmp_path: Pat
         (tmp_path / name).write_text("manifest marker", encoding="utf-8")
     inventory = ProjectInventoryBuilder().scan(tmp_path)
     assert inventory.manifest_paths == sorted(names)
+
+
+def test_from_imports_capture_package_and_local_submodule_edges(tmp_path: Path) -> None:
+    """A from-import records both the local package and its submodule when present."""
+    package = tmp_path / "package"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "operations.py").write_text("VALUE = 42\n", encoding="utf-8")
+    (tmp_path / "main.py").write_text(
+        "from package import operations\n",
+        encoding="utf-8",
+    )
+    inventory = ProjectInventoryBuilder().scan(tmp_path)
+    edges = {
+        (edge.source_module, edge.target_module)
+        for edge in inventory.python_import_edges
+    }
+    assert ("main", "package") in edges
+    assert ("main", "package.operations") in edges
+
+
+def test_relative_import_beyond_package_root_is_not_misresolved(tmp_path: Path) -> None:
+    """An invalid upward relative import must not be mistaken for a top-level import."""
+    package = tmp_path / "package"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "module.py").write_text(
+        "from ..outside import helper\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "outside.py").write_text("helper = True\n", encoding="utf-8")
+    inventory = ProjectInventoryBuilder().scan(tmp_path)
+    assert all(
+        not (edge.source_module == "package.module" and edge.target_module == "outside")
+        for edge in inventory.python_import_edges
+    )
