@@ -23,13 +23,14 @@ def report_to_artifact(report: ExperimentReport, *, timestamp_ns: int) -> Artifa
         ensure_ascii=False,
         allow_nan=False,
     )
-    evidence_refs = sorted(
-        {
-            evidence_ref
-            for assessment in report.assessments
-            for evidence_ref in assessment.evidence_refs
-        }
-    )
+    evidence_ref_set = {
+        evidence_ref
+        for assessment in report.assessments
+        for evidence_ref in assessment.evidence_refs
+    }
+    if report.spec.directive_id is not None:
+        evidence_ref_set.add(f"directive:{report.spec.directive_id}")
+    evidence_refs = sorted(evidence_ref_set)
     return Artifact.create(
         content=content,
         source_uris=evidence_refs,
