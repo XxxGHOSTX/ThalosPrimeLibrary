@@ -126,22 +126,25 @@ class CandidateRun(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    run_id: str = Field(min_length=1)
-    candidate_id: str = Field(min_length=1)
-    approach: str = Field(min_length=1)
-    representation_id: str = Field(min_length=1)
-    implementation_version: str = Field(min_length=1)
-    environment_fingerprint: str = Field(min_length=1)
-    model_versions: dict[str, str] = Field(default_factory=dict)
+    run_id: str = Field(min_length=1, max_length=200)
+    candidate_id: str = Field(min_length=1, max_length=200)
+    approach: str = Field(min_length=1, max_length=1_000)
+    representation_id: str = Field(min_length=1, max_length=200)
+    implementation_version: str = Field(min_length=1, max_length=200)
+    environment_fingerprint: str = Field(min_length=1, max_length=256)
+    model_versions: dict[str, str] = Field(default_factory=dict, max_length=100)
     configuration_digest: str | None = None
-    metric_samples: dict[str, list[float]]
-    sample_ids: list[str] = Field(default_factory=list)
+    metric_samples: dict[str, list[float]] = Field(max_length=MAX_METRICS_PER_RUN)
+    sample_ids: list[str] = Field(
+        default_factory=list,
+        max_length=MAX_SAMPLES_PER_METRIC,
+    )
     tests_passed: bool
-    test_ids: list[str] = Field(default_factory=list)
-    evidence_refs: list[str] = Field(default_factory=list)
+    test_ids: list[str] = Field(default_factory=list, max_length=5_000)
+    evidence_refs: list[str] = Field(default_factory=list, max_length=MAX_EVIDENCE_REFERENCES)
     elapsed_ms: float = Field(ge=0, allow_inf_nan=False)
     cost_usd: float = Field(default=0.0, ge=0, allow_inf_nan=False)
-    failure_summary: list[str] = Field(default_factory=list)
+    failure_summary: list[str] = Field(default_factory=list, max_length=200)
 
     @field_validator("metric_samples")
     @classmethod
@@ -150,6 +153,10 @@ class CandidateRun(BaseModel):
         for name, samples in values.items():
             if not name.strip():
                 raise ValueError("metric names must not be blank")
+            if len(samples) > MAX_SAMPLES_PER_METRIC:
+                raise ValueError(
+                    f"metric {name!r} exceeds {MAX_SAMPLES_PER_METRIC} samples"
+                )
             if not samples:
                 raise ValueError(f"metric {name!r} must contain at least one sample")
             if not all(isfinite(value) for value in samples):
