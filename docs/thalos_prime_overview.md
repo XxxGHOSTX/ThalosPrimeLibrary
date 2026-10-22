@@ -6,7 +6,7 @@
 
 ## What is Thalos Prime?
 
-Thalos Prime is a deterministic toolkit for coherence-first discovery and analysis across deterministic information spaces. It is a software library and development toolkit — not a hardware system, not a biological system, and not a cloud service.
+ThalosPrime is an AI research and engineering project intended to improve how complex problems are investigated, solutions are generated, and proposed implementations are tested. The proposed product workflow coordinates evidence gathering, candidate-solution comparison, contradiction and implementation-error analysis, and evaluation against explicit criteria. This overview describes software architecture; it does not establish that the full product workflow has been validated end to end. The repository currently includes Library of Babel tooling and other software components that can support parts of that direction.
 
 > **Disclaimer:** All references to "symbiotic," "biological," "wetware," or "neural" in this project's documentation are software architecture metaphors. Thalos Prime does not integrate with real biological cells, human neural tissue, or any wetware substrate. SBI (Symbiotic Biological Intelligence) is a conceptual architecture term describing the system's design philosophy: components cooperate symbiotically in software, not in biology. No claims of real wetware integration are made or implied.
 
