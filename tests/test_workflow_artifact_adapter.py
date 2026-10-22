@@ -53,7 +53,13 @@ def build_report() -> WorkflowExecutionReport:
         stages=[StageSpec(stage_id="inspect", operation="inspect")],
     )
     executor = WorkflowExecutor()
-    executor.register("inspect", lambda _context: {"checked": True})
+    executor.register(
+        "inspect",
+        lambda _context: {
+            "checked": True,
+            "_artifact_refs": ["artifact:stage-output"],
+        },
+    )
     report = executor.execute(
         plan=plan,
         spec=spec,
@@ -82,7 +88,11 @@ def test_workflow_report_becomes_pending_artifact_with_source_lineage() -> None:
     assert artifact.metadata["report_digest"] == report.report_digest
     assert artifact.metadata["directive_id"] == report.directive_id
     assert artifact.metadata["directive_digest"] == report.directive_digest
-    assert artifact.source_uris == ["artifact:evidence-1", "artifact:evidence-2"]
+    assert artifact.source_uris == [
+        "artifact:evidence-1",
+        "artifact:evidence-2",
+        "artifact:stage-output",
+    ]
     assert artifact.timestamp_ns == 123456789
 
 
