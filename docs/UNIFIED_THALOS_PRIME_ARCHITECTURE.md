@@ -75,6 +75,14 @@ Use least privilege, isolated workspaces, allowlisted commands, resource limits,
 
 These statuses are not interchangeable. A hash establishes identity/integrity of recorded bytes under relevant assumptions, not truth. A coherence score reflects its scoring function, not factual accuracy. A successful build proves only the conditions and tests that actually ran.
 
+### Registered stage execution
+
+The `WorkflowExecutor` now runs the declarative plan through explicitly registered handlers. Before dispatch, it checks that the experiment spec is bound to the exact signed Human Directive Record and that the stage's operation identifier is allowlisted by that directive. Stages requiring separate approval remain blocked until their IDs are explicitly approved. Failed dependencies block descendant stages without erasing successful independent branch results.
+
+The runtime records stage input/output digests, status, elapsed time and errors, clones JSON input between stages, and enforces configurable per-stage and aggregate output budgets plus a bounded stage-input budget. It is sequential today; the DAG identifies independent branches for future concurrency once cancellation, output persistence and resource isolation can be guaranteed. The current timeout behavior is post-return overrun detection, not forced interruption, and the executor is not a sandbox. Any registered handler that calls a build system or test runner must enforce its own subprocess timeout, permissions and isolation.
+
+Execution reports can be converted to PENDING canonical artifacts with caller-supplied evidence references. The adapter does not manufacture evidence URIs or accept the report into the belief ledger.
+
 ## Definition of done
 A component is integrated only when its source and license are recorded; dependencies and interface are documented; it is called through a canonical interface; unit and integration tests pass in the target repository; failure modes and security boundaries are documented; acceptance tests demonstrate the stated effect; and product claims match validated scope.
 
