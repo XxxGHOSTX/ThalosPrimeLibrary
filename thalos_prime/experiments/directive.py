@@ -42,9 +42,18 @@ class HumanDirectiveRecord(BaseModel):
     constraints: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
     parameters: dict[str, object] = Field(default_factory=dict, max_length=100)
     success_criteria: list[str] = Field(min_length=1, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
-    prohibited_actions: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
-    prohibited_operations: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
-    permitted_operations: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    prohibited_actions: list[str] = Field(
+        default_factory=list,
+        max_length=_MAX_DIRECTIVE_LIST_ITEMS,
+    )
+    prohibited_operations: list[str] = Field(
+        default_factory=list,
+        max_length=_MAX_DIRECTIVE_LIST_ITEMS,
+    )
+    permitted_operations: list[str] = Field(
+        default_factory=list,
+        max_length=_MAX_DIRECTIVE_LIST_ITEMS,
+    )
     signer: str | None = Field(default=None, max_length=200)
     signature: str | None = Field(default=None, max_length=2_000)
     schema_version: int = Field(default=1, ge=1)
