@@ -366,7 +366,7 @@ class ProjectInventoryBuilder:
             if len(data) > self._max_file_bytes:
                 warning_counts["oversize_file_skipped"] += 1
                 continue
-            if b"\\x00" in data:
+            if b"\x00" in data:
                 warning_counts["binary_file_skipped"] += 1
                 continue
 
