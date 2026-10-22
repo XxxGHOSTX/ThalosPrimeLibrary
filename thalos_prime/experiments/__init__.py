@@ -10,6 +10,7 @@ from thalos_prime.experiments.contracts import (
     MetricDirection,
 )
 from thalos_prime.experiments.evaluator import ExperimentEvaluator
+from thalos_prime.experiments.artifact_adapter import report_to_artifact
 
 __all__ = [
     "CandidateAssessment",
@@ -20,4 +21,5 @@ __all__ = [
     "MetricComparison",
     "MetricDefinition",
     "MetricDirection",
+    "report_to_artifact",
 ]
