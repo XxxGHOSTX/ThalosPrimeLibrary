@@ -67,7 +67,7 @@ def test_default_plan_executes_only_registered_allowlisted_handlers() -> None:
     """The entire multi-representation workflow can run through trusted handlers."""
     plan = default_research_plan()
     operations = sorted({stage.operation for stage in plan.stages})
-    _, public_key = make_keypair()
+    private_key, public_key = make_keypair()
     directive = HumanDirectiveRecord(
         directive_id="full-plan-directive",
         timestamp=datetime(2026, 10, 22, tzinfo=timezone.utc),
