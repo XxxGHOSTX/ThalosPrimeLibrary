@@ -17,7 +17,10 @@ from thalos_prime.experiments.contracts import (
     MetricDefinition,
     MetricDirection,
 )
-from thalos_prime.experiments.directive import HumanDirectiveRecord
+from thalos_prime.experiments.directive import (
+    HumanDirectiveRecord,
+    authorize_experiment_operation,
+)
 from thalos_prime.experiments.evaluator import ExperimentEvaluator
 from thalos_prime.experiments.plan import ExperimentPlan, StageSpec, default_research_plan
 from thalos_prime.experiments.project_inventory import (
@@ -32,6 +35,7 @@ from thalos_prime.experiments.project_inventory import (
 __all__ = [
     "CandidateAssessment",
     "CandidateRun",
+    "authorize_experiment_operation",
     "DuplicateFileGroup",
     "ExperimentEvaluator",
     "ExperimentPlan",
