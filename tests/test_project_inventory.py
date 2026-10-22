@@ -252,3 +252,36 @@ def test_deeply_nested_python_source_reports_parse_issue(tmp_path: Path) -> None
         "python_syntax_error",
         "python_ast_recursion_limit",
     }
+
+
+def test_directory_count_limit_marks_inventory_truncated(tmp_path: Path) -> None:
+    """A project with too many directories is bounded before all trees are walked."""
+    for name in ("one", "two", "three"):
+        directory = tmp_path / name
+        directory.mkdir()
+        (directory / "README.md").write_text(name, encoding="utf-8")
+    inventory = ProjectInventoryBuilder(max_directories=2).scan(tmp_path)
+    assert inventory.truncated_by_limits
+    assert inventory.warning_counts["directory_limit_reached"] == 1
+    assert len(inventory.files) < 3
+
+
+def test_nesting_depth_limit_marks_inventory_truncated(tmp_path: Path) -> None:
+    """Deep directory chains are truncated at the configured depth."""
+    current = tmp_path
+    for index in range(4):
+        current = current / f"level-{index}"
+        current.mkdir()
+    (current / "deep.txt").write_text("deep file", encoding="utf-8")
+    inventory = ProjectInventoryBuilder(max_depth=2).scan(tmp_path)
+    assert inventory.truncated_by_limits
+    assert inventory.warning_counts["directory_depth_limit_reached"] >= 1
+    assert "deep.txt" not in {record.path for record in inventory.files}
+
+
+def test_nonpositive_directory_limit_and_negative_depth_are_rejected() -> None:
+    """Directory and depth controls must have valid ranges."""
+    with pytest.raises(ValueError, match="max_directories"):
+        ProjectInventoryBuilder(max_directories=0)
+    with pytest.raises(ValueError, match="max_depth"):
+        ProjectInventoryBuilder(max_depth=-1)
