@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi.testclient import TestClient
 
 from thalos_prime.api.server import app
@@ -71,6 +73,7 @@ def test_compare_endpoint_returns_ranked_evidence_report() -> None:
 
 def test_compare_endpoint_rejects_missing_baseline() -> None:
     payload = make_payload()
-    payload["runs"] = [payload["runs"][1]]  # type: ignore[index]
+    runs = cast(list[dict[str, object]], payload["runs"])
+    payload["runs"] = [runs[1]]
     response = client.post("/api/v1/experiments/compare", json=payload)
     assert response.status_code == 400
