@@ -172,7 +172,13 @@ def test_unknown_metrics_fail_instead_of_being_silently_ignored() -> None:
     spec = make_spec()
     baseline = make_run("baseline", [0.7], [1.5])
     invalid = make_run("candidate", [0.9], [1.0]).model_copy(
-        update={"metric_samples": {"pass_rate": [0.9], "cost_usd": [1.0], "confidence_guess": [0.99]}}
+        update={
+            "metric_samples": {
+                "pass_rate": [0.9],
+                "cost_usd": [1.0],
+                "confidence_guess": [0.99],
+            }
+        }
     )
     with pytest.raises(ValueError, match="undeclared metrics"):
         ExperimentEvaluator.compare(spec, [baseline, invalid])
