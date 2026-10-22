@@ -394,8 +394,10 @@ class WorkflowExecutor:
                 if not isinstance(decoded_output, dict):
                     raise ValueError("stage handler must return a JSON object")
                 raw_output_refs = decoded_output.get("_artifact_refs", [])
-                if not isinstance(raw_output_refs, list) or any(
-                    not isinstance(reference, str) for reference in raw_output_refs
+                if (
+                    not isinstance(raw_output_refs, list)
+                    or len(raw_output_refs) > 500
+                    or any(not isinstance(reference, str) for reference in raw_output_refs)
                 ):
                     raise ValueError(
                         "reserved _artifact_refs output must be a list of strings"
