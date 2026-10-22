@@ -221,6 +221,30 @@ class WorkflowExecutor:
                 for dependency in stage.depends_on
                 if dependency in successful_outputs
             }
+            if dependency_failures:
+                input_digest = _digest(
+                    {
+                        "initial_context_digest": _digest(cloned_initial),
+                        "dependency_outputs": {
+                            dependency: _digest(output)
+                            for dependency, output in sorted(dependency_outputs.items())
+                        },
+                    }
+                )
+                stage_results.append(
+                    WorkflowStageResult(
+                        stage_id=stage.stage_id,
+                        operation=stage.operation,
+                        status=StageStatus.BLOCKED,
+                        input_digest=input_digest,
+                        elapsed_ms=0.0,
+                        error_type="DependencyNotSuccessful",
+                        error_message="Dependencies did not succeed: "
+                        + ", ".join(sorted(dependency_failures)),
+                    )
+                )
+                continue
+
             estimated_input_bytes = (
                 initial_context_bytes
                 + 64
@@ -254,6 +278,7 @@ class WorkflowExecutor:
                     )
                 )
                 continue
+
             input_payload = {
                 "initial_context": cloned_initial,
                 "dependency_outputs": dependency_outputs,
@@ -276,21 +301,6 @@ class WorkflowExecutor:
                 )
                 continue
             input_digest = hashlib.sha256(encoded_input).hexdigest()
-
-            if dependency_failures:
-                stage_results.append(
-                    WorkflowStageResult(
-                        stage_id=stage.stage_id,
-                        operation=stage.operation,
-                        status=StageStatus.BLOCKED,
-                        input_digest=input_digest,
-                        elapsed_ms=0.0,
-                        error_type="DependencyNotSuccessful",
-                        error_message="Dependencies did not succeed: "
-                        + ", ".join(sorted(dependency_failures)),
-                    )
-                )
-                continue
 
             if stage.requires_approval and stage.stage_id not in approvals:
                 stage_results.append(
@@ -399,7 +409,8 @@ class WorkflowExecutor:
                         elapsed_ms=elapsed_ms,
                     )
                 )
-            except Exception as error:  # noqa: BLE001 - record handler failures as explicit stage results
+            # Handler exceptions are captured as structured failures; other branches continue.
+            except Exception as error:  # noqa: BLE001
                 elapsed_ms = (time.perf_counter() - start) * 1000.0
                 stage_results.append(
                     WorkflowStageResult(
