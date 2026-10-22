@@ -1,3 +1,5 @@
+> **Historical report notice (2026-10-22):** The status below refers to an earlier snapshot. It must not be treated as the current status of the unified ThalosPrime integration; use current CI outputs and recorded test runs.
+
 # Validation Status Report
 
 **Date**: 2026-02-13  
