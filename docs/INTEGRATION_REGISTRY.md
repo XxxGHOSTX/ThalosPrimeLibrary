@@ -16,7 +16,7 @@ This registry tracks candidate source repositories and the evidence required bef
 |---|---|---|---|
 | [ThalosPrimeLibrary](https://github.com/XxxGHOSTX/ThalosPrimeLibrary) | Canonical base: Babel tooling, symbolic constraints, planning, retrieval, API/UI, artifact synthesis | Canonical target | Establish current baseline and regression suite |
 | [ThalosPrimeLibrary.v2](https://github.com/XxxGHOSTX/ThalosPrimeLibrary.v2) | Staged retrieval, reasoning, validation, presentation concepts | Candidate; README reviewed | Inspect code and tests; identify concrete improvements not already present |
-| [ThalosPrimeConcept](https://github.com/XxxGHOSTX/ThalosPrimeConcept) | Human directive records, execution DAGs, provenance, graph/vector retrieval, sandbox concepts | Candidate; README reviewed | Verify signature handling, execution graph semantics, provenance integrity, sandbox boundaries |
+| [ThalosPrimeConcept](https://github.com/XxxGHOSTX/ThalosPrimeConcept) | Human directive records, execution DAGs, provenance, graph/vector retrieval, sandbox concepts | DAG planning and evidence-linked experiment concepts adapted in this branch; source code not wholesale copied | Verify signature handling, provenance integrity, graph execution semantics, and sandbox boundaries before further adoption |
 | [THALOS_PRIME_CORE_INTELLIGENCE](https://github.com/XxxGHOSTX/THALOS_PRIME_CORE_INTELLIGENCE) | Project analysis, dependency graph, build orchestration, caching | Candidate; README reviewed | Verify supported languages, safe command execution, cache invalidation, test results |
 | [ThalosPrime-Platform](https://github.com/XxxGHOSTX/ThalosPrime-Platform) | Governance, risk analysis, audit and artifact workflow | Candidate; README reviewed | Separate enterprise-specific features from reusable governance; verify security |
 | [Thalos-Prime-Directive2](https://github.com/XxxGHOSTX/Thalos-Prime-Directive2) | Container/deployment/CI and health-check patterns | Candidate; README reviewed | Confirm actual stack, endpoints, tests, license compatibility, secrets handling |
@@ -30,6 +30,18 @@ This registry tracks candidate source repositories and the evidence required bef
 | [ThalosPrimeMedv1](https://github.com/XxxGHOSTX/ThalosPrimeMedv1) | Medical-domain implementation | Candidate; metadata available | Keep domain-specific and clinically unvalidated functions out of general claims; assess privacy and safety |
 | [Thalos-Prime-Revision](https://github.com/XxxGHOSTX/Thalos-Prime-Revision) | Revision branch/project | Candidate; README reviewed | Inspect tree and commits to identify unique work and overlap |
 | [ThalosPrimeCodev1](https://github.com/XxxGHOSTX/ThalosPrimeCodev1) | Earlier code project | Candidate; metadata available | Inspect tree, tests, license and unique code before selection |
+
+## Implemented shared foundation on the integration branch
+
+The following implementation now exists in `thalos_prime/experiments/` and has been exposed through the API:
+
+- Declarative DAG planning with stable topological ordering and cycle/missing-dependency rejection. This adapts the useful dependency-graph idea from ThalosPrimeConcept rather than importing its raw callable executor.
+- Typed experiment specifications and candidate-run records that preserve repeated metric samples, model/tool versions, implementation version, environment fingerprint, configuration digest, tests, evidence references, time, and cost.
+- Baseline comparison with explicit maximize/minimize semantics, target gates, eligibility reasons, sample counts, dispersion, stable ranking, and report/spec digests.
+- Adapter to the existing canonical artifact schema. Produced artifacts remain PENDING and must go through the existing validation workflow.
+- API endpoints for retrieving the default declarative plan and comparing recorded result batches.
+
+The new foundation has source files and tests in this branch, but the tests and repository-wide checks have not been confirmed passing. Check the latest PR checks before treating it as accepted. This implementation does not yet dispatch models, execute candidate code, implement a sandbox, compute statistical significance, or import the candidate repositories wholesale.
 
 ## Current limitations of this registry
 
