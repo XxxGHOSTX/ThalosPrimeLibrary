@@ -6,6 +6,7 @@ import json
 
 from thalos_prime.artifacts.schema import Artifact
 from thalos_prime.experiments.contracts import ExperimentReport
+from thalos_prime.experiments.evaluator import ExperimentEvaluator
 from thalos_prime.experiments.execution import WorkflowExecutionReport
 from thalos_prime.experiments.project_inventory import ProjectInventory
 
