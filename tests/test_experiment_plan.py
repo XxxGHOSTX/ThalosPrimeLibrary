@@ -12,16 +12,33 @@ from thalos_prime.experiments.plan import (
 )
 
 
-def test_default_plan_is_dependency_ordered() -> None:
+def test_default_plan_is_a_validated_multi_representation_dag() -> None:
     plan = default_research_plan()
-    assert plan.topological_order() == [
-        "define_task",
-        "ingest_evidence",
-        "construct_representations",
-        "generate_candidates",
-        "run_validation",
-        "compare_baseline",
-        "persist_report",
+    order = plan.topological_order()
+    assert order[0] == "define_task"
+    assert order[-1] == "persist_report"
+    assert len(order) == 12
+    positions = {stage_id: index for index, stage_id in enumerate(order)}
+    assert positions["build_problem_model"] < positions["represent_graph"]
+    assert positions["build_problem_model"] < positions["represent_constraints"]
+    assert positions["build_problem_model"] < positions["represent_state_transition"]
+    assert positions["represent_graph"] < positions["generate_graph_candidate"]
+    assert positions["represent_constraints"] < positions["generate_constraint_candidate"]
+    assert positions["represent_state_transition"] < positions["generate_state_candidate"]
+    assert max(
+        positions["generate_graph_candidate"],
+        positions["generate_constraint_candidate"],
+        positions["generate_state_candidate"],
+    ) < positions["run_validation"]
+
+
+def test_independent_representation_branches_can_be_ready_together() -> None:
+    plan = default_research_plan()
+    completed = {"define_task", "ingest_evidence", "build_problem_model"}
+    assert plan.ready_stages(completed) == [
+        "represent_constraints",
+        "represent_graph",
+        "represent_state_transition",
     ]
 
 
