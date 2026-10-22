@@ -236,3 +236,19 @@ def test_relative_import_beyond_package_root_is_not_misresolved(tmp_path: Path) 
         not (edge.source_module == "package.module" and edge.target_module == "outside")
         for edge in inventory.python_import_edges
     )
+
+
+def test_deeply_nested_python_source_reports_parse_issue(tmp_path: Path) -> None:
+    """One adversarially nested source file must not abort the entire inventory."""
+    (tmp_path / "deep.py").write_text(
+        "value = " + "(" * 2_000 + "1" + ")" * 2_000,
+        encoding="utf-8",
+    )
+    (tmp_path / "README.md").write_text("other files still scan", encoding="utf-8")
+    inventory = ProjectInventoryBuilder().scan(tmp_path)
+    assert {item.path for item in inventory.files} == {"README.md", "deep.py"}
+    assert len(inventory.python_parse_issues) == 1
+    assert inventory.python_parse_issues[0].message in {
+        "python_syntax_error",
+        "python_ast_recursion_limit",
+    }
