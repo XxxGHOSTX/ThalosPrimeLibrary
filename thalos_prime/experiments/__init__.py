@@ -3,6 +3,7 @@
 from thalos_prime.experiments.artifact_adapter import (
     project_inventory_to_artifact,
     report_to_artifact,
+    workflow_report_to_artifact,
 )
 from thalos_prime.experiments.contracts import (
     CandidateAssessment,
@@ -69,6 +70,7 @@ __all__ = [
     "StageHandler",
     "StageSpec",
     "StageStatus",
+    "workflow_report_to_artifact",
     "WorkflowExecutionReport",
     "WorkflowExecutor",
     "WorkflowStageResult",
