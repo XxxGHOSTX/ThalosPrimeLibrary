@@ -8,7 +8,13 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import ValidationError
 
-from thalos_prime.experiments.directive import HumanDirectiveRecord
+from thalos_prime.experiments import (
+    ExperimentSpec,
+    HumanDirectiveRecord,
+    MetricDefinition,
+    MetricDirection,
+    authorize_experiment_operation,
+)
 
 
 def make_directive() -> HumanDirectiveRecord:
@@ -104,3 +110,67 @@ def test_duplicate_or_blank_permissions_are_rejected() -> None:
             success_criteria=["tested"],
             permitted_operations=[" "],
         )
+
+
+def make_experiment_spec(
+    directive_id: str | None = None,
+    directive_digest: str | None = None,
+) -> ExperimentSpec:
+    """Build a task contract optionally bound to a signed human directive."""
+    return ExperimentSpec(
+        experiment_id="experiment-directive-binding",
+        task_family="repository-fix",
+        task_description="Compare declared candidates under a fixed task contract",
+        dataset_version="fixture-v1",
+        baseline_candidate_id="baseline",
+        primary_metric="pass_rate",
+        metrics=[
+            MetricDefinition(
+                name="pass_rate",
+                direction=MetricDirection.MAXIMIZE,
+                target_value=0.8,
+            )
+        ],
+        directive_id=directive_id,
+        directive_digest=directive_digest,
+    )
+
+
+def test_experiment_operation_requires_matching_signed_directive() -> None:
+    """An allowlisted operation still needs the exact directive bound to the spec."""
+    private_key, public_key = make_keypair()
+    directive = make_directive()
+    directive.sign(private_key, "test-reviewer")
+    spec = make_experiment_spec(
+        directive_id=directive.directive_id,
+        directive_digest=directive.directive_digest,
+    )
+    authorize_experiment_operation(spec, directive, "run-tests", public_key)
+
+
+def test_unbound_experiment_cannot_authorize_an_operation() -> None:
+    """No directive reference means no permission to dispatch an operation."""
+    _, public_key = make_keypair()
+    with pytest.raises(PermissionError, match="not bound to a human directive"):
+        authorize_experiment_operation(
+            make_experiment_spec(),
+            make_directive(),
+            "run-tests",
+            public_key,
+        )
+
+
+def test_mismatched_directive_digest_is_rejected() -> None:
+    """A valid signature cannot authorize a spec that names another directive digest."""
+    private_key, public_key = make_keypair()
+    directive = make_directive()
+    directive.sign(private_key, "test-reviewer")
+    wrong_digest = "a" * 64
+    if wrong_digest == directive.directive_digest:
+        wrong_digest = "b" * 64
+    spec = make_experiment_spec(
+        directive_id=directive.directive_id,
+        directive_digest=wrong_digest,
+    )
+    with pytest.raises(PermissionError, match="digest does not match"):
+        authorize_experiment_operation(spec, directive, "run-tests", public_key)
