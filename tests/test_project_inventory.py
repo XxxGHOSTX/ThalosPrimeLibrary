@@ -285,3 +285,18 @@ def test_nonpositive_directory_limit_and_negative_depth_are_rejected() -> None:
         ProjectInventoryBuilder(max_directories=0)
     with pytest.raises(ValueError, match="max_depth"):
         ProjectInventoryBuilder(max_depth=-1)
+    with pytest.raises(ValueError, match="max_entries_per_directory"):
+        ProjectInventoryBuilder(max_entries_per_directory=0)
+
+
+def test_directory_entry_limit_bounds_memory_and_is_deterministic(tmp_path: Path) -> None:
+    """Oversized directories are skipped as a unit rather than sampled nondeterministically."""
+    for name in ("a.txt", "b.txt", "c.txt"):
+        (tmp_path / name).write_text(name, encoding="utf-8")
+    builder = ProjectInventoryBuilder(max_entries_per_directory=2)
+    first = builder.scan(tmp_path)
+    second = builder.scan(tmp_path)
+    assert first.files == []
+    assert first.truncated_by_limits
+    assert first.warning_counts["directory_entry_limit_reached"] == 1
+    assert first.project_digest == second.project_digest
