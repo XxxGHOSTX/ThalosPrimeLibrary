@@ -50,7 +50,6 @@ def report_to_artifact(report: ExperimentReport, *, timestamp_ns: int) -> Artifa
     )
 
 
-
 def project_inventory_to_artifact(
     inventory: ProjectInventory,
     *,
@@ -59,9 +58,9 @@ def project_inventory_to_artifact(
 ) -> Artifact:
     """Convert a bounded project snapshot into a pending canonical artifact.
 
-    This creates a record for downstream validation and provenance; it does
-    not admit the inventory to the belief ledger or assert that its static
-    import graph captures all runtime dependencies.
+    The caller must supply a real URI identifying the inspected project. This
+    adapter does not invent a provenance reference, admit the artifact to the
+    belief ledger, or claim the static import graph captures runtime dependencies.
     """
     normalized_source_uri = source_uri.strip()
     if not normalized_source_uri:
