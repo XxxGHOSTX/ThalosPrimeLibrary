@@ -1,18 +1,16 @@
 # ThalosPrimeLibrary
 
-> *"In the Library of Babel, every truth already exists — Thalos Prime finds it."*
+> *"From proposed solution to evidence that it works."*
 
-ThalosPrimeLibrary is a deterministic, production-grade Python toolkit that integrates the
-[Library of Babel](https://libraryofbabel.info) with hybrid cognitive synthesis, symbolic reasoning,
-autonomous agency, and infrastructure-as-code generation. It is designed around strict
-**Control Plane / Data Plane** separation, enforced lifecycle contracts, and full replay
-determinism — identical inputs always produce identical outputs.
+ThalosPrime is an AI research and engineering project intended to improve how complex problems are investigated, solutions are generated, and proposed implementations are tested. The proposed system will coordinate AI models and specialized software components to investigate problems, compare competing solutions, identify contradictions and implementation errors, and evaluate results against explicit criteria.
+
+Rather than treating a single AI response as proof, the product is being developed around a repeatable workflow connecting research, candidate generation, testing, validation, and iterative improvement. Product-level effectiveness must be established through reproducible evaluation; the presence of individual components does not establish that the full workflow has been validated end to end.
+
+**Positioning documents:** [Product positioning](docs/PRODUCT_POSITIONING.md) · [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md) · [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md)
 
 ## Brief Repo Description
 
-ThalosPrimeLibrary provides deterministic Library of Babel generation/search tooling, a FastAPI
-service with an interactive UI, and an infrastructure synthesis CLI (`thalos`) for generating
-deployment artifacts from YAML schemas.
+The repository currently contains Library of Babel generation/search tooling, a FastAPI service and UI, symbolic-constraint and planning modules, knowledge-graph/retrieval components, and an infrastructure-synthesis CLI for generating deployment artifacts from YAML schemas. These components are the technical starting point for the broader evidence-oriented research workflow; their existence alone does not prove end-to-end product effectiveness.
 
 ## ZIP Setup Walkthrough (Deploy After Downloading ZIP)
 
@@ -54,22 +52,20 @@ repository and retains associated legal rights to that original authored content
 
 ## What Is ThalosPrimeLibrary?
 
-ThalosPrimeLibrary (`thalos_prime`) is a multi-subsystem Python library that combines:
+The repository currently includes the following software components (each should be evaluated against its own current tests and scope):
 
 - **Library of Babel integration** — deterministic generation and coherence-scored retrieval of
   pages from [libraryofbabel.info](https://libraryofbabel.info).
 - **Hybrid cognitive synthesis** — multi-view semantic decomposition across Physical/Chemical,
   Logical/Mathematical, and Linguistic/Narrative knowledge planes.
 - **Symbolic reasoning** — Z3-based constraint solving, proof checking, and planning.
-- **Autonomous agency** — perceive-plan-act loops with belief tracking and multi-path planning.
+- **Planning and state exploration** — Tree of Thoughts / MCTS planning and state-simulation components.
 - **Knowledge graphs** — Neo4j-compatible graph with hybrid graph+text retrieval (Graph-RAG).
 - **Infrastructure synthesis** — YAML-driven, multi-provider artifact generation (Terraform,
   OpenTofu, Cloudflare, GitHub Actions, Docker) with policy enforcement and drift detection.
 - **REST API & interactive UI** — FastAPI server with a Matrix-style browser interface.
 
-Every subsystem follows the same six-method lifecycle contract
-(`initialize → validate → operate → reconcile → checkpoint → terminate`) and every operation is
-fully deterministic with a seeded replay guarantee.
+Participating subsystems use a six-method lifecycle convention (`initialize → validate → operate → reconcile → checkpoint → terminate`). Determinism and replayability are design goals for specified execution paths and must be demonstrated by scope-matched tests; do not assume that external services, timestamps, changing dependencies, or every subsystem are automatically deterministic.
 
 ---
 
@@ -114,13 +110,13 @@ initialize() → validate() → operate() → reconcile() → checkpoint() → t
 Any invariant violation raises `DeterministicHalt` with a full state snapshot and
 JSONL event log. Silent degradation is never permitted.
 
-### Determinism Guarantees
+### Deterministic Execution and Validation
 
-- A single integer `--seed` seeds an isolated `random.Random(seed)` instance.
-- All collections are sorted with stable, deterministic keys (e.g. `score DESC, doc_id ASC`).
-- No module-level RNG state; no implicit async at the module boundary.
-- Checkpoints are blake2b-hashed, versioned, and atomic.
-- Replay: same `--seed` + `--query` always produces byte-for-byte identical output.
+- The deterministic pipeline accepts an explicit seed and is designed to control its local pseudo-randomness.
+- Relevant execution paths should use stable ordering and versioned checkpoints where implemented.
+- Replay claims must be tested on the specific command, inputs, configuration, dependencies, and environment being described.
+- Network responses, timestamps, dependency versions, filesystem state, or concurrency can affect results unless those variables are captured or controlled.
+- Report test commands, versions, outputs, and failures. Do not extrapolate a narrow deterministic test into a guarantee about every subsystem or the full product.
 
 ### 7-Stage MNN Pipeline
 
@@ -711,6 +707,9 @@ docker compose -f infra/docker-compose.yml up
 
 | Document | Description |
 |----------|-------------|
+| [PRODUCT_POSITIONING.md](docs/PRODUCT_POSITIONING.md) | Evidence-first product definition, validation principles, and claim rules |
+| [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md) | Repayment-oriented funding narrative and risk controls |
+| [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md) | Product thesis, validation gates, differentiation hypotheses, and commercial questions |
 | [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Full system architecture and layer descriptions |
 | [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) | Deterministic architecture blueprint and MNN pipeline spec |
 | [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) | Complete deployment guide |
