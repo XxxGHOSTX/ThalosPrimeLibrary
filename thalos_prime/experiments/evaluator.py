@@ -60,6 +60,7 @@ def _compare_metric(
     baseline_samples: list[float],
     candidate_samples: list[float],
     metric: MetricDefinition,
+    paired_improvement_samples: list[float] | None = None,
 ) -> MetricComparison:
     """Compare sample means while preserving sample counts and dispersion."""
     baseline_value = _mean(baseline_samples)
@@ -87,6 +88,17 @@ def _compare_metric(
         candidate_sample_count=len(candidate_samples),
         baseline_sample_stddev=_sample_stddev(baseline_samples),
         candidate_sample_stddev=_sample_stddev(candidate_samples),
+        paired_sample_count=len(paired_improvement_samples or []),
+        paired_improvement_mean=(
+            _mean(paired_improvement_samples)
+            if paired_improvement_samples
+            else None
+        ),
+        paired_improvement_stddev=(
+            _sample_stddev(paired_improvement_samples)
+            if paired_improvement_samples
+            else None
+        ),
     )
 
 
@@ -108,10 +120,32 @@ def _assessment(
     comparisons: dict[str, MetricComparison] = {}
     for name, samples in run.metric_samples.items():
         if name in definitions and name in baseline.metric_samples:
+            paired_improvements: list[float] | None = None
+            if baseline.sample_ids:
+                baseline_by_sample = dict(
+                    zip(
+                        baseline.sample_ids,
+                        baseline.metric_samples[name],
+                        strict=True,
+                    )
+                )
+                candidate_by_sample = dict(
+                    zip(run.sample_ids, samples, strict=True)
+                )
+                metric = definitions[name]
+                paired_improvements = [
+                    (
+                        candidate_by_sample[sample_id] - baseline_by_sample[sample_id]
+                        if metric.direction is MetricDirection.MAXIMIZE
+                        else baseline_by_sample[sample_id] - candidate_by_sample[sample_id]
+                    )
+                    for sample_id in sorted(baseline_by_sample)
+                ]
             comparisons[name] = _compare_metric(
                 baseline.metric_samples[name],
                 samples,
                 definitions[name],
+                paired_improvement_samples=paired_improvements,
             )
     for name, samples in run.metric_samples.items():
         if name in definitions:
@@ -143,6 +177,7 @@ def _assessment(
             else None
         ),
         metric_samples=run.metric_samples,
+        sample_ids=run.sample_ids,
         metric_comparisons=comparisons,
         tests_passed=run.tests_passed,
         test_ids=sorted(set(run.test_ids)),
@@ -200,6 +235,14 @@ class ExperimentEvaluator:
             if run.environment_fingerprint != baseline.environment_fingerprint:
                 raise ValueError(
                     "candidate and baseline environment_fingerprint values must match"
+                )
+            if bool(run.sample_ids) != bool(baseline.sample_ids):
+                raise ValueError(
+                    "candidate and baseline must both specify sample_ids or leave them both empty"
+                )
+            if baseline.sample_ids and set(run.sample_ids) != set(baseline.sample_ids):
+                raise ValueError(
+                    "candidate and baseline sample_ids must identify the same task/trial set"
                 )
         assessments = [
             _assessment(spec, run, baseline, definitions)
