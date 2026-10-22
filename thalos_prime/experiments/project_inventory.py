@@ -373,6 +373,13 @@ class ProjectInventoryBuilder:
             return True
         if name.startswith(".env."):
             return True
+        if any(
+            marker in name
+            for marker in ("secret", "credential", "private-key", "private_key")
+        ):
+            return True
+        if name.startswith(("id_rsa", "id_ed25519")) and not name.endswith(".pub"):
+            return True
         if any(part.lower() in {".ssh", ".aws", ".azure"} for part in relative.parts[:-1]):
             return name not in {"config.example", "credentials.example"}
         return False
