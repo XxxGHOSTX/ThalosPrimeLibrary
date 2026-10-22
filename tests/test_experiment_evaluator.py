@@ -18,6 +18,7 @@ from thalos_prime.experiments import (
 def make_spec(
     direction: MetricDirection = MetricDirection.MAXIMIZE,
     target: float | None = 0.8,
+    primary_metric: str = "pass_rate",
 ) -> ExperimentSpec:
     """Create a fixed experiment spec for reproducible tests."""
     return ExperimentSpec(
@@ -26,17 +27,17 @@ def make_spec(
         task_description="Fix a deterministic defect and run the regression suite",
         dataset_version="fixture-v1",
         baseline_candidate_id="baseline",
-        primary_metric="pass_rate",
+        primary_metric=primary_metric,
         metrics=[
             MetricDefinition(
                 name="pass_rate",
-                direction=direction,
+                direction=direction if primary_metric == "pass_rate" else MetricDirection.MAXIMIZE,
                 required=True,
-                target_value=target,
+                target_value=target if primary_metric == "pass_rate" else 0.8,
             ),
             MetricDefinition(
                 name="cost_usd",
-                direction=MetricDirection.MINIMIZE,
+                direction=direction if primary_metric == "cost_usd" else MetricDirection.MINIMIZE,
                 required=True,
                 target_value=2.0,
             ),
@@ -48,33 +49,40 @@ def make_spec(
 
 def make_run(
     candidate_id: str,
-    pass_rate: float,
-    cost_usd: float,
+    pass_rates: list[float],
+    cost_samples: list[float],
     *,
     tests_passed: bool = True,
     evidence_refs: list[str] | None = None,
     representation_id: str = "graph-v1",
+    environment_fingerprint: str = "env-python312-deps-v1",
 ) -> CandidateRun:
     """Create a fixed candidate measurement."""
     return CandidateRun(
+        run_id=f"run-{candidate_id}",
         candidate_id=candidate_id,
         approach="candidate approach",
         representation_id=representation_id,
         implementation_version="commit-abc123",
-        metrics={"pass_rate": pass_rate, "cost_usd": cost_usd},
+        environment_fingerprint=environment_fingerprint,
+        model_versions={"solver": "test-double-1"},
+        configuration_digest="b" * 64,
+        metric_samples={"pass_rate": pass_rates, "cost_usd": cost_samples},
         tests_passed=tests_passed,
         test_ids=["unit-1", "integration-1"],
         evidence_refs=evidence_refs if evidence_refs is not None else ["artifact:run-1"],
         elapsed_ms=100.0,
-        cost_usd=cost_usd,
+        cost_usd=sum(cost_samples) / len(cost_samples),
     )
 
 
 def test_ranks_only_eligible_candidates_by_primary_metric() -> None:
     spec = make_spec()
-    baseline = make_run("baseline", 0.7, 1.5)
-    better = make_run("candidate-b", 0.95, 1.8, representation_id="constraint-v2")
-    cheaper = make_run("candidate-a", 0.85, 0.9, representation_id="graph-v2")
+    baseline = make_run("baseline", [0.7, 0.7], [1.5, 1.5])
+    better = make_run(
+        "candidate-b", [0.94, 0.96], [1.8, 1.8], representation_id="constraint-v2"
+    )
+    cheaper = make_run("candidate-a", [0.84, 0.86], [0.9, 0.9], representation_id="graph-v2")
     report = ExperimentEvaluator.compare(spec, [baseline, cheaper, better])
     assert report.ranked_candidate_ids == ["candidate-b", "candidate-a"]
     assessments = {item.candidate_id: item for item in report.assessments}
@@ -82,31 +90,21 @@ def test_ranks_only_eligible_candidates_by_primary_metric() -> None:
     assert assessments["candidate-b"].relative_primary_improvement_percent == pytest.approx(
         0.25 / 0.7 * 100.0
     )
+    comparison = assessments["candidate-b"].metric_comparisons["pass_rate"]
+    assert comparison.baseline_sample_count == 2
+    assert comparison.candidate_sample_count == 2
+    assert comparison.candidate_sample_stddev is not None
 
 
 def test_minimizing_primary_metric_ranks_lower_values_first() -> None:
-    spec = make_spec(direction=MetricDirection.MINIMIZE, target=0.8).model_copy(
-        update={
-            "primary_metric": "cost_usd",
-            "metrics": [
-                MetricDefinition(
-                    name="pass_rate",
-                    direction=MetricDirection.MAXIMIZE,
-                    required=True,
-                    target_value=0.8,
-                ),
-                MetricDefinition(
-                    name="cost_usd",
-                    direction=MetricDirection.MINIMIZE,
-                    required=True,
-                    target_value=2.0,
-                ),
-            ],
-        }
+    spec = make_spec(
+        direction=MetricDirection.MINIMIZE,
+        target=2.0,
+        primary_metric="cost_usd",
     )
-    baseline = make_run("baseline", 0.9, 1.8)
-    high_cost = make_run("high-cost", 0.95, 1.7)
-    low_cost = make_run("low-cost", 0.90, 1.0)
+    baseline = make_run("baseline", [0.9, 0.9], [1.8, 1.8])
+    high_cost = make_run("high-cost", [0.95, 0.95], [1.7, 1.7])
+    low_cost = make_run("low-cost", [0.90, 0.90], [1.0, 1.0])
     report = ExperimentEvaluator.compare(spec, [baseline, high_cost, low_cost])
     assert report.ranked_candidate_ids == ["low-cost", "high-cost"]
     assessments = {item.candidate_id: item for item in report.assessments}
@@ -117,8 +115,8 @@ def test_excludes_failed_tests_without_hiding_failure() -> None:
     report = ExperimentEvaluator.compare(
         make_spec(),
         [
-            make_run("baseline", 0.7, 1.5),
-            make_run("broken", 0.99, 0.5, tests_passed=False),
+            make_run("baseline", [0.7], [1.5]),
+            make_run("broken", [0.99], [0.5], tests_passed=False),
         ],
     )
     assert report.ranked_candidate_ids == []
@@ -131,8 +129,8 @@ def test_evidence_is_required_when_spec_says_so() -> None:
     report = ExperimentEvaluator.compare(
         make_spec(),
         [
-            make_run("baseline", 0.7, 1.5),
-            make_run("untraceable", 0.9, 1.0, evidence_refs=[]),
+            make_run("baseline", [0.7], [1.5]),
+            make_run("untraceable", [0.9], [1.0], evidence_refs=[]),
         ],
     )
     candidate = next(item for item in report.assessments if item.candidate_id == "untraceable")
@@ -144,8 +142,8 @@ def test_candidate_below_target_is_not_ranked() -> None:
     report = ExperimentEvaluator.compare(
         make_spec(),
         [
-            make_run("baseline", 0.7, 1.5),
-            make_run("misses-target", 0.79, 1.0),
+            make_run("baseline", [0.7], [1.5]),
+            make_run("misses-target", [0.78, 0.8], [1.0, 1.0]),
         ],
     )
     candidate = next(item for item in report.assessments if item.candidate_id == "misses-target")
@@ -155,8 +153,8 @@ def test_candidate_below_target_is_not_ranked() -> None:
 
 def test_report_digest_is_independent_of_input_order() -> None:
     spec = make_spec()
-    baseline = make_run("baseline", 0.7, 1.5)
-    candidate = make_run("candidate", 0.9, 1.0)
+    baseline = make_run("baseline", [0.7, 0.7], [1.5, 1.5])
+    candidate = make_run("candidate", [0.9, 0.9], [1.0, 1.0])
     first = ExperimentEvaluator.compare(spec, [baseline, candidate])
     second = ExperimentEvaluator.compare(spec, [candidate, baseline])
     assert first.report_digest == second.report_digest
@@ -165,14 +163,14 @@ def test_report_digest_is_independent_of_input_order() -> None:
 
 def test_missing_baseline_fails_fast() -> None:
     with pytest.raises(ValueError, match="baseline candidate is missing"):
-        ExperimentEvaluator.compare(make_spec(), [make_run("other", 0.9, 1.0)])
+        ExperimentEvaluator.compare(make_spec(), [make_run("other", [0.9], [1.0])])
 
 
 def test_unknown_metrics_fail_instead_of_being_silently_ignored() -> None:
     spec = make_spec()
-    baseline = make_run("baseline", 0.7, 1.5)
-    invalid = make_run("candidate", 0.9, 1.0).model_copy(
-        update={"metrics": {"pass_rate": 0.9, "cost_usd": 1.0, "confidence_guess": 0.99}}
+    baseline = make_run("baseline", [0.7], [1.5])
+    invalid = make_run("candidate", [0.9], [1.0]).model_copy(
+        update={"metric_samples": {"pass_rate": [0.9], "cost_usd": [1.0], "confidence_guess": [0.99]}}
     )
     with pytest.raises(ValueError, match="undeclared metrics"):
         ExperimentEvaluator.compare(spec, [baseline, invalid])
@@ -190,16 +188,31 @@ def test_duplicate_metric_names_are_rejected() -> None:
 
 def test_nonfinite_measurements_are_rejected() -> None:
     with pytest.raises(ValidationError):
-        make_run("bad", float("nan"), 1.0)
+        make_run("bad", [float("nan")], [1.0])
 
+
+def test_candidate_and_baseline_must_share_execution_environment() -> None:
+    with pytest.raises(ValueError, match="environment_fingerprint values must match"):
+        ExperimentEvaluator.compare(
+            make_spec(),
+            [
+                make_run("baseline", [0.7], [1.5]),
+                make_run("candidate", [0.9], [1.0], environment_fingerprint="different-env"),
+            ],
+        )
 
 
 def test_report_converts_to_pending_canonical_artifact() -> None:
     report = ExperimentEvaluator.compare(
         make_spec(),
         [
-            make_run("baseline", 0.7, 1.5),
-            make_run("candidate", 0.9, 1.0, evidence_refs=["artifact:evidence-2", "artifact:evidence-1"]),
+            make_run("baseline", [0.7], [1.5]),
+            make_run(
+                "candidate",
+                [0.9],
+                [1.0],
+                evidence_refs=["artifact:evidence-2", "artifact:evidence-1"],
+            ),
         ],
     )
     artifact = report_to_artifact(report, timestamp_ns=123456789)
@@ -211,7 +224,7 @@ def test_report_converts_to_pending_canonical_artifact() -> None:
 
 
 def test_report_artifact_identity_is_reproducible_for_fixed_timestamp() -> None:
-    runs = [make_run("baseline", 0.7, 1.5), make_run("candidate", 0.9, 1.0)]
+    runs = [make_run("baseline", [0.7], [1.5]), make_run("candidate", [0.9], [1.0])]
     report = ExperimentEvaluator.compare(make_spec(), runs)
     first = report_to_artifact(report, timestamp_ns=10)
     second = report_to_artifact(report, timestamp_ns=10)
