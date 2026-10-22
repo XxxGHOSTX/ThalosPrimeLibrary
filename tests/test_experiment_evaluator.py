@@ -288,5 +288,7 @@ def test_report_verification_fails_when_spec_is_modified() -> None:
             make_run("candidate", [0.9], [1.0]),
         ],
     )
-    report.spec.metrics[0].name = "mutated-metric"
+    report.spec.metrics[0] = MetricDefinition(
+        name="mutated-metric", direction=MetricDirection.MAXIMIZE
+    )
     assert not ExperimentEvaluator.verify_report(report)
