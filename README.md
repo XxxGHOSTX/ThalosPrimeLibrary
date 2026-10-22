@@ -431,6 +431,17 @@ The server starts on **http://localhost:8000** by default.
 | http://localhost:8000/redoc | ReDoc (read-only) |
 | http://localhost:8000 | Matrix-style browser UI |
 
+### Experiment Evaluation Endpoints
+
+The experiment API accepts recorded candidate measurements and returns a baseline comparison report. These endpoints do not execute candidate code or automatically accept the report as verified knowledge.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/experiments/plan/default` | Return the validated declarative research workflow |
+| `POST` | `/api/v1/experiments/compare` | Compare recorded candidate results against a defined baseline |
+
+See [docs/EXPERIMENT_WORKFLOW.md](docs/EXPERIMENT_WORKFLOW.md) for the request contract, metric semantics, and safety boundaries.
+
 ### Artifact Epistemic Endpoints
 
 The TPL epistemic pipeline is exposed under `/api/v1/artifacts/`:
@@ -717,6 +728,7 @@ docker compose -f infra/docker-compose.yml up
 | [Unified architecture](docs/UNIFIED_THALOS_PRIME_ARCHITECTURE.md) | Canonical product workflow, module boundaries, and integration phases |
 | [Integration registry](docs/INTEGRATION_REGISTRY.md) | Candidate repositories, contribution hypotheses, and acceptance requirements |
 | [Validation plan](docs/VALIDATION_AND_BENCHMARK_PLAN.md) | Baselines, metrics, and experimental controls |
+| [Experiment workflow](docs/EXPERIMENT_WORKFLOW.md) | Declarative research plan, API usage, repeated measurements, and evaluation limitations |
 | [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md) | Repayment-oriented financing narrative and risk controls |
 | [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md) | Product thesis and technical/commercial validation gates |
 | [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md) | Existing system architecture and layer descriptions |
