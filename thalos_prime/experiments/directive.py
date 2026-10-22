@@ -37,7 +37,7 @@ class HumanDirectiveRecord(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     directive_id: str = Field(min_length=1, max_length=200)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime
     objectives: list[str] = Field(min_length=1, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
     constraints: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
     parameters: dict[str, object] = Field(default_factory=dict, max_length=100)
