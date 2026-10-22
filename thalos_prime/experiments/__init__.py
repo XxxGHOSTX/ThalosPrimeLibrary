@@ -13,6 +13,14 @@ from thalos_prime.experiments.contracts import (
 from thalos_prime.experiments.directive import HumanDirectiveRecord
 from thalos_prime.experiments.evaluator import ExperimentEvaluator
 from thalos_prime.experiments.plan import ExperimentPlan, StageSpec, default_research_plan
+from thalos_prime.experiments.project_inventory import (
+    DuplicateFileGroup,
+    ImportEdge,
+    InventoryFile,
+    ProjectInventory,
+    ProjectInventoryBuilder,
+    PythonParseIssue,
+)
 
 __all__ = [
     "CandidateAssessment",
@@ -22,6 +30,12 @@ __all__ = [
     "ExperimentPlan",
     "ExperimentReport",
     "ExperimentSpec",
+    "DuplicateFileGroup",
+    "ImportEdge",
+    "InventoryFile",
+    "ProjectInventory",
+    "ProjectInventoryBuilder",
+    "PythonParseIssue",
     "MetricComparison",
     "MetricDefinition",
     "MetricDirection",
