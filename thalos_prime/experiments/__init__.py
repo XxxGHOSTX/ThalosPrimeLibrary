@@ -11,15 +11,19 @@ from thalos_prime.experiments.contracts import (
 )
 from thalos_prime.experiments.evaluator import ExperimentEvaluator
 from thalos_prime.experiments.artifact_adapter import report_to_artifact
+from thalos_prime.experiments.plan import ExperimentPlan, StageSpec, default_research_plan
 
 __all__ = [
     "CandidateAssessment",
     "CandidateRun",
     "ExperimentEvaluator",
+    "ExperimentPlan",
     "ExperimentReport",
     "ExperimentSpec",
     "MetricComparison",
     "MetricDefinition",
     "MetricDirection",
+    "StageSpec",
+    "default_research_plan",
     "report_to_artifact",
 ]
