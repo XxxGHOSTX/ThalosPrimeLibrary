@@ -11,6 +11,7 @@ import ast
 import hashlib
 import json
 import os
+import stat
 from collections import defaultdict
 from pathlib import Path
 from typing import ClassVar
@@ -32,6 +33,8 @@ _IGNORED_DIRECTORIES: frozenset[str] = frozenset(
         ".mypy_cache",
         ".ruff_cache",
         ".tox",
+        ".terraform",
+        ".pulumi",
         "dist",
         "build",
         "coverage",
@@ -115,9 +118,17 @@ _SENSITIVE_NAMES: frozenset[str] = frozenset(
         "credentials.json",
         "id_rsa",
         "id_ed25519",
+        ".npmrc",
+        ".pypirc",
+        ".netrc",
+        ".git-credentials",
+        "config.json",
+        "credentials",
         "secrets.json",
         "secrets.yaml",
         "secrets.yml",
+        "terraform.tfstate",
+        "terraform.tfstate.backup",
     }
 )
 _SENSITIVE_SUFFIXES: frozenset[str] = frozenset(
@@ -191,7 +202,7 @@ class ProjectInventory(BaseModel):
 class ProjectInventoryBuilder:
     """Inspect a project without imports, subprocesses, or repository code execution."""
 
-    schema_version: ClassVar[int] = 1
+    schema_version: ClassVar[int] = 2
 
     def __init__(
         self,
@@ -261,7 +272,20 @@ class ProjectInventoryBuilder:
                 "max_total_bytes": self._max_total_bytes,
             },
             "files": [record.model_dump(mode="json") for record in file_records],
+            "language_counts": dict(sorted(language_counts.items())),
+            "manifest_paths": manifest_paths,
+            "test_paths": test_paths,
+            "duplicate_groups": [
+                group.model_dump(mode="json") for group in duplicate_groups
+            ],
+            "python_import_edges": [
+                edge.model_dump(mode="json") for edge in python_import_edges
+            ],
+            "python_parse_issues": [
+                issue.model_dump(mode="json") for issue in parse_issues
+            ],
             "warning_counts": dict(sorted(warning_counts.items())),
+            "total_bytes_read": total_bytes_read,
             "truncated_by_limits": truncated,
         }
         digest_bytes = json.dumps(
@@ -338,8 +362,14 @@ class ProjectInventoryBuilder:
         root_path: Path,
         candidate_paths: list[Path],
         warning_counts: dict[str, int],
-    ) -> tuple[list[InventoryFile], dict[str, bytes], dict[str, list[str]], int, bool]:
-        """Read bounded file bytes, hash accepted files, and record scan warnings."""
+    ) -> tuple[
+        list[InventoryFile],
+        dict[str, bytes],
+        dict[str, list[str]],
+        int,
+        bool,
+    ]:
+        """Read bounded file bytes and reject files that change during inspection."""
         file_records: list[InventoryFile] = []
         source_bytes: dict[str, bytes] = {}
         digest_paths: dict[str, list[str]] = defaultdict(list)
@@ -349,42 +379,74 @@ class ProjectInventoryBuilder:
         for path in candidate_paths:
             relative = path.relative_to(root_path).as_posix()
             try:
-                file_size = path.stat().st_size
-            except OSError as error:
-                warning_counts[f"file_stat_error:{type(error).__name__}"] += 1
-                continue
-            if file_size > self._max_file_bytes:
-                warning_counts["oversize_file_skipped"] += 1
-                truncated = True
-                continue
-
-            remaining_budget = self._max_total_bytes - total_bytes_read
-            if remaining_budget <= 0 or file_size > remaining_budget:
-                warning_counts["total_size_limit_reached"] += 1
-                truncated = True
-                break
-            read_limit = min(self._max_file_bytes, remaining_budget)
-            try:
+                path_stat = path.lstat()
+                if stat.S_ISLNK(path_stat.st_mode):
+                    warning_counts["symlink_skipped"] += 1
+                    continue
+                if not stat.S_ISREG(path_stat.st_mode):
+                    warning_counts["non_regular_file_skipped"] += 1
+                    continue
                 flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                 descriptor = os.open(path, flags)
-                with os.fdopen(descriptor, "rb") as handle:
-                    data = handle.read(read_limit + _READ_LIMIT_MARGIN)
             except OSError as error:
-                warning_counts[f"file_read_error:{type(error).__name__}"] += 1
+                warning_counts[f"file_open_error:{type(error).__name__}"] += 1
                 continue
 
-            if len(data) > remaining_budget:
-                warning_counts["total_size_limit_reached"] += 1
-                truncated = True
-                break
-            total_bytes_read += len(data)
-            if len(data) > self._max_file_bytes:
-                warning_counts["oversize_file_skipped"] += 1
-                truncated = True
-                continue
-            if b"\x00" in data:
-                warning_counts["binary_file_skipped"] += 1
-                continue
+            with os.fdopen(descriptor, "rb") as handle:
+                try:
+                    opened_stat = os.fstat(handle.fileno())
+                except OSError as error:
+                    warning_counts[f"file_stat_error:{type(error).__name__}"] += 1
+                    continue
+                if (
+                    not stat.S_ISREG(opened_stat.st_mode)
+                    or path_stat.st_dev != opened_stat.st_dev
+                    or path_stat.st_ino != opened_stat.st_ino
+                ):
+                    warning_counts["file_replaced_before_read"] += 1
+                    truncated = True
+                    continue
+
+                file_size = opened_stat.st_size
+                if file_size > self._max_file_bytes:
+                    warning_counts["oversize_file_skipped"] += 1
+                    truncated = True
+                    continue
+
+                remaining_budget = self._max_total_bytes - total_bytes_read
+                if remaining_budget <= 0:
+                    warning_counts["total_size_limit_reached"] += 1
+                    truncated = True
+                    break
+                if file_size > remaining_budget:
+                    warning_counts["total_size_limit_reached"] += 1
+                    truncated = True
+                    continue
+
+                read_limit = min(self._max_file_bytes, remaining_budget)
+                try:
+                    data = handle.read(read_limit)
+                    after_read_stat = os.fstat(handle.fileno())
+                except OSError as error:
+                    warning_counts[f"file_read_error:{type(error).__name__}"] += 1
+                    continue
+                total_bytes_read += len(data)
+
+                changed_during_read = (
+                    opened_stat.st_dev != after_read_stat.st_dev
+                    or opened_stat.st_ino != after_read_stat.st_ino
+                    or opened_stat.st_size != after_read_stat.st_size
+                    or opened_stat.st_mtime_ns != after_read_stat.st_mtime_ns
+                    or opened_stat.st_ctime_ns != after_read_stat.st_ctime_ns
+                    or len(data) != file_size
+                )
+                if changed_during_read:
+                    warning_counts["file_changed_during_scan"] += 1
+                    truncated = True
+                    continue
+                if b"\\x00" in data:
+                    warning_counts["binary_file_skipped"] += 1
+                    continue
 
             language = _LANGUAGE_BY_SUFFIX.get(path.suffix.lower(), "other")
             sha256 = hashlib.sha256(data).hexdigest()
