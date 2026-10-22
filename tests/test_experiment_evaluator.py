@@ -11,6 +11,7 @@ from thalos_prime.experiments import (
     ExperimentSpec,
     MetricDefinition,
     MetricDirection,
+    report_to_artifact,
 )
 
 
@@ -178,17 +179,41 @@ def test_unknown_metrics_fail_instead_of_being_silently_ignored() -> None:
 
 
 def test_duplicate_metric_names_are_rejected() -> None:
+    base = make_spec().model_dump(mode="python")
+    base["metrics"] = [
+        MetricDefinition(name="pass_rate", direction=MetricDirection.MAXIMIZE),
+        MetricDefinition(name="pass_rate", direction=MetricDirection.MINIMIZE),
+    ]
     with pytest.raises(ValidationError, match="metric names must be unique"):
-        make_spec().model_copy(
-            update={
-                "metrics": [
-                    MetricDefinition(name="pass_rate", direction=MetricDirection.MAXIMIZE),
-                    MetricDefinition(name="pass_rate", direction=MetricDirection.MINIMIZE),
-                ]
-            }
-        )
+        ExperimentSpec.model_validate(base)
 
 
 def test_nonfinite_measurements_are_rejected() -> None:
     with pytest.raises(ValidationError):
         make_run("bad", float("nan"), 1.0)
+
+
+
+def test_report_converts_to_pending_canonical_artifact() -> None:
+    report = ExperimentEvaluator.compare(
+        make_spec(),
+        [
+            make_run("baseline", 0.7, 1.5),
+            make_run("candidate", 0.9, 1.0, evidence_refs=["artifact:evidence-2", "artifact:evidence-1"]),
+        ],
+    )
+    artifact = report_to_artifact(report, timestamp_ns=123456789)
+    assert artifact.metadata["artifact_kind"] == "experiment_report"
+    assert artifact.metadata["report_digest"] == report.report_digest
+    assert artifact.timestamp_ns == 123456789
+    assert artifact.source_uris == ["artifact:evidence-1", "artifact:evidence-2"]
+    assert artifact.validation_status.value == "pending"
+
+
+def test_report_artifact_identity_is_reproducible_for_fixed_timestamp() -> None:
+    runs = [make_run("baseline", 0.7, 1.5), make_run("candidate", 0.9, 1.0)]
+    report = ExperimentEvaluator.compare(make_spec(), runs)
+    first = report_to_artifact(report, timestamp_ns=10)
+    second = report_to_artifact(report, timestamp_ns=10)
+    assert first.artifact_id == second.artifact_id
+    assert first.content_hash == second.content_hash
