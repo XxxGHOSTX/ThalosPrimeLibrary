@@ -95,7 +95,7 @@ Changing the solution representation while holding the execution environment con
 
 ## Safety boundary
 
-Neither the plan nor the evaluator executes operation names, model-generated code, shell commands, repository patches, or infrastructure artifacts. The plan is declarative. A later execution service must resolve operations from an allowlisted handler registry, use resource limits and isolated workspaces, log each stage, and require explicit approval before consequential actions.
+Neither the plan nor the evaluator executes operation names, model-generated code, shell commands, repository patches, or infrastructure artifacts. The plan is declarative and the current sequential executor resolves names only from an application-registered handler map. It applies signed directive authorization, optional stage approvals, input/output budgets, and per-stage reporting. It is not a sandbox: handlers must enforce their own process/tool timeouts and isolation before running builds, tests, or other potentially dangerous workloads.
 
 ## Signed human directive records
 
@@ -161,6 +161,68 @@ assert artifact.validation_status.value == "pending"
 The scan skips known secret-like filenames and directories, symlinks, ignored build/vendor directories, oversized files, and binary files. Limits are explicit and a truncated scan is marked. Filename exclusions are a safety precaution, not a guarantee that every possible secret name will be recognized. The Python import graph is static and incomplete by design: dynamic imports, plugin discovery, runtime configuration, and dependencies declared only in manifests are not fully resolved. Manifest paths are inventoried but dependency manifests are not yet parsed into a transitive dependency graph.
 
 The adapter requires a caller-supplied `source_uri` that identifies the inspected project; it does not invent a provenance pointer. The resulting artifact is a pending record for the existing validation and provenance pipeline. It is not an assertion that the project is secure, correctly configured, or fully reproducible.
+
+## Registered workflow execution
+
+`WorkflowExecutor` is the controlled runtime for declarative plans. It does not load a handler by importing the operation name. Application code must explicitly register each trusted handler:
+
+```python
+from datetime import datetime, timezone
+from cryptography.hazmat.primitives.asymmetric import rsa
+from thalos_prime.experiments import (
+    ExperimentSpec,
+    HumanDirectiveRecord,
+    MetricDefinition,
+    MetricDirection,
+    WorkflowExecutor,
+    default_research_plan,
+)
+
+private_key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
+public_key = private_key.public_key()
+
+plan = default_research_plan()
+allowed_operations = sorted({stage.operation for stage in plan.stages})
+directive = HumanDirectiveRecord(
+    directive_id="research-run-001",
+    timestamp=datetime.now(timezone.utc),
+    objectives=["Compare candidate representations on a fixed task set"],
+    constraints=["Use the same environment and named cases"],
+    success_criteria=["Record test outputs, cost, and failures"],
+    permitted_operations=allowed_operations,
+)
+directive.sign(private_key, signer_id="trusted-user-or-service-id")
+
+spec = ExperimentSpec(
+    experiment_id="research-run-001",
+    task_family="repository-engineering",
+    task_description="Inspect and compare representation alternatives",
+    dataset_version="task-set-v1",
+    baseline_candidate_id="baseline",
+    primary_metric="pass_rate",
+    metrics=[
+        MetricDefinition(
+            name="pass_rate",
+            direction=MetricDirection.MAXIMIZE,
+            target_value=0.9,
+        )
+    ],
+    directive_id=directive.directive_id,
+    directive_digest=directive.directive_digest,
+)
+
+executor = WorkflowExecutor()
+executor.register("define_task", lambda context: {"task": context.initial_context["task"]})
+# Register a trusted handler for each remaining operation before execution.
+```
+
+Execution then requires `plan`, the matching `spec`, the signed `directive`, its trusted public key, and a JSON-compatible `initial_context`. `authorize_experiment_operation` verifies the exact directive ID/digest and checks each operation against the signed allowlist before the registered handler is invoked. A stage marked `requires_approval=True` additionally requires its stage ID in `approved_stage_ids`.
+
+The report records each stage's input and output digest, status, elapsed time, and bounded error details. An unsuccessful dependency blocks its descendants, while independent branches can still complete. Handler outputs are size-limited individually and across a workflow run, and each stage input is bounded. Outputs are passed as JSON-cloned data so that one handler cannot mutate stored prior-stage results through shared object references.
+
+**Execution safety boundaries:** handlers are trusted application code; registering a handler is an explicit trust decision. The executor does not sandbox a handler or forcibly terminate an in-process Python call. Its timeout field detects that a handler returned after its allotted time; a handler invoking a test runner, build system, or external tool must enforce a real process/tool timeout and isolation itself. Do not register model-generated Python or commands as handlers. Review consequential operations separately and require explicit approvals.
+
+A run report can be converted into a PENDING artifact via `workflow_report_to_artifact(report, source_uris=..., timestamp_ns=...)`. The caller must supply actual supporting source/evidence references; the adapter does not manufacture one and does not bypass the existing artifact validation or belief-admission path.
 
 ## Next integration stages
 
