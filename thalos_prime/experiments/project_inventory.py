@@ -204,106 +204,15 @@ class ProjectInventoryBuilder:
             raise ValueError("root must resolve to a directory")
 
         warning_counts: dict[str, int] = defaultdict(int)
-        candidate_paths: list[Path] = []
-        pending_directories = [root_path]
-        truncated = False
-
-        while pending_directories:
-            directory = pending_directories.pop()
-            try:
-                entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
-            except OSError as error:
-                warning_counts[f"directory_read_error:{type(error).__name__}"] += 1
-                continue
-
-            directories: list[Path] = []
-            for entry in entries:
-                relative = entry.relative_to(root_path)
-                if entry.is_symlink():
-                    warning_counts["symlink_skipped"] += 1
-                    continue
-                if entry.is_dir():
-                    if entry.name.lower() in _IGNORED_DIRECTORIES:
-                        warning_counts["ignored_directory_skipped"] += 1
-                    else:
-                        directories.append(entry)
-                    continue
-                if not entry.is_file():
-                    continue
-                if self._is_sensitive_path(relative):
-                    warning_counts["sensitive_path_skipped"] += 1
-                    continue
-                candidate_paths.append(entry)
-                if len(candidate_paths) > self._max_files:
-                    truncated = True
-                    warning_counts["file_limit_reached"] += 1
-                    break
-
-            if truncated:
-                break
-            pending_directories.extend(reversed(directories))
-
-        candidate_paths.sort(key=lambda path: path.relative_to(root_path).as_posix())
-        candidate_paths = candidate_paths[: self._max_files]
-        file_records: list[InventoryFile] = []
-        source_bytes: dict[str, bytes] = {}
-        digest_paths: dict[str, list[str]] = defaultdict(list)
-        total_bytes_read = 0
-
-        for path in candidate_paths:
-            relative = path.relative_to(root_path).as_posix()
-            try:
-                file_size = path.stat().st_size
-            except OSError as error:
-                warning_counts[f"file_stat_error:{type(error).__name__}"] += 1
-                continue
-
-            if file_size > self._max_file_bytes:
-                warning_counts["oversize_file_skipped"] += 1
-                continue
-            remaining_budget = self._max_total_bytes - total_bytes_read
-            if remaining_budget <= 0 or file_size > remaining_budget:
-                warning_counts["total_size_limit_reached"] += 1
-                truncated = True
-                break
-            read_limit = min(self._max_file_bytes, remaining_budget)
-
-            try:
-                flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-                descriptor = os.open(path, flags)
-                with os.fdopen(descriptor, "rb") as handle:
-                    data = handle.read(read_limit + _READ_LIMIT_MARGIN)
-            except OSError as error:
-                warning_counts[f"file_read_error:{type(error).__name__}"] += 1
-                continue
-
-            if len(data) > remaining_budget:
-                warning_counts["total_size_limit_reached"] += 1
-                truncated = True
-                break
-            total_bytes_read += len(data)
-            if len(data) > self._max_file_bytes:
-                warning_counts["oversize_file_skipped"] += 1
-                continue
-            if b"\x00" in data:
-                warning_counts["binary_file_skipped"] += 1
-                continue
-
-            language = _LANGUAGE_BY_SUFFIX.get(path.suffix.lower(), "other")
-            kind = self._classify_file(path, relative)
-            sha256 = hashlib.sha256(data).hexdigest()
-            file_records.append(
-                InventoryFile(
-                    path=relative,
-                    size_bytes=len(data),
-                    sha256=sha256,
-                    language=language,
-                    file_kind=kind,
-                )
-            )
-            digest_paths[sha256].append(relative)
-            if language == "python":
-                source_bytes[relative] = data
+        candidate_paths, truncated = self._collect_candidate_paths(root_path, warning_counts)
+        (
+            file_records,
+            source_bytes,
+            digest_paths,
+            total_bytes_read,
+            read_truncated,
+        ) = self._read_candidate_files(root_path, candidate_paths, warning_counts)
+        truncated = truncated or read_truncated
 
         file_records.sort(key=lambda item: item.path)
         language_counts: dict[str, int] = defaultdict(int)
@@ -321,12 +230,12 @@ class ProjectInventoryBuilder:
             if len(paths) > 1
         ]
         manifest_paths = sorted(
-            record.path for record in file_records
+            record.path
+            for record in file_records
             if Path(record.path).name.lower() in _MANIFEST_NAMES
         )
         test_paths = sorted(
-            record.path for record in file_records
-            if record.file_kind == "test"
+            record.path for record in file_records if record.file_kind == "test"
         )
 
         digest_payload = {
@@ -364,6 +273,119 @@ class ProjectInventoryBuilder:
             truncated_by_limits=truncated,
             project_digest=project_digest,
         )
+
+    def _collect_candidate_paths(
+        self,
+        root_path: Path,
+        warning_counts: dict[str, int],
+    ) -> tuple[list[Path], bool]:
+        """Collect eligible file paths with deterministic traversal and a file cap."""
+        candidate_paths: list[Path] = []
+        pending_directories = [root_path]
+        truncated = False
+        while pending_directories:
+            directory = pending_directories.pop()
+            try:
+                entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+            except OSError as error:
+                warning_counts[f"directory_read_error:{type(error).__name__}"] += 1
+                continue
+
+            directories: list[Path] = []
+            for entry in entries:
+                if entry.is_symlink():
+                    warning_counts["symlink_skipped"] += 1
+                    continue
+                if entry.is_dir():
+                    if entry.name.lower() in _IGNORED_DIRECTORIES:
+                        warning_counts["ignored_directory_skipped"] += 1
+                    else:
+                        directories.append(entry)
+                    continue
+                if not entry.is_file():
+                    continue
+                if self._is_sensitive_path(entry.relative_to(root_path)):
+                    warning_counts["sensitive_path_skipped"] += 1
+                    continue
+                candidate_paths.append(entry)
+                if len(candidate_paths) > self._max_files:
+                    truncated = True
+                    warning_counts["file_limit_reached"] += 1
+                    break
+            if truncated:
+                break
+            pending_directories.extend(reversed(directories))
+
+        candidate_paths.sort(key=lambda path: path.relative_to(root_path).as_posix())
+        return candidate_paths[: self._max_files], truncated
+
+    def _read_candidate_files(
+        self,
+        root_path: Path,
+        candidate_paths: list[Path],
+        warning_counts: dict[str, int],
+    ) -> tuple[list[InventoryFile], dict[str, bytes], dict[str, list[str]], int, bool]:
+        """Read bounded file bytes, hash accepted files, and record scan warnings."""
+        file_records: list[InventoryFile] = []
+        source_bytes: dict[str, bytes] = {}
+        digest_paths: dict[str, list[str]] = defaultdict(list)
+        total_bytes_read = 0
+        truncated = False
+
+        for path in candidate_paths:
+            relative = path.relative_to(root_path).as_posix()
+            try:
+                file_size = path.stat().st_size
+            except OSError as error:
+                warning_counts[f"file_stat_error:{type(error).__name__}"] += 1
+                continue
+            if file_size > self._max_file_bytes:
+                warning_counts["oversize_file_skipped"] += 1
+                continue
+
+            remaining_budget = self._max_total_bytes - total_bytes_read
+            if remaining_budget <= 0 or file_size > remaining_budget:
+                warning_counts["total_size_limit_reached"] += 1
+                truncated = True
+                break
+            read_limit = min(self._max_file_bytes, remaining_budget)
+            try:
+                flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                descriptor = os.open(path, flags)
+                with os.fdopen(descriptor, "rb") as handle:
+                    data = handle.read(read_limit + _READ_LIMIT_MARGIN)
+            except OSError as error:
+                warning_counts[f"file_read_error:{type(error).__name__}"] += 1
+                continue
+
+            if len(data) > remaining_budget:
+                warning_counts["total_size_limit_reached"] += 1
+                truncated = True
+                break
+            total_bytes_read += len(data)
+            if len(data) > self._max_file_bytes:
+                warning_counts["oversize_file_skipped"] += 1
+                continue
+            if b"\\x00" in data:
+                warning_counts["binary_file_skipped"] += 1
+                continue
+
+            language = _LANGUAGE_BY_SUFFIX.get(path.suffix.lower(), "other")
+            sha256 = hashlib.sha256(data).hexdigest()
+            file_records.append(
+                InventoryFile(
+                    path=relative,
+                    size_bytes=len(data),
+                    sha256=sha256,
+                    language=language,
+                    file_kind=self._classify_file(path, relative),
+                )
+            )
+            digest_paths[sha256].append(relative)
+            if language == "python":
+                source_bytes[relative] = data
+
+        return file_records, source_bytes, digest_paths, total_bytes_read, truncated
 
     @staticmethod
     def _is_sensitive_path(relative: Path) -> bool:
