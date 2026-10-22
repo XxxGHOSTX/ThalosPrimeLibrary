@@ -50,6 +50,7 @@ def report_to_artifact(report: ExperimentReport, *, timestamp_ns: int) -> Artifa
 def project_inventory_to_artifact(
     inventory: ProjectInventory,
     *,
+    source_uri: str,
     timestamp_ns: int,
 ) -> Artifact:
     """Convert a bounded project snapshot into a pending canonical artifact.
@@ -58,6 +59,10 @@ def project_inventory_to_artifact(
     not admit the inventory to the belief ledger or assert that its static
     import graph captures all runtime dependencies.
     """
+    normalized_source_uri = source_uri.strip()
+    if not normalized_source_uri:
+        raise ValueError("source_uri must identify the inventoried project")
+
     content = json.dumps(
         inventory.model_dump(mode="json"),
         sort_keys=True,
@@ -67,7 +72,7 @@ def project_inventory_to_artifact(
     )
     return Artifact.create(
         content=content,
-        source_uris=[],
+        source_uris=[normalized_source_uri],
         metadata={
             "artifact_kind": "project_inventory",
             "root_name": inventory.root_name,
