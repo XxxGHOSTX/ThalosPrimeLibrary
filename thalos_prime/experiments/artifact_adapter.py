@@ -100,6 +100,9 @@ def workflow_report_to_artifact(
     or task artifacts used by the run. The adapter preserves the signed
     directive and execution digests but does not auto-accept the report.
     """
+    if not report.verify_report():
+        raise ValueError("workflow report digest does not match its current contents")
+
     reported_refs = {
         reference
         for stage in report.stages
