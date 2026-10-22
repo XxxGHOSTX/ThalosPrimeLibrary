@@ -109,6 +109,9 @@ _SENSITIVE_NAMES: frozenset[str] = frozenset(
 _SENSITIVE_SUFFIXES: frozenset[str] = frozenset(
     {".pem", ".key", ".p12", ".pfx", ".jks", ".keystore"}
 )
+_MIN_POSITIVE_LIMIT = 1
+_READ_LIMIT_MARGIN = 1
+_MIN_PYTHON_LINE = 1
 
 
 class InventoryFile(BaseModel):
@@ -184,11 +187,11 @@ class ProjectInventoryBuilder:
         max_total_bytes: int = 100 * 1_048_576,
     ) -> None:
         """Set explicit work limits for project scanning."""
-        if max_files < 1:
+        if max_files < _MIN_POSITIVE_LIMIT:
             raise ValueError("max_files must be at least 1")
-        if max_file_bytes < 1:
+        if max_file_bytes < _MIN_POSITIVE_LIMIT:
             raise ValueError("max_file_bytes must be at least 1")
-        if max_total_bytes < 1:
+        if max_total_bytes < _MIN_POSITIVE_LIMIT:
             raise ValueError("max_total_bytes must be at least 1")
         self._max_files = max_files
         self._max_file_bytes = max_file_bytes
@@ -241,6 +244,7 @@ class ProjectInventoryBuilder:
             pending_directories.extend(reversed(directories))
 
         candidate_paths.sort(key=lambda path: path.relative_to(root_path).as_posix())
+        candidate_paths = candidate_paths[: self._max_files]
         file_records: list[InventoryFile] = []
         source_bytes: dict[str, bytes] = {}
         digest_paths: dict[str, list[str]] = defaultdict(list)
@@ -266,7 +270,7 @@ class ProjectInventoryBuilder:
                 flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                 descriptor = os.open(path, flags)
                 with os.fdopen(descriptor, "rb") as handle:
-                    data = handle.read(self._max_file_bytes + 1)
+                    data = handle.read(self._max_file_bytes + _READ_LIMIT_MARGIN)
             except OSError as error:
                 warning_counts[f"file_read_error:{type(error).__name__}"] += 1
                 continue
@@ -460,7 +464,7 @@ class ProjectInventoryBuilder:
                 parse_issues.append(
                     PythonParseIssue(
                         path=relative,
-                        line=max(1, error.lineno or 1),
+                        line=max(_MIN_PYTHON_LINE, error.lineno or _MIN_PYTHON_LINE),
                         message="python_syntax_error",
                     )
                 )
