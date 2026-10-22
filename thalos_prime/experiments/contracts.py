@@ -102,7 +102,7 @@ class ExperimentSpec(BaseModel):
             len(value) != _SHA256_HEX_LENGTH
             or any(character not in "0123456789abcdef" for character in value)
         ):
-            raise ValueError("configuration and directive digests must be lowercase SHA-256 hex")
+            raise ValueError("configuration_digest and directive_digest must be lowercase SHA-256 hex digest strings")
         return value
 
     @model_validator(mode="after")
