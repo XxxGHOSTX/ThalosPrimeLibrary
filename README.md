@@ -80,18 +80,23 @@ Some subsystems use a shared lifecycle convention (`initialize → validate → 
 
 | Capability | Description |
 |---|---|
-| **Deterministic page generation** | SHA-256-based generation of 3,200-character Babel pages from hex addresses |
+| **Library of Babel page generation** | SHA-256-based page generation and address mapping for the existing Babel subsystem |
 | **Query enumeration** | Map natural-language queries to candidate Babel addresses via n-gram extraction |
 | **Coherence scoring** | Four-metric scoring (language, structure, n-gram, exact match) on a 0–100 scale |
 | **Deep synthesis** | Multi-view semantic decomposition with Physical/Chemical, Logical/Mathematical, Linguistic/Narrative nexus results |
 | **Symbolic reasoning** | Z3 SMT constraint solving, incremental updates, optimization objectives |
-| **Tree of Thoughts / MCTS** | Deterministic multi-path planning with explicit thought-node representation |
+| **Multi-representation experiment planning** | Declarative DAG that prepares graph, constraint, and state-transition branches for baseline comparison |
+| **Baseline candidate evaluation** | Compare recorded metric samples, test status, cost, runtime, and evidence against a declared baseline |
+| **Signed human directives** | RSA-PSS/SHA-256 signatures and explicit allowlists; unsigned directives cannot authorize an operation |
+| **Read-only project inventory** | Bounded file hashing, manifest/test inventory, duplicate-file grouping, and static Python import graph |
+| **Evidence artifacts** | Convert experiment reports and project inventories to PENDING canonical artifacts for downstream validation |
+| **Planning** | Tree of Thoughts / MCTS planning components where implemented; test each execution path before claiming deterministic behavior |
 | **Graph-RAG** | Hybrid knowledge graph retrieval combining BFS graph traversal and text search |
 | **Infrastructure synthesis** | YAML-schema → Terraform/OpenTofu/Cloudflare/GitHub Actions/Docker artifacts |
 | **Policy enforcement** | `require_ssl`, `limit_scaling`, and extensible policy rules |
 | **Release strategies** | `direct`, `blue_green`, `canary` deployment orchestration |
 | **Drift detection** | DeepDiff-based schema drift detection and rollback |
-| **Replay determinism** | Single seed controls all pseudo-randomness; identical inputs → identical outputs |
+| **Scoped reproducibility** | Seeded replay and stable ordering are supported by specified paths; broader guarantees require path-specific tests |
 
 ---
 
@@ -589,6 +594,7 @@ ThalosPrimeLibrary is organised into 22 subsystem packages under `thalos_prime/`
 | `constraints/` | Z3-based symbolic constraint engine with typed variables |
 | `reasoning/` | Unified reasoning control plane (symbolic + proof + constraint) |
 | `planning/` | Tree of Thoughts and MCTS multi-path planners |
+| `experiments/` | Signed human directives, declarative DAG plans, bounded project inventory, baseline evaluation, artifact adapters |
 | `simulation/` | Deterministic world-state simulation |
 | `agency/` | Perceive-plan-act agent loop with belief tracking |
 | `babel/` | Deterministic conversational pipeline and semantic orchestrator |
