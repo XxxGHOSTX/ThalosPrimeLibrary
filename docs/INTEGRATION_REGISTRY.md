@@ -16,8 +16,8 @@ This registry tracks candidate source repositories and the evidence required bef
 |---|---|---|---|
 | [ThalosPrimeLibrary](https://github.com/XxxGHOSTX/ThalosPrimeLibrary) | Canonical base: Babel tooling, symbolic constraints, planning, retrieval, API/UI, artifact synthesis | Canonical target | Establish current baseline and regression suite |
 | [ThalosPrimeLibrary.v2](https://github.com/XxxGHOSTX/ThalosPrimeLibrary.v2) | Staged retrieval, reasoning, validation, presentation concepts | Candidate; README reviewed | Inspect code and tests; identify concrete improvements not already present |
-| [ThalosPrimeConcept](https://github.com/XxxGHOSTX/ThalosPrimeConcept) | Human directive records, execution DAGs, provenance, graph/vector retrieval, sandbox concepts | DAG planning and evidence-linked experiment concepts adapted in this branch; source code not wholesale copied | Verify signature handling, provenance integrity, graph execution semantics, and sandbox boundaries before further adoption |
-| [THALOS_PRIME_CORE_INTELLIGENCE](https://github.com/XxxGHOSTX/THALOS_PRIME_CORE_INTELLIGENCE) | Project analysis, dependency graph, build orchestration, caching | Candidate; README reviewed | Verify supported languages, safe command execution, cache invalidation, test results |
+| [ThalosPrimeConcept](https://github.com/XxxGHOSTX/ThalosPrimeConcept) | Human directive records, execution DAGs, provenance, graph/vector retrieval, sandbox concepts | Declarative DAG and RSA-PSS-signed HumanDirectiveRecord adapted in this branch; raw callable executor not imported | Verify tests, key management, provenance integrity, graph execution semantics, and sandbox boundaries before further adoption |
+| [THALOS_PRIME_CORE_INTELLIGENCE](https://github.com/XxxGHOSTX/THALOS_PRIME_CORE_INTELLIGENCE) | Project analysis, dependency graph, build orchestration, caching | Bounded read-only ProjectInventoryBuilder adapted in this branch; no build commands are executed | Verify tests, file/byte bounds, import graph results, and dependency/security handling; build orchestration remains deferred |
 | [ThalosPrime-Platform](https://github.com/XxxGHOSTX/ThalosPrime-Platform) | Governance, risk analysis, audit and artifact workflow | Candidate; README reviewed | Separate enterprise-specific features from reusable governance; verify security |
 | [Thalos-Prime-Directive2](https://github.com/XxxGHOSTX/Thalos-Prime-Directive2) | Container/deployment/CI and health-check patterns | Candidate; README reviewed | Confirm actual stack, endpoints, tests, license compatibility, secrets handling |
 | [Thalos-Prime-Directive](https://github.com/XxxGHOSTX/Thalos-Prime-Directive) | Bio-inspired simulations and general software modules | Candidate; README reviewed | Audit ordinary software separately; exclude unverified biological/organism claims |
@@ -33,15 +33,17 @@ This registry tracks candidate source repositories and the evidence required bef
 
 ## Implemented shared foundation on the integration branch
 
-The following implementation now exists in `thalos_prime/experiments/` and has been exposed through the API:
+The following implementation now exists in `thalos_prime/experiments/`; the experiment comparator and DAG plan are exposed through the API, while project scanning and directive authorization are Python interfaces:
 
-- Declarative DAG planning with stable topological ordering and cycle/missing-dependency rejection. This adapts the useful dependency-graph idea from ThalosPrimeConcept rather than importing its raw callable executor.
+- Declarative DAG planning with stable topological ordering, parallel-ready representation branches (graph, constraints, state transitions), and cycle/missing-dependency rejection. This adapts the dependency-graph idea from ThalosPrimeConcept rather than importing its raw callable executor.
+- Signed `HumanDirectiveRecord` with RSA-PSS/SHA-256 signatures, explicit operation allowlists, deny-by-default authorization, and directive ID/digest linkage in experiment specs. Key lifecycle and public-key trust remain application responsibilities.
 - Typed experiment specifications and candidate-run records that preserve repeated metric samples, model/tool versions, implementation version, environment fingerprint, configuration digest, tests, evidence references, time, and cost.
 - Baseline comparison with explicit maximize/minimize semantics, target gates, eligibility reasons, sample counts, dispersion, stable ranking, and report/spec digests.
-- Adapter to the existing canonical artifact schema. Produced artifacts remain PENDING and must go through the existing validation workflow.
+- Adapter to the existing canonical artifact schema. Experiment reports and project inventories become PENDING artifacts and must go through the existing validation workflow.
+- `ProjectInventoryBuilder`, a bounded read-only scanner that hashes files, inventories manifests/tests, detects byte-identical files, creates a best-effort Python import graph, records syntax errors, and avoids code execution. Output can be stored through the canonical artifact adapter.
 - API endpoints for retrieving the default declarative plan and comparing recorded result batches.
 
-The new foundation has source files and tests in this branch, but the tests and repository-wide checks have not been confirmed passing. Check the latest PR checks before treating it as accepted. This implementation does not yet dispatch models, execute candidate code, implement a sandbox, compute statistical significance, or import the candidate repositories wholesale.
+Source modules and targeted tests have been added in this branch. Repository-wide CI jobs have been failing before runner assignment (the job API reports no runner and no executed steps), so those results do not establish test or lint status. The new local test suite has not yet been verified against the complete repository environment. This implementation does not yet dispatch models, execute candidate code, implement a sandbox, calculate confidence intervals/statistical significance, or import the candidate repositories wholesale.
 
 ## Current limitations of this registry
 
