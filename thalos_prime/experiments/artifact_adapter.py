@@ -30,9 +30,11 @@ def report_to_artifact(report: ExperimentReport, *, timestamp_ns: int) -> Artifa
         for assessment in report.assessments
         for evidence_ref in assessment.evidence_refs
     }
-    if report.spec.directive_id is not None:
-        evidence_ref_set.add(f"directive:{report.spec.directive_id}")
     evidence_refs = sorted(evidence_ref_set)
+    if not evidence_refs:
+        raise ValueError(
+            "at least one real evidence reference is required for experiment artifacts"
+        )
     metadata = {
         "artifact_kind": "experiment_report",
         "experiment_id": report.experiment_id,
