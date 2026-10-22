@@ -53,6 +53,8 @@ class ExperimentSpec(BaseModel):
     metrics: list[MetricDefinition] = Field(min_length=1)
     require_evidence: bool = True
     configuration_digest: str | None = None
+    directive_id: str | None = None
+    directive_digest: str | None = None
 
     @model_validator(mode="after")
     def validate_metric_definitions(self) -> ExperimentSpec:
@@ -67,6 +69,14 @@ class ExperimentSpec(BaseModel):
             raise ValueError("primary_metric must be required")
         if not self.baseline_candidate_id.strip():
             raise ValueError("baseline_candidate_id must not be blank")
+        if (self.directive_id is None) != (self.directive_digest is None):
+            raise ValueError("directive_id and directive_digest must be supplied together")
+        if self.directive_digest is not None:
+            digest = self.directive_digest
+            if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+                raise ValueError("directive_digest must be a lowercase SHA-256 hex digest")
+        if self.directive_id is not None and not self.directive_id.strip():
+            raise ValueError("directive_id must not be blank")
         return self
 
 
