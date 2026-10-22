@@ -13,13 +13,14 @@ from thalos_prime.experiments import (
     MetricDefinition,
     MetricDirection,
     StageSpec,
+    WorkflowExecutionReport,
     WorkflowExecutor,
     workflow_report_to_artifact,
 )
 from thalos_prime.experiments.plan import ExperimentPlan
 
 
-def build_report():
+def build_report() -> WorkflowExecutionReport:
     """Create a deterministic one-stage run for adapter tests."""
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = private_key.public_key()
