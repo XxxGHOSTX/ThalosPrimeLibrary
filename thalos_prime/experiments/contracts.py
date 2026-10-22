@@ -9,6 +9,8 @@ from __future__ import annotations
 from enum import StrEnum
 from math import isfinite
 
+_SHA256_HEX_LENGTH = 64
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
@@ -56,6 +58,46 @@ class ExperimentSpec(BaseModel):
     directive_id: str | None = None
     directive_digest: str | None = None
 
+    @field_validator(
+        "experiment_id",
+        "task_family",
+        "task_description",
+        "dataset_version",
+        "baseline_candidate_id",
+        "primary_metric",
+    )
+    @classmethod
+    def normalize_required_text(cls, value: str) -> str:
+        """Normalize task identity text and reject whitespace-only values."""
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("experiment specification text fields must not be blank")
+        return normalized
+
+    @field_validator("directive_id")
+    @classmethod
+    def normalize_directive_id(cls, value: str | None) -> str | None:
+        """Normalize an optional directive ID."""
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("directive_id must not be blank")
+        return normalized
+
+    @field_validator("configuration_digest", "directive_digest")
+    @classmethod
+    def validate_optional_digest(cls, value: str | None) -> str | None:
+        """Require a lowercase SHA-256 hex digest when a digest is supplied."""
+        if value is None:
+            return None
+        if (
+            len(value) != _SHA256_HEX_LENGTH
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("configuration and directive digests must be lowercase SHA-256 hex")
+        return value
+
     @model_validator(mode="after")
     def validate_metric_definitions(self) -> ExperimentSpec:
         """Require unique metrics and a required primary metric."""
@@ -67,16 +109,8 @@ class ExperimentSpec(BaseModel):
             raise ValueError("primary_metric must name a declared metric")
         if not by_name[self.primary_metric].required:
             raise ValueError("primary_metric must be required")
-        if not self.baseline_candidate_id.strip():
-            raise ValueError("baseline_candidate_id must not be blank")
         if (self.directive_id is None) != (self.directive_digest is None):
             raise ValueError("directive_id and directive_digest must be supplied together")
-        if self.directive_digest is not None:
-            digest = self.directive_digest
-            if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
-                raise ValueError("directive_digest must be a lowercase SHA-256 hex digest")
-        if self.directive_id is not None and not self.directive_id.strip():
-            raise ValueError("directive_id must not be blank")
         return self
 
 
@@ -142,14 +176,33 @@ class CandidateRun(BaseModel):
             raise ValueError("sample IDs must be unique")
         return normalized
 
+    @field_validator("configuration_digest")
+    @classmethod
+    def validate_configuration_digest(cls, value: str | None) -> str | None:
+        """Require a lowercase SHA-256 hex digest when configuration is identified."""
+        if value is None:
+            return None
+        if (
+            len(value) != _SHA256_HEX_LENGTH
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("configuration_digest must be a lowercase SHA-256 hex digest")
+        return value
+
     @field_validator("model_versions")
     @classmethod
     def validate_model_versions(cls, values: dict[str, str]) -> dict[str, str]:
-        """Require nonblank model/tool labels and versions."""
+        """Normalize model/tool labels and reject blank or duplicate normalized names."""
+        normalized: dict[str, str] = {}
         for name, version in values.items():
-            if not name.strip() or not version.strip():
+            normalized_name = name.strip()
+            normalized_version = version.strip()
+            if not normalized_name or not normalized_version:
                 raise ValueError("model/tool names and versions must not be blank")
-        return values
+            if normalized_name in normalized:
+                raise ValueError("model/tool names must remain unique after normalization")
+            normalized[normalized_name] = normalized_version
+        return normalized
 
     @model_validator(mode="after")
     def validate_sample_alignment(self) -> CandidateRun:
@@ -228,10 +281,10 @@ class ExperimentReport(BaseModel):
     baseline_candidate_id: str
     primary_metric: str
     spec: ExperimentSpec
-    spec_digest: str
+    spec_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     assessments: list[CandidateAssessment]
     ranked_candidate_ids: list[str]
-    report_digest: str
+    report_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 __all__ = [
