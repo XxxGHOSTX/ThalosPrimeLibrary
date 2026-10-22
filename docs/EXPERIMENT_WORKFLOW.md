@@ -136,6 +136,8 @@ Use the resulting `directive.directive_digest` in `ExperimentSpec.directive_dige
 `ProjectInventoryBuilder` adapts the useful project-discovery and source-fingerprinting ideas from `THALOS_PRIME_CORE_INTELLIGENCE` into a bounded, non-executing scanner. It reports relative paths, sizes, SHA-256 file hashes, language counts, common manifest/test paths, duplicate files, locally resolvable Python imports, and Python syntax errors. It does not import or execute inspected files, run build tools, or return file contents.
 
 ```python
+from pathlib import Path
+
 from thalos_prime.experiments import ProjectInventoryBuilder, project_inventory_to_artifact
 
 builder = ProjectInventoryBuilder(
@@ -148,13 +150,17 @@ print(inventory.project_digest)
 print(inventory.language_counts)
 print(inventory.python_import_edges)
 
-artifact = project_inventory_to_artifact(inventory, timestamp_ns=123456789)
+artifact = project_inventory_to_artifact(
+    inventory,
+    source_uri=Path("./path/to/project").resolve().as_uri(),
+    timestamp_ns=123456789,
+)
 assert artifact.validation_status.value == "pending"
 ```
 
 The scan skips known secret-like filenames and directories, symlinks, ignored build/vendor directories, oversized files, and binary files. Limits are explicit and a truncated scan is marked. Filename exclusions are a safety precaution, not a guarantee that every possible secret name will be recognized. The Python import graph is static and incomplete by design: dynamic imports, plugin discovery, runtime configuration, and dependencies declared only in manifests are not fully resolved. Manifest paths are inventoried but dependency manifests are not yet parsed into a transitive dependency graph.
 
-The resulting artifact is a pending record for the existing validation and provenance pipeline. It is not an assertion that the project is secure, correctly configured, or fully reproducible.
+The adapter requires a caller-supplied `source_uri` that identifies the inspected project; it does not invent a provenance pointer. The resulting artifact is a pending record for the existing validation and provenance pipeline. It is not an assertion that the project is secure, correctly configured, or fully reproducible.
 
 ## Next integration stages
 
