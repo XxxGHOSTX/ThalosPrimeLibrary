@@ -123,7 +123,6 @@ _SENSITIVE_NAMES: frozenset[str] = frozenset(
         ".netrc",
         ".git-credentials",
         "config.json",
-        "credentials",
         "secrets.json",
         "secrets.yaml",
         "secrets.yml",
@@ -132,10 +131,9 @@ _SENSITIVE_NAMES: frozenset[str] = frozenset(
     }
 )
 _SENSITIVE_SUFFIXES: frozenset[str] = frozenset(
-    {".pem", ".key", ".p12", ".pfx", ".jks", ".keystore"}
+    {".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".tfstate"}
 )
 _MIN_POSITIVE_LIMIT = 1
-_READ_LIMIT_MARGIN = 1
 _MIN_PYTHON_LINE = 1
 
 
@@ -444,7 +442,7 @@ class ProjectInventoryBuilder:
                     warning_counts["file_changed_during_scan"] += 1
                     truncated = True
                     continue
-                if b"\\x00" in data:
+                if b"\x00" in data:
                     warning_counts["binary_file_skipped"] += 1
                     continue
 
@@ -480,7 +478,10 @@ class ProjectInventoryBuilder:
             return True
         if name.startswith(("id_rsa", "id_ed25519")) and not name.endswith(".pub"):
             return True
-        if any(part.lower() in {".ssh", ".aws", ".azure"} for part in relative.parts[:-1]):
+        if any(
+            part.lower() in {".ssh", ".aws", ".azure", ".kube", ".docker"}
+            for part in relative.parts[:-1]
+        ):
             return name not in {"config.example", "credentials.example"}
         return False
 
