@@ -28,6 +28,12 @@ Before running a benchmark, record:
 
 Keep a held-out set where feasible. Avoid tuning on evaluation cases and then reporting the same cases as independent validation.
 
+## Paired representation comparisons
+
+For representation experiments, use the same named task cases across the baseline and each candidate. Record one value per case and set `CandidateRun.sample_ids` to the corresponding case identifiers. The evaluator rejects candidate/baseline sample-set mismatches and aligns values by ID rather than trusting list order.
+
+Report average primary-metric change together with per-case paired improvement dispersion. Include cases where the candidate regresses. This is a more informative view than comparing averages alone, but it does not establish statistical significance or generalization. A formal statistical test and independent held-out task set remain separate evaluation requirements.
+
 ## Core metrics
 
 | Metric | Meaning |
