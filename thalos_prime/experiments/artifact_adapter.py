@@ -7,6 +7,7 @@ import json
 from thalos_prime.artifacts.schema import Artifact
 from thalos_prime.experiments.contracts import ExperimentReport
 from thalos_prime.experiments.project_inventory import ProjectInventory
+from thalos_prime.experiments.execution import WorkflowExecutionReport
 
 
 def report_to_artifact(report: ExperimentReport, *, timestamp_ns: int) -> Artifact:
@@ -85,4 +86,52 @@ def project_inventory_to_artifact(
     )
 
 
-__all__ = ["project_inventory_to_artifact", "report_to_artifact"]
+def workflow_report_to_artifact(
+    report: WorkflowExecutionReport,
+    *,
+    source_uris: list[str],
+    timestamp_ns: int,
+) -> Artifact:
+    """Convert a workflow run report to a pending, source-bound artifact.
+
+    Source references must be supplied by the caller and identify the evidence
+    or task artifacts used by the run. The adapter preserves the signed
+    directive and execution digests but does not auto-accept the report.
+    """
+    normalized_sources = sorted({source_uri.strip() for source_uri in source_uris if source_uri.strip()})
+    if not normalized_sources:
+        raise ValueError("at least one real source URI is required for workflow provenance")
+
+    content = json.dumps(
+        report.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    return Artifact.create(
+        content=content,
+        source_uris=normalized_sources,
+        metadata={
+            "artifact_kind": "workflow_execution_report",
+            "plan_id": report.plan_id,
+            "plan_digest": report.plan_digest,
+            "directive_id": report.directive_id,
+            "directive_digest": report.directive_digest,
+            "report_digest": report.report_digest,
+            "succeeded_count": str(report.succeeded_count),
+            "failed_count": str(report.failed_count),
+            "blocked_count": str(report.blocked_count),
+            "authorization_denied_count": str(report.authorization_denied_count),
+            "approval_required_count": str(report.approval_required_count),
+            "timed_out_count": str(report.timed_out_count),
+        },
+        timestamp_ns=timestamp_ns,
+    )
+
+
+__all__ = [
+    "project_inventory_to_artifact",
+    "report_to_artifact",
+    "workflow_report_to_artifact",
+]
