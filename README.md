@@ -19,6 +19,8 @@ This repository is the canonical integration core. Related Thalos Prime reposito
 - [Lender brief](docs/funding/THALOSPRIME_LENDER_BRIEF.md)
 - [Investor brief](docs/funding/THALOSPRIME_INVESTOR_BRIEF.md)
 
+> **Verification status:** The completion and verification reports dated February 2026 describe earlier repository snapshots. They are not evidence that the current unified workflow passes its tests or is production-ready. The current integration branch requires fresh automated tests, type checks, lint, security scans, and task benchmarks before readiness claims can be made.
+
 ## ZIP Setup Walkthrough (Deploy After Downloading ZIP)
 
 1. Download and extract the ZIP.
@@ -363,8 +365,9 @@ Each run writes two files to `--workdir`:
 pytest tests/test_thalos_prime_pipeline.py -v
 ```
 
-The 64 offline tests cover halt semantics, state serialisation, BM25 scoring, volume assembly,
-traversal determinism, and a full dry-run end-to-end pass.
+The offline pipeline test module covers halt semantics, state serialization, BM25 scoring,
+volume assembly, traversal determinism, and an end-to-end dry run. Run the current test suite
+before using it as evidence of readiness.
 
 ---
 
@@ -741,8 +744,8 @@ docker compose -f infra/docker-compose.yml up
 | [docs/thalos_prime_blueprint.md](docs/thalos_prime_blueprint.md) | Deterministic architecture blueprint and MNN pipeline spec |
 | [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) | Complete deployment guide |
 | [CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) | Development workflow, code standards, and CI requirements |
-| [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Phase 1 / Phase 2 implementation status |
-| [VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) | System verification and test results |
+| [IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md) | Historical implementation snapshot; not current validation |
+| [VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) | Historical February 2026 test snapshot; rerun checks for current status |
 
 ---
 
