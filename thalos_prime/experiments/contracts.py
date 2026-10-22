@@ -1,7 +1,7 @@
 """Typed contracts for evidence-oriented candidate evaluation.
 
-This module deliberately contains data structures only. It does not execute
-model output, shell commands, arbitrary Python, or generated implementations.
+This module contains data structures only. It does not execute model output,
+shell commands, arbitrary Python, or generated implementations.
 """
 
 from __future__ import annotations
@@ -71,15 +71,19 @@ class ExperimentSpec(BaseModel):
 
 
 class CandidateRun(BaseModel):
-    """Recorded output from evaluating one solution or representation."""
+    """Recorded measurements for one candidate implementation or representation."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    run_id: str = Field(min_length=1)
     candidate_id: str = Field(min_length=1)
     approach: str = Field(min_length=1)
     representation_id: str = Field(min_length=1)
     implementation_version: str = Field(min_length=1)
-    metrics: dict[str, float]
+    environment_fingerprint: str = Field(min_length=1)
+    model_versions: dict[str, str] = Field(default_factory=dict)
+    configuration_digest: str | None = None
+    metric_samples: dict[str, list[float]]
     tests_passed: bool
     test_ids: list[str] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)
@@ -87,29 +91,47 @@ class CandidateRun(BaseModel):
     cost_usd: float = Field(default=0.0, ge=0, allow_inf_nan=False)
     failure_summary: list[str] = Field(default_factory=list)
 
-    @field_validator("metrics")
+    @field_validator("metric_samples")
     @classmethod
-    def validate_metrics(cls, values: dict[str, float]) -> dict[str, float]:
-        """Reject blank metric names and non-finite measurements."""
-        for name, value in values.items():
+    def validate_metric_samples(cls, values: dict[str, list[float]]) -> dict[str, list[float]]:
+        """Reject blank names, empty samples, and non-finite measurements."""
+        for name, samples in values.items():
             if not name.strip():
                 raise ValueError("metric names must not be blank")
-            if not isfinite(value):
-                raise ValueError(f"metric {name!r} must be finite")
+            if not samples:
+                raise ValueError(f"metric {name!r} must contain at least one sample")
+            if not all(isfinite(value) for value in samples):
+                raise ValueError(f"all samples for metric {name!r} must be finite")
         return values
 
-    @field_validator("candidate_id", "approach", "representation_id", "implementation_version")
+    @field_validator(
+        "run_id",
+        "candidate_id",
+        "approach",
+        "representation_id",
+        "implementation_version",
+        "environment_fingerprint",
+    )
     @classmethod
     def validate_nonblank_strings(cls, value: str) -> str:
         """Reject identifiers and labels that only contain whitespace."""
         value = value.strip()
         if not value:
-            raise ValueError("candidate identifiers and labels must not be blank")
+            raise ValueError("identifiers and labels must not be blank")
         return value
+
+    @field_validator("model_versions")
+    @classmethod
+    def validate_model_versions(cls, values: dict[str, str]) -> dict[str, str]:
+        """Require nonblank model/tool labels and versions."""
+        for name, version in values.items():
+            if not name.strip() or not version.strip():
+                raise ValueError("model/tool names and versions must not be blank")
+        return values
 
 
 class MetricComparison(BaseModel):
-    """Comparison against the baseline; positive improvement is always better."""
+    """Comparison against a baseline; positive directed change is better."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -120,24 +142,34 @@ class MetricComparison(BaseModel):
     relative_improvement_percent: float | None
     improved: bool
     meets_target: bool | None
+    baseline_sample_count: int = Field(ge=1)
+    candidate_sample_count: int = Field(ge=1)
+    baseline_sample_stddev: float | None
+    candidate_sample_stddev: float | None
 
 
 class CandidateAssessment(BaseModel):
-    """Eligibility and measured results for one candidate."""
+    """Eligibility, measured results, and provenance for one candidate."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    run_id: str
     candidate_id: str
     approach: str
     representation_id: str
     implementation_version: str
+    environment_fingerprint: str
+    model_versions: dict[str, str]
+    configuration_digest: str | None
     eligible: bool
     exclusion_reasons: list[str]
     primary_metric_value: float | None
     primary_improvement: float | None
     relative_primary_improvement_percent: float | None
+    metric_samples: dict[str, list[float]]
     metric_comparisons: dict[str, MetricComparison]
     tests_passed: bool
+    test_ids: list[str]
     evidence_refs: list[str]
     elapsed_ms: float
     cost_usd: float
@@ -145,7 +177,7 @@ class CandidateAssessment(BaseModel):
 
 
 class ExperimentReport(BaseModel):
-    """Reproducible comparison report with a digest of the report contents."""
+    """Reproducible report including the specification and its content digest."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -153,6 +185,7 @@ class ExperimentReport(BaseModel):
     task_family: str
     baseline_candidate_id: str
     primary_metric: str
+    spec: ExperimentSpec
     spec_digest: str
     assessments: list[CandidateAssessment]
     ranked_candidate_ids: list[str]
