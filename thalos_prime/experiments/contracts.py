@@ -9,9 +9,13 @@ from __future__ import annotations
 from enum import StrEnum
 from math import isfinite
 
-_SHA256_HEX_LENGTH = 64
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+_SHA256_HEX_LENGTH = 64
+MAX_EXPERIMENT_RUNS = 25
+MAX_METRICS_PER_RUN = 25
+MAX_SAMPLES_PER_METRIC = 2_000
+MAX_EVIDENCE_REFERENCES = 500
 
 
 class MetricDirection(StrEnum):
@@ -26,7 +30,7 @@ class MetricDefinition(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    name: str = Field(min_length=1)
+    name: str = Field(min_length=1, max_length=100)
     direction: MetricDirection
     required: bool = True
     target_value: float | None = Field(default=None, allow_inf_nan=False)
@@ -46,13 +50,16 @@ class ExperimentSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    experiment_id: str = Field(min_length=1)
-    task_family: str = Field(min_length=1)
-    task_description: str = Field(min_length=1)
-    dataset_version: str = Field(min_length=1)
-    baseline_candidate_id: str = Field(min_length=1)
-    primary_metric: str = Field(min_length=1)
-    metrics: list[MetricDefinition] = Field(min_length=1)
+    experiment_id: str = Field(min_length=1, max_length=200)
+    task_family: str = Field(min_length=1, max_length=200)
+    task_description: str = Field(min_length=1, max_length=4_000)
+    dataset_version: str = Field(min_length=1, max_length=200)
+    baseline_candidate_id: str = Field(min_length=1, max_length=200)
+    primary_metric: str = Field(min_length=1, max_length=100)
+    metrics: list[MetricDefinition] = Field(
+        min_length=1,
+        max_length=MAX_METRICS_PER_RUN,
+    )
     require_evidence: bool = True
     configuration_digest: str | None = None
     directive_id: str | None = None
