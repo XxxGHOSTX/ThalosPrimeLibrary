@@ -262,3 +262,31 @@ def test_report_artifact_preserves_directive_lineage() -> None:
     )
     artifact = report_to_artifact(report, timestamp_ns=10)
     assert "directive:hdr-123" in artifact.source_uris
+
+
+def test_report_verification_detects_nested_content_mutation() -> None:
+    """Report digests can be recomputed after serialization and detect tampering."""
+    report = ExperimentEvaluator.compare(
+        make_spec(),
+        [
+            make_run("baseline", [0.7, 0.7], [1.5, 1.5]),
+            make_run("candidate", [0.9, 0.9], [1.0, 1.0]),
+        ],
+    )
+    assert ExperimentEvaluator.verify_report(report)
+    candidate = next(item for item in report.assessments if item.candidate_id == "candidate")
+    candidate.metric_samples["pass_rate"].append(0.1)
+    assert not ExperimentEvaluator.verify_report(report)
+
+
+def test_report_verification_fails_when_spec_is_modified() -> None:
+    """The spec digest binds the report to its task definition."""
+    report = ExperimentEvaluator.compare(
+        make_spec(),
+        [
+            make_run("baseline", [0.7], [1.5]),
+            make_run("candidate", [0.9], [1.0]),
+        ],
+    )
+    report.spec.metrics[0].name = "mutated-metric"
+    assert not ExperimentEvaluator.verify_report(report)
