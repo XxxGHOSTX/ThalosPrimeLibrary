@@ -209,6 +209,8 @@ class ProjectInventoryBuilder:
         max_files: int = 5000,
         max_file_bytes: int = 1_048_576,
         max_total_bytes: int = 100 * 1_048_576,
+        max_directories: int = 20_000,
+        max_depth: int = 50,
     ) -> None:
         """Set explicit work limits for project scanning."""
         if max_files < _MIN_POSITIVE_LIMIT:
@@ -217,9 +219,15 @@ class ProjectInventoryBuilder:
             raise ValueError("max_file_bytes must be at least 1")
         if max_total_bytes < _MIN_POSITIVE_LIMIT:
             raise ValueError("max_total_bytes must be at least 1")
+        if max_directories < _MIN_POSITIVE_LIMIT:
+            raise ValueError("max_directories must be at least 1")
+        if max_depth < 0:
+            raise ValueError("max_depth must not be negative")
         self._max_files = max_files
         self._max_file_bytes = max_file_bytes
         self._max_total_bytes = max_total_bytes
+        self._max_directories = max_directories
+        self._max_depth = max_depth
 
     def scan(self, root: str | Path) -> ProjectInventory:
         """Create a deterministic metadata snapshot for a local project directory."""
@@ -269,6 +277,8 @@ class ProjectInventoryBuilder:
                 "max_files": self._max_files,
                 "max_file_bytes": self._max_file_bytes,
                 "max_total_bytes": self._max_total_bytes,
+                "max_directories": self._max_directories,
+                "max_depth": self._max_depth,
             },
             "files": [record.model_dump(mode="json") for record in file_records],
             "language_counts": dict(sorted(language_counts.items())),
@@ -317,19 +327,28 @@ class ProjectInventoryBuilder:
         root_path: Path,
         warning_counts: dict[str, int],
     ) -> tuple[list[Path], bool]:
-        """Collect eligible file paths with deterministic traversal and a file cap."""
+        """Collect eligible paths with deterministic file, directory, and depth caps."""
         candidate_paths: list[Path] = []
-        pending_directories = [root_path]
+        pending_directories: list[tuple[Path, int]] = [(root_path, 0)]
         truncated = False
+        visited_directories = 0
+
         while pending_directories:
-            directory = pending_directories.pop()
+            if visited_directories >= self._max_directories:
+                warning_counts["directory_limit_reached"] += 1
+                truncated = True
+                break
+
+            directory, depth = pending_directories.pop()
+            visited_directories += 1
             try:
                 entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
             except OSError as error:
                 warning_counts[f"directory_read_error:{type(error).__name__}"] += 1
+                truncated = True
                 continue
 
-            directories: list[Path] = []
+            directories: list[tuple[Path, int]] = []
             for entry in entries:
                 if entry.is_symlink():
                     warning_counts["symlink_skipped"] += 1
@@ -337,8 +356,11 @@ class ProjectInventoryBuilder:
                 if entry.is_dir():
                     if entry.name.lower() in _IGNORED_DIRECTORIES:
                         warning_counts["ignored_directory_skipped"] += 1
+                    elif depth >= self._max_depth:
+                        warning_counts["directory_depth_limit_reached"] += 1
+                        truncated = True
                     else:
-                        directories.append(entry)
+                        directories.append((entry, depth + 1))
                     continue
                 if not entry.is_file():
                     continue
@@ -350,7 +372,8 @@ class ProjectInventoryBuilder:
                     truncated = True
                     warning_counts["file_limit_reached"] += 1
                     break
-            if truncated:
+
+            if len(candidate_paths) > self._max_files:
                 break
             pending_directories.extend(reversed(directories))
 
