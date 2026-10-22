@@ -261,32 +261,34 @@ class ProjectInventoryBuilder:
             if file_size > self._max_file_bytes:
                 warning_counts["oversize_file_skipped"] += 1
                 continue
-            if total_bytes_read + file_size > self._max_total_bytes:
+            remaining_budget = self._max_total_bytes - total_bytes_read
+            if remaining_budget <= 0 or file_size > remaining_budget:
                 warning_counts["total_size_limit_reached"] += 1
                 truncated = True
                 break
+            read_limit = min(self._max_file_bytes, remaining_budget)
 
             try:
                 flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                 descriptor = os.open(path, flags)
                 with os.fdopen(descriptor, "rb") as handle:
-                    data = handle.read(self._max_file_bytes + _READ_LIMIT_MARGIN)
+                    data = handle.read(read_limit + _READ_LIMIT_MARGIN)
             except OSError as error:
                 warning_counts[f"file_read_error:{type(error).__name__}"] += 1
                 continue
 
-            if len(data) > self._max_file_bytes:
-                warning_counts["oversize_file_skipped"] += 1
-                continue
-            if total_bytes_read + len(data) > self._max_total_bytes:
+            if len(data) > remaining_budget:
                 warning_counts["total_size_limit_reached"] += 1
                 truncated = True
                 break
+            total_bytes_read += len(data)
+            if len(data) > self._max_file_bytes:
+                warning_counts["oversize_file_skipped"] += 1
+                continue
             if b"\x00" in data:
                 warning_counts["binary_file_skipped"] += 1
                 continue
 
-            total_bytes_read += len(data)
             language = _LANGUAGE_BY_SUFFIX.get(path.suffix.lower(), "other")
             kind = self._classify_file(path, relative)
             sha256 = hashlib.sha256(data).hexdigest()
