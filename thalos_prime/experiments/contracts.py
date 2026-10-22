@@ -102,7 +102,10 @@ class ExperimentSpec(BaseModel):
             len(value) != _SHA256_HEX_LENGTH
             or any(character not in "0123456789abcdef" for character in value)
         ):
-            raise ValueError("configuration_digest and directive_digest must be lowercase SHA-256 hex digest strings")
+            raise ValueError(
+                "configuration_digest and directive_digest must be lowercase "
+                "SHA-256 hex digest strings"
+            )
         return value
 
     @model_validator(mode="after")
@@ -178,6 +181,17 @@ class CandidateRun(BaseModel):
         if not value:
             raise ValueError("identifiers and labels must not be blank")
         return value
+
+    @field_validator("test_ids", "evidence_refs")
+    @classmethod
+    def validate_reference_lists(cls, values: list[str]) -> list[str]:
+        """Require nonblank, unique test and evidence identifiers."""
+        normalized = [value.strip() for value in values]
+        if any(not value for value in normalized):
+            raise ValueError("test IDs and evidence references must not be blank")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("test IDs and evidence references must be unique")
+        return normalized
 
     @field_validator("sample_ids")
     @classmethod
