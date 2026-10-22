@@ -271,7 +271,8 @@ def test_report_artifact_preserves_directive_lineage() -> None:
         ],
     )
     artifact = report_to_artifact(report, timestamp_ns=10)
-    assert "directive:hdr-123" in artifact.source_uris
+    assert artifact.source_uris
+    assert "directive:hdr-123" not in artifact.source_uris
     assert artifact.metadata["directive_id"] == "hdr-123"
     assert artifact.metadata["directive_digest"] == "c" * 64
 
@@ -379,3 +380,21 @@ def test_experiment_run_count_is_bounded() -> None:
     )
     with pytest.raises(ValueError, match="at most"):
         ExperimentEvaluator.compare(make_spec(), runs)
+
+
+def test_report_artifact_requires_evidence_references_even_if_spec_is_optional() -> None:
+    """No fake directive URI may stand in for missing supporting evidence."""
+    spec_data = make_spec().model_dump(mode="python")
+    spec_data["require_evidence"] = False
+    spec_data["directive_id"] = "hdr-no-evidence"
+    spec_data["directive_digest"] = "d" * 64
+    spec = ExperimentSpec.model_validate(spec_data)
+    report = ExperimentEvaluator.compare(
+        spec,
+        [
+            make_run("baseline", [0.7], [1.5], evidence_refs=["artifact:baseline-test"]),
+            make_run("candidate", [0.9], [1.0], evidence_refs=[]),
+        ],
+    )
+    with pytest.raises(ValueError, match="at least one real evidence reference"):
+        report_to_artifact(report, timestamp_ns=10)
