@@ -30,6 +30,7 @@ from thalos_prime.experiments.plan import ExperimentPlan, StageSpec
 _MAX_INITIAL_CONTEXT_BYTES = 1_048_576
 _MAX_STAGE_INPUT_BYTES = 2_097_152
 _MAX_STAGE_OUTPUT_BYTES = 1_048_576
+_MAX_TOTAL_WORKFLOW_OUTPUT_BYTES = 20 * 1_048_576
 _MAX_ERROR_TEXT_LENGTH = 500
 _MAX_PLAN_STAGES = 200
 
@@ -147,14 +148,18 @@ class WorkflowExecutor:
         *,
         max_stage_input_bytes: int = _MAX_STAGE_INPUT_BYTES,
         max_stage_output_bytes: int = _MAX_STAGE_OUTPUT_BYTES,
+        max_total_workflow_output_bytes: int = _MAX_TOTAL_WORKFLOW_OUTPUT_BYTES,
     ) -> None:
-        """Create an empty registry with explicit input and output size limits."""
+        """Create a registry with explicit input, per-stage, and total output limits."""
         if max_stage_input_bytes < 1:
             raise ValueError("max_stage_input_bytes must be at least 1")
         if max_stage_output_bytes < 1:
             raise ValueError("max_stage_output_bytes must be at least 1")
+        if max_total_workflow_output_bytes < 1:
+            raise ValueError("max_total_workflow_output_bytes must be at least 1")
         self._max_stage_input_bytes = max_stage_input_bytes
         self._max_stage_output_bytes = max_stage_output_bytes
+        self._max_total_workflow_output_bytes = max_total_workflow_output_bytes
         self._handlers: dict[str, StageHandler] = {}
 
     def register(self, operation: str, handler: StageHandler) -> None:
@@ -193,6 +198,7 @@ class WorkflowExecutor:
         cloned_initial = _clone_json_mapping(initial_context, label="initial_context")
         initial_context_bytes = len(_canonical_json(cloned_initial))
         successful_output_sizes: dict[str, int] = {}
+        total_workflow_output_bytes = 0
         approvals = approved_stage_ids or set()
         stage_specs = {stage.stage_id: stage for stage in plan.stages}
         unknown_approvals = approvals - set(stage_specs)
@@ -375,6 +381,14 @@ class WorkflowExecutor:
                     raise ValueError(
                         f"stage output exceeds {self._max_stage_output_bytes} bytes"
                     )
+                if (
+                    total_workflow_output_bytes + len(encoded_output)
+                    > self._max_total_workflow_output_bytes
+                ):
+                    raise ValueError(
+                        "total workflow output exceeds "
+                        f"{self._max_total_workflow_output_bytes} bytes"
+                    )
                 decoded_output = json.loads(encoded_output)
                 if not isinstance(decoded_output, dict):
                     raise ValueError("stage handler must return a JSON object")
@@ -399,6 +413,7 @@ class WorkflowExecutor:
                     continue
                 successful_outputs[stage.stage_id] = decoded_output
                 successful_output_sizes[stage.stage_id] = len(encoded_output)
+                total_workflow_output_bytes += len(encoded_output)
                 stage_results.append(
                     WorkflowStageResult(
                         stage_id=stage.stage_id,
