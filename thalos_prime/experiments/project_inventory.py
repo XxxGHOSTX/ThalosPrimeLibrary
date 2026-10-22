@@ -46,15 +46,29 @@ _MANIFEST_NAMES: frozenset[str] = frozenset(
         "pyproject.toml",
         "setup.py",
         "setup.cfg",
-        "requirements.txt",
+        "pipfile",
+        "pipfile.lock",
+        "poetry.lock",
+        "uv.lock",
+        "pdm.lock",
+        "requirements.lock",
         "package.json",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "bun.lock",
+        "bun.lockb",
         "cargo.toml",
+        "cargo.lock",
         "go.mod",
+        "go.sum",
         "pom.xml",
         "build.gradle",
         "build.gradle.kts",
         "gemfile",
+        "gemfile.lock",
         "composer.json",
+        "composer.lock",
     }
 )
 _LANGUAGE_BY_SUFFIX: dict[str, str] = {
@@ -232,7 +246,7 @@ class ProjectInventoryBuilder:
         manifest_paths = sorted(
             record.path
             for record in file_records
-            if Path(record.path).name.lower() in _MANIFEST_NAMES
+            if self._is_manifest_name(Path(record.path).name)
         )
         test_paths = sorted(
             record.path for record in file_records if record.file_kind == "test"
@@ -409,11 +423,19 @@ class ProjectInventoryBuilder:
         return False
 
     @staticmethod
+    def _is_manifest_name(name: str) -> bool:
+        """Recognize common manifests, lockfiles, and versioned requirements files."""
+        normalized = name.lower()
+        return normalized in _MANIFEST_NAMES or (
+            normalized.startswith("requirements") and normalized.endswith(".txt")
+        )
+
+    @staticmethod
     def _classify_file(path: Path, relative: str) -> str:
         """Classify a file as a manifest, test, source, documentation, or other."""
         name = path.name.lower()
         parts = {part.lower() for part in Path(relative).parts}
-        if name in _MANIFEST_NAMES:
+        if ProjectInventoryBuilder._is_manifest_name(name):
             return "manifest"
         if (
             "test" in parts
