@@ -99,6 +99,7 @@ def test_duplicate_or_blank_permissions_are_rejected() -> None:
     with pytest.raises(ValidationError, match="must be unique"):
         HumanDirectiveRecord(
             directive_id="hdr-duplicate",
+            timestamp=datetime.fromisoformat("2026-10-22T12:00:00+00:00"),
             objectives=["compare"],
             success_criteria=["tested"],
             permitted_operations=["run-tests", "run-tests"],
@@ -106,6 +107,7 @@ def test_duplicate_or_blank_permissions_are_rejected() -> None:
     with pytest.raises(ValidationError, match="must not be blank"):
         HumanDirectiveRecord(
             directive_id="hdr-blank",
+            timestamp=datetime.fromisoformat("2026-10-22T12:00:00+00:00"),
             objectives=["compare"],
             success_criteria=["tested"],
             permitted_operations=[" "],
