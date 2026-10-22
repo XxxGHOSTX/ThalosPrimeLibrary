@@ -20,6 +20,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from thalos_prime.experiments.contracts import ExperimentSpec
 
+_MAX_DIRECTIVE_PAYLOAD_BYTES = 64 * 1_024
+_MAX_DIRECTIVE_LIST_ITEMS = 100
+_MAX_DIRECTIVE_TEXT_LENGTH = 2_000
+
 
 class HumanDirectiveRecord(BaseModel):
     """Human-defined task, constraints, acceptance criteria, and permissions.
@@ -32,17 +36,17 @@ class HumanDirectiveRecord(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    directive_id: str = Field(min_length=1)
+    directive_id: str = Field(min_length=1, max_length=200)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    objectives: list[str] = Field(min_length=1)
-    constraints: list[str] = Field(default_factory=list)
-    parameters: dict[str, object] = Field(default_factory=dict)
-    success_criteria: list[str] = Field(min_length=1)
-    prohibited_actions: list[str] = Field(default_factory=list)
-    prohibited_operations: list[str] = Field(default_factory=list)
-    permitted_operations: list[str] = Field(default_factory=list)
-    signer: str | None = None
-    signature: str | None = None
+    objectives: list[str] = Field(min_length=1, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    constraints: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    parameters: dict[str, object] = Field(default_factory=dict, max_length=100)
+    success_criteria: list[str] = Field(min_length=1, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    prohibited_actions: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    prohibited_operations: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    permitted_operations: list[str] = Field(default_factory=list, max_length=_MAX_DIRECTIVE_LIST_ITEMS)
+    signer: str | None = Field(default=None, max_length=200)
+    signature: str | None = Field(default=None, max_length=2_000)
     schema_version: int = Field(default=1, ge=1)
 
     @field_validator("directive_id", "signer")
@@ -78,6 +82,10 @@ class HumanDirectiveRecord(BaseModel):
         normalized = [value.strip() for value in values]
         if any(not value for value in normalized):
             raise ValueError("directive list items must not be blank")
+        if any(len(value) > _MAX_DIRECTIVE_TEXT_LENGTH for value in normalized):
+            raise ValueError(
+                f"directive list items must be at most {_MAX_DIRECTIVE_TEXT_LENGTH} characters"
+            )
         if len(normalized) != len(set(normalized)):
             raise ValueError("directive list items must be unique")
         return normalized
@@ -85,13 +93,18 @@ class HumanDirectiveRecord(BaseModel):
     def to_signing_payload(self) -> bytes:
         """Return canonical JSON bytes for all fields except the signature."""
         payload = self.model_dump(mode="json", exclude={"signature"})
-        return json.dumps(
+        encoded = json.dumps(
             payload,
             sort_keys=True,
             separators=(",", ":"),
             ensure_ascii=False,
             allow_nan=False,
         ).encode("utf-8")
+        if len(encoded) > _MAX_DIRECTIVE_PAYLOAD_BYTES:
+            raise ValueError(
+                f"directive signing payload exceeds {_MAX_DIRECTIVE_PAYLOAD_BYTES} bytes"
+            )
+        return encoded
 
     @property
     def directive_digest(self) -> str:
@@ -129,7 +142,7 @@ class HumanDirectiveRecord(BaseModel):
                 ),
                 hashes.SHA256(),
             )
-        except (InvalidSignature, ValueError, binascii.Error):
+        except (InvalidSignature, ValueError, TypeError, RecursionError, binascii.Error):
             return False
         return True
 
