@@ -95,6 +95,65 @@ Changing the solution representation while holding the execution environment con
 
 Neither the plan nor the evaluator executes operation names, model-generated code, shell commands, repository patches, or infrastructure artifacts. The plan is declarative. A later execution service must resolve operations from an allowlisted handler registry, use resource limits and isolated workspaces, log each stage, and require explicit approval before consequential actions.
 
+## Signed human directive records
+
+The `HumanDirectiveRecord` type adapts the useful human-directive concept from `ThalosPrimeConcept` while keeping execution separate from the record itself. It captures objectives, constraints, parameters, acceptance criteria, prohibited actions, prohibited operation IDs, and an explicit allowlist of permitted operation IDs.
+
+The directive can be signed with RSA-PSS/SHA-256. Its canonical signing payload contains the signer identity and every directive field except the signature. Changing a signed field invalidates verification. `authorize_operation(name, public_key)` denies an unsigned/invalid directive, a specifically prohibited operation, or any operation absent from the allowlist. The directive creates no keys and embeds no default private key; key generation, storage, rotation, and public-key trust must be handled by the application owner.
+
+Example:
+
+```python
+from datetime import datetime, timezone
+from cryptography.hazmat.primitives.asymmetric import rsa
+from thalos_prime.experiments import HumanDirectiveRecord
+
+private_key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
+public_key = private_key.public_key()
+
+directive = HumanDirectiveRecord(
+    directive_id="hdr-representation-001",
+    timestamp=datetime.now(timezone.utc),
+    objectives=["Compare graph, constraint, and state-transition representations"],
+    constraints=["Use the same task set and runtime environment"],
+    success_criteria=["Pass the declared tests", "Record cost and failure cases"],
+    prohibited_operations=["deploy", "delete-production-data"],
+    permitted_operations=["ingest-evidence", "run-tests", "compare-results"],
+)
+directive.sign(private_key, signer_id="trusted-user-id")
+assert directive.verify(public_key)
+directive.authorize_operation("run-tests", public_key)
+```
+
+Use the resulting `directive.directive_digest` in `ExperimentSpec.directive_digest` and the matching ID in `ExperimentSpec.directive_id`. The evaluator requires both fields to be present together and validates the digest format. Report artifacts retain `directive:<id>` as a source reference.
+
+**Security boundary:** the comparison API does not authorize or execute operations. Any future runner must verify the directive using a trusted public key and check the exact operation allowlist before dispatching each operation. A signature proves who signed the encoded record under the application's key-trust assumptions; it does not prove that the objective is wise or the evidence is true.
+
+## Read-only project inventory
+
+`ProjectInventoryBuilder` adapts the useful project-discovery and source-fingerprinting ideas from `THALOS_PRIME_CORE_INTELLIGENCE` into a bounded, non-executing scanner. It reports relative paths, sizes, SHA-256 file hashes, language counts, common manifest/test paths, duplicate files, locally resolvable Python imports, and Python syntax errors. It does not import or execute inspected files, run build tools, or return file contents.
+
+```python
+from thalos_prime.experiments import ProjectInventoryBuilder, project_inventory_to_artifact
+
+builder = ProjectInventoryBuilder(
+    max_files=5000,
+    max_file_bytes=1_048_576,
+    max_total_bytes=100 * 1_048_576,
+)
+inventory = builder.scan("./path/to/project")
+print(inventory.project_digest)
+print(inventory.language_counts)
+print(inventory.python_import_edges)
+
+artifact = project_inventory_to_artifact(inventory, timestamp_ns=123456789)
+assert artifact.validation_status.value == "pending"
+```
+
+The scan skips known secret-like filenames and directories, symlinks, ignored build/vendor directories, oversized files, and binary files. Limits are explicit and a truncated scan is marked. Filename exclusions are a safety precaution, not a guarantee that every possible secret name will be recognized. The Python import graph is static and incomplete by design: dynamic imports, plugin discovery, runtime configuration, and dependencies declared only in manifests are not fully resolved. Manifest paths are inventoried but dependency manifests are not yet parsed into a transitive dependency graph.
+
+The resulting artifact is a pending record for the existing validation and provenance pipeline. It is not an assertion that the project is secure, correctly configured, or fully reproducible.
+
 ## Next integration stages
 
 1. Add a handler registry and structured stage-run records, with explicit retry and timeout semantics.
