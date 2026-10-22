@@ -85,7 +85,9 @@ Changing the solution representation while holding the execution environment con
 
 - A metric can be maximizing or minimizing. Directed improvement is positive when the candidate is better under that direction.
 - Acceptance thresholds are applied to the arithmetic mean of the supplied samples.
-- The report includes sample count and sample standard deviation when there is more than one sample. It does not currently calculate confidence intervals, correct for multiple comparisons, or claim statistical significance.
+- The report includes sample count and sample standard deviation when there is more than one sample. When `sample_ids` are provided, it also aligns baseline and candidate values by ID and reports the mean and sample standard deviation of per-case directed improvements.
+- Sample IDs must be unique, their count must match every metric sample list, and the candidate and baseline must use the same set of IDs. Different list order is allowed because values are aligned by ID.
+- Paired improvements show whether a representation tends to help or hurt individual cases, but are descriptive statistics, not confidence intervals or a significance test. The evaluator does not currently correct for multiple comparisons or claim statistical significance.
 - Relative improvement is omitted when the baseline mean is zero because the usual percent-change calculation would be undefined.
 - The evaluator ranks by the predeclared primary metric, then reported candidate cost, elapsed time, and candidate ID for deterministic tie-breaking. It is not a multi-objective optimizer.
 - A candidate is excluded from ranking if tests fail, required evidence or metrics are missing, or a declared target is not met. The report preserves the exclusion reason rather than silently discarding the candidate.
