@@ -168,7 +168,7 @@ def test_nonpositive_limits_are_rejected() -> None:
 
 def test_binary_files_count_toward_total_read_budget(tmp_path: Path) -> None:
     """Ignored binary bytes still consume the scanner's I/O budget."""
-    (tmp_path / "a.bin").write_bytes(b"\x00abc")
+    (tmp_path / "a.bin").write_bytes(bytes([0, 97, 98, 99]))
     (tmp_path / "b.txt").write_text("xyz", encoding="utf-8")
     inventory = ProjectInventoryBuilder(max_total_bytes=4).scan(tmp_path)
     assert inventory.total_bytes_read == 4
