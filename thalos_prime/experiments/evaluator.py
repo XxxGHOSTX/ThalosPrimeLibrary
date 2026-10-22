@@ -243,5 +243,32 @@ class ExperimentEvaluator:
         report_digest = _canonical_digest(report_body)
         return ExperimentReport(**report_body, report_digest=report_digest)
 
+    @staticmethod
+    def verify_report(report: ExperimentReport) -> bool:
+        """Verify report/spec digests against the report's current serialized contents.
+
+        This detects accidental or deliberate content changes when a trusted
+        digest is available. It does not authenticate who created the report.
+        """
+        try:
+            spec_payload = report.spec.model_dump(mode="json")
+            if _canonical_digest(spec_payload) != report.spec_digest:
+                return False
+            report_body = {
+                "experiment_id": report.experiment_id,
+                "task_family": report.task_family,
+                "baseline_candidate_id": report.baseline_candidate_id,
+                "primary_metric": report.primary_metric,
+                "spec": spec_payload,
+                "spec_digest": report.spec_digest,
+                "assessments": [
+                    item.model_dump(mode="json") for item in report.assessments
+                ],
+                "ranked_candidate_ids": report.ranked_candidate_ids,
+            }
+            return _canonical_digest(report_body) == report.report_digest
+        except (TypeError, ValueError):
+            return False
+
 
 __all__ = ["ExperimentEvaluator"]
