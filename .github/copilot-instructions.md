@@ -1,14 +1,23 @@
 # Copilot Coding Agent Instructions — ThalosPrimeLibrary
 
 ## Purpose and scope
-Thalos Prime is a deterministic Library of Babel toolkit implementing strict control-plane/data-plane separation. The Control Plane coordinates lifecycle and state; the Data Plane executes computational work. All boundaries must remain explicit.
+ThalosPrime is an AI research and engineering project intended to improve problem investigation, candidate-solution comparison, error detection, and reproducible evaluation. The repository currently includes Library of Babel tooling and other software modules that support parts of this direction. Do not imply that every proposed product capability is already integrated or validated. The Control Plane coordinates lifecycle and state; the Data Plane executes computational work. Keep their boundaries explicit.
 
-**Only acceptable end-state:** Fully Implemented. Fully Integrated. Fully Operational. No TODOs, stubs, mocks, placeholders, or partial features are permitted in production code.
+**Implementation standard:** Implement and test the declared scope of each changed component. Do not present TODOs, stubs, mocks, placeholders, planned features, or unexecuted tests as completed behavior. A feature may be described as validated only when current, scope-matched evidence supports that claim.
+
+### Product framing and evidence rules
+- Treat model-generated claims and candidate solutions as hypotheses until checked by an appropriate method.
+- Prefer explicit task definitions, assumptions, constraints, success criteria, baselines, and reproducible tests.
+- Preserve contradictions for investigation instead of suppressing them merely to produce consensus.
+- Track claim provenance, source quality, uncertainty, relevant versions, and test conditions where applicable.
+- Distinguish implemented code, planned architecture, simulated results, test results, and real-world empirical evidence.
+- Do not describe ThalosPrime as solving every problem, discovering truth automatically, or bypassing scientific, mathematical, computational, or physical limits.
+- Do not claim the complete product is production-ready, proven, or fully operational unless current evidence validates the stated scope.
 
 ## Quick orientation
 
 ### Core mission
-Extract coherent information from the Library of Babel (libraryofbabel.info) through deterministic page generation, query enumeration, and multi-metric coherence scoring.
+Build and maintain software components that help turn complex problem statements into traceable investigations: evidence intake, useful representations, candidate generation, constraint and contradiction checks, appropriate testing, comparison with baselines, and recorded results. Preserve the Library of Babel generation, query-enumeration, and coherence-scoring functionality as existing repository components, not as proof that every broader product objective is already achieved.
 
 ### Package structure
 ```
