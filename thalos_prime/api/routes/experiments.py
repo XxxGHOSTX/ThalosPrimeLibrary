@@ -9,9 +9,13 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from thalos_prime.experiments.contracts import CandidateRun, ExperimentSpec
+from thalos_prime.experiments.contracts import (
+    MAX_EXPERIMENT_RUNS,
+    CandidateRun,
+    ExperimentSpec,
+)
 from thalos_prime.experiments.evaluator import ExperimentEvaluator
 from thalos_prime.experiments.plan import default_research_plan
 
@@ -24,7 +28,7 @@ class CompareExperimentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     spec: ExperimentSpec
-    runs: list[CandidateRun]
+    runs: list[CandidateRun] = Field(min_length=1, max_length=MAX_EXPERIMENT_RUNS)
 
 
 @router.get("/plan/default")
