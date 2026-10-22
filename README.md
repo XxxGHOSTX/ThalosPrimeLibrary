@@ -86,7 +86,7 @@ Some subsystems use a shared lifecycle convention (`initialize → validate → 
 | **Deep synthesis** | Multi-view semantic decomposition with Physical/Chemical, Logical/Mathematical, Linguistic/Narrative nexus results |
 | **Symbolic reasoning** | Z3 SMT constraint solving, incremental updates, optimization objectives |
 | **Multi-representation experiment planning** | Declarative DAG that prepares graph, constraint, and state-transition branches for baseline comparison |
-| **Baseline candidate evaluation** | Compare recorded metric samples, test status, cost, runtime, and evidence against a declared baseline |
+| **Baseline candidate evaluation** | Compare recorded metric samples, test status, cost, runtime, and evidence against a declared baseline; align per-case improvements when sample IDs are supplied |
 | **Signed human directives** | RSA-PSS/SHA-256 signatures and explicit allowlists; unsigned directives cannot authorize an operation |
 | **Read-only project inventory** | Bounded file hashing, manifest/test inventory, duplicate-file grouping, and static Python import graph |
 | **Evidence artifacts** | Convert experiment reports and project inventories to PENDING canonical artifacts for downstream validation |
