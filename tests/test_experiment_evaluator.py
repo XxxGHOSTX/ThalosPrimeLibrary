@@ -56,6 +56,7 @@ def make_run(
     evidence_refs: list[str] | None = None,
     representation_id: str = "graph-v1",
     environment_fingerprint: str = "env-python312-deps-v1",
+    sample_ids: list[str] | None = None,
 ) -> CandidateRun:
     """Create a fixed candidate measurement."""
     return CandidateRun(
@@ -68,6 +69,7 @@ def make_run(
         model_versions={"solver": "test-double-1"},
         configuration_digest="b" * 64,
         metric_samples={"pass_rate": pass_rates, "cost_usd": cost_samples},
+        sample_ids=sample_ids or [],
         tests_passed=tests_passed,
         test_ids=["unit-1", "integration-1"],
         evidence_refs=evidence_refs if evidence_refs is not None else ["artifact:run-1"],
@@ -292,3 +294,57 @@ def test_report_verification_fails_when_spec_is_modified() -> None:
         name="mutated-metric", direction=MetricDirection.MAXIMIZE
     )
     assert not ExperimentEvaluator.verify_report(report)
+
+
+def test_paired_improvements_align_cases_by_id_not_list_order() -> None:
+    """Per-case effect statistics align candidates even when sample order differs."""
+    spec = make_spec()
+    baseline = make_run(
+        "baseline",
+        [0.7, 0.9],
+        [1.5, 1.6],
+        sample_ids=["case-a", "case-b"],
+    )
+    candidate = make_run(
+        "candidate",
+        [0.8, 0.8],
+        [1.6, 1.5],
+        sample_ids=["case-b", "case-a"],
+    )
+    report = ExperimentEvaluator.compare(spec, [baseline, candidate])
+    assessment = next(item for item in report.assessments if item.candidate_id == "candidate")
+    comparison = assessment.metric_comparisons["pass_rate"]
+    assert comparison.baseline_value == pytest.approx(0.8)
+    assert comparison.candidate_value == pytest.approx(0.8)
+    assert comparison.paired_sample_count == 2
+    assert comparison.paired_improvement_mean == pytest.approx(0.0)
+    assert comparison.paired_improvement_stddev == pytest.approx(0.1414213562)
+
+
+def test_paired_candidate_must_use_same_case_set_as_baseline() -> None:
+    """An unaligned task set must not be presented as a paired comparison."""
+    with pytest.raises(ValueError, match="same task/trial set"):
+        ExperimentEvaluator.compare(
+            make_spec(),
+            [
+                make_run("baseline", [0.7, 0.9], [1.5, 1.6], sample_ids=["case-a", "case-b"]),
+                make_run("candidate", [0.8, 0.8], [1.0, 1.0], sample_ids=["case-a", "case-c"]),
+            ],
+        )
+
+
+def test_sample_id_count_must_match_each_metric_vector() -> None:
+    """Paired statistics require exactly one measurement per declared sample ID."""
+    with pytest.raises(ValidationError, match="sample_ids length must match"):
+        CandidateRun(
+            run_id="bad-sample-count",
+            candidate_id="bad",
+            approach="test",
+            representation_id="graph",
+            implementation_version="abc",
+            environment_fingerprint="env-v1",
+            metric_samples={"pass_rate": [0.8, 0.9]},
+            sample_ids=["case-a"],
+            tests_passed=True,
+            elapsed_ms=1.0,
+        )
