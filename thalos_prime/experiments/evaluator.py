@@ -18,6 +18,7 @@ from thalos_prime.experiments.contracts import (
     MetricComparison,
     MetricDefinition,
     MetricDirection,
+    MAX_EXPERIMENT_RUNS,
 )
 
 
@@ -201,6 +202,10 @@ class ExperimentEvaluator:
         """
         if not runs:
             raise ValueError("at least one candidate run, including the baseline, is required")
+        if len(runs) > MAX_EXPERIMENT_RUNS:
+            raise ValueError(
+                f"an experiment may contain at most {MAX_EXPERIMENT_RUNS} candidate runs"
+            )
         identifiers = [run.candidate_id for run in runs]
         if len(identifiers) != len(set(identifiers)):
             raise ValueError("candidate_id values must be unique within an experiment")
