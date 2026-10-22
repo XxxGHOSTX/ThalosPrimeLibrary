@@ -593,6 +593,15 @@ class ProjectInventoryBuilder:
                     )
                 )
                 continue
+            except RecursionError:
+                parse_issues.append(
+                    PythonParseIssue(
+                        path=relative,
+                        line=_MIN_PYTHON_LINE,
+                        message="python_ast_recursion_limit",
+                    )
+                )
+                continue
 
             current_package = (
                 module_name
