@@ -110,6 +110,7 @@ def test_individual_file_size_limit_is_enforced(tmp_path: Path) -> None:
     inventory = ProjectInventoryBuilder(max_file_bytes=4).scan(tmp_path)
     assert {item.path for item in inventory.files} == {"small.txt"}
     assert inventory.warning_counts["oversize_file_skipped"] == 1
+    assert inventory.truncated_by_limits
 
 
 def test_total_read_budget_is_enforced(tmp_path: Path) -> None:
@@ -169,3 +170,24 @@ def test_nonpositive_limits_are_rejected() -> None:
         except ValueError:
             continue
         raise AssertionError(f"limit must be positive: {kwargs}")
+
+
+def test_binary_files_count_toward_total_read_budget(tmp_path: Path) -> None:
+    """Ignored binary bytes still consume the scanner's I/O budget."""
+    (tmp_path / "a.bin").write_bytes(b"\x00abc")
+    (tmp_path / "b.txt").write_text("xyz", encoding="utf-8")
+    inventory = ProjectInventoryBuilder(max_total_bytes=4).scan(tmp_path)
+    assert inventory.total_bytes_read == 4
+    assert inventory.files == []
+    assert inventory.warning_counts["binary_file_skipped"] == 1
+    assert inventory.warning_counts["total_size_limit_reached"] == 1
+    assert inventory.truncated_by_limits
+
+
+def test_secret_like_filename_is_skipped(tmp_path: Path) -> None:
+    """Secret-like file names are excluded even when their extension is ordinary."""
+    (tmp_path / "service-secret.txt").write_text("must not read", encoding="utf-8")
+    (tmp_path / "public.txt").write_text("safe", encoding="utf-8")
+    inventory = ProjectInventoryBuilder().scan(tmp_path)
+    assert [item.path for item in inventory.files] == ["public.txt"]
+    assert inventory.warning_counts["sensitive_path_skipped"] == 1
