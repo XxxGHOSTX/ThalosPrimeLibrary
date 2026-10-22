@@ -425,7 +425,21 @@ class WorkflowExecutor:
                     )
                 )
             # Handler exceptions are captured as structured failures; other branches continue.
-            except Exception as error:  # noqa: BLE001
+            except (
+                ArithmeticError,
+                AssertionError,
+                AttributeError,
+                ImportError,
+                IndexError,
+                KeyError,
+                LookupError,
+                NameError,
+                NotImplementedError,
+                OSError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+            ) as error:
                 elapsed_ms = (time.perf_counter() - start) * 1000.0
                 stage_results.append(
                     WorkflowStageResult(
