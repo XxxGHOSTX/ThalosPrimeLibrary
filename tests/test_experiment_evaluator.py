@@ -11,6 +11,8 @@ from thalos_prime.experiments import (
     ExperimentSpec,
     MetricDefinition,
     MetricDirection,
+    MAX_EXPERIMENT_RUNS,
+    MAX_SAMPLES_PER_METRIC,
     report_to_artifact,
 )
 
@@ -354,3 +356,24 @@ def test_sample_id_count_must_match_each_metric_vector() -> None:
             tests_passed=True,
             elapsed_ms=1.0,
         )
+
+
+def test_candidate_sample_count_is_bounded() -> None:
+    """Reject enormous candidate sample vectors before comparison."""
+    with pytest.raises(ValidationError, match="at most"):
+        make_run(
+            "oversized",
+            [0.8] * (MAX_SAMPLES_PER_METRIC + 1),
+            [1.0] * (MAX_SAMPLES_PER_METRIC + 1),
+        )
+
+
+def test_experiment_run_count_is_bounded() -> None:
+    """Reject experiment batches that exceed the declared processing budget."""
+    runs = [make_run("baseline", [0.7], [1.5])]
+    runs.extend(
+        make_run(f"candidate-{index}", [0.9], [1.0])
+        for index in range(MAX_EXPERIMENT_RUNS)
+    )
+    with pytest.raises(ValueError, match="at most"):
+        ExperimentEvaluator.compare(make_spec(), runs)
