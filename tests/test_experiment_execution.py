@@ -13,10 +13,10 @@ from thalos_prime.experiments import (
     HumanDirectiveRecord,
     MetricDefinition,
     MetricDirection,
+    StageContext,
     StageSpec,
     StageStatus,
     WorkflowExecutor,
-    authorize_experiment_operation,
     default_research_plan,
 )
 
@@ -67,7 +67,7 @@ def test_default_plan_executes_only_registered_allowlisted_handlers() -> None:
     """The entire multi-representation workflow can run through trusted handlers."""
     plan = default_research_plan()
     operations = sorted({stage.operation for stage in plan.stages})
-    private_key, public_key = make_keypair()
+    _, public_key = make_keypair()
     directive = HumanDirectiveRecord(
         directive_id="full-plan-directive",
         timestamp=datetime(2026, 10, 22, tzinfo=timezone.utc),
@@ -111,8 +111,16 @@ def test_unallowlisted_operation_is_denied_and_descendants_are_blocked() -> None
         plan_id="deny-test",
         stages=[
             StageSpec(stage_id="safe-stage", operation="safe"),
-            StageSpec(stage_id="restricted-stage", operation="restricted", depends_on=["safe-stage"]),
-            StageSpec(stage_id="dependent-stage", operation="safe", depends_on=["restricted-stage"]),
+            StageSpec(
+                stage_id="restricted-stage",
+                operation="restricted",
+                depends_on=["safe-stage"],
+            ),
+            StageSpec(
+                stage_id="dependent-stage",
+                operation="safe",
+                depends_on=["restricted-stage"],
+            ),
         ],
     )
     private_key, public_key = make_keypair()
@@ -127,7 +135,10 @@ def test_unallowlisted_operation_is_denied_and_descendants_are_blocked() -> None
     executor = WorkflowExecutor()
     invoked: list[str] = []
     executor.register("safe", lambda context: invoked.append(context.stage_id) or {"ok": True})
-    executor.register("restricted", lambda context: invoked.append(context.stage_id) or {"ok": True})
+    executor.register(
+        "restricted",
+        lambda context: invoked.append(context.stage_id) or {"ok": True},
+    )
 
     report = executor.execute(
         plan=plan,
@@ -220,7 +231,7 @@ def test_failed_branch_does_not_stop_an_independent_branch() -> None:
     executor = WorkflowExecutor()
     executor.register("root", lambda context: {"root": True})
 
-    def fail_left(context: object) -> dict[str, object]:
+    def fail_left(_context: StageContext) -> dict[str, object]:
         """Represent a stage handler that failed."""
         raise RuntimeError("controlled failure")
 
@@ -345,6 +356,7 @@ def test_handler_context_changes_do_not_mutate_prior_outputs() -> None:
         stages=[
             StageSpec(stage_id="first", operation="first"),
             StageSpec(stage_id="second", operation="second", depends_on=["first"]),
+            StageSpec(stage_id="third", operation="third", depends_on=["first"]),
         ],
     )
     private_key, public_key = make_keypair()
@@ -353,19 +365,27 @@ def test_handler_context_changes_do_not_mutate_prior_outputs() -> None:
         timestamp=datetime(2026, 10, 22, tzinfo=timezone.utc),
         objectives=["Prevent cross-stage mutation"],
         success_criteria=["Dependency output remains intact"],
-        permitted_operations=["first", "second"],
+        permitted_operations=["first", "second", "third"],
     )
     directive.sign(private_key, "reviewer")
     executor = WorkflowExecutor()
     executor.register("first", lambda context: {"nested": {"value": 1}})
 
-    def mutate_dependency(context: object) -> dict[str, object]:
+    def mutate_dependency(context: StageContext) -> dict[str, object]:
         """Try to alter one handler's dependency copy."""
-        stage_context = context
-        stage_context.dependency_outputs["first"]["nested"]["value"] = 99  # type: ignore[attr-defined]
-        return {"observed": stage_context.dependency_outputs["first"]["nested"]["value"]}
+        context.dependency_outputs["first"]["nested"]["value"] = 99
+        return {"observed": context.dependency_outputs["first"]["nested"]["value"]}
+
+    observed_values: list[int] = []
+
+    def inspect_dependency(context: StageContext) -> dict[str, object]:
+        """Check a later handler still receives the original registered output."""
+        value = context.dependency_outputs["first"]["nested"]["value"]
+        observed_values.append(value)
+        return {"observed": value}
 
     executor.register("second", mutate_dependency)
+    executor.register("third", inspect_dependency)
     report = executor.execute(
         plan=plan,
         spec=make_spec(directive),
@@ -376,4 +396,71 @@ def test_handler_context_changes_do_not_mutate_prior_outputs() -> None:
     assert [stage.status for stage in report.stages] == [
         StageStatus.SUCCEEDED,
         StageStatus.SUCCEEDED,
+        StageStatus.SUCCEEDED,
     ]
+    assert observed_values == [1]
+
+
+def test_stage_input_size_is_bounded_before_handler_dispatch() -> None:
+    """Large dependency input is rejected before a handler is invoked."""
+    plan = ExperimentPlan(
+        plan_id="input-bound-test",
+        stages=[StageSpec(stage_id="stage", operation="safe")],
+    )
+    private_key, public_key = make_keypair()
+    directive = HumanDirectiveRecord(
+        directive_id="input-bound-directive",
+        timestamp=datetime(2026, 10, 22, tzinfo=timezone.utc),
+        objectives=["Bound handler input payloads"],
+        success_criteria=["Oversized context is rejected"],
+        permitted_operations=["safe"],
+    )
+    directive.sign(private_key, "reviewer")
+    executor = WorkflowExecutor(max_stage_input_bytes=64)
+    invoked: list[str] = []
+    executor.register("safe", lambda _context: invoked.append("safe") or {"ok": True})
+    report = executor.execute(
+        plan=plan,
+        spec=make_spec(directive),
+        directive=directive,
+        public_key=public_key,
+        initial_context={"large": "x" * 200},
+    )
+    assert report.failed_count == 1
+    assert report.stages[0].error_type == "StageInputTooLarge"
+    assert invoked == []
+
+
+def test_timeout_overrun_is_recorded_without_claiming_forced_termination() -> None:
+    """An overrun is visible in the report, but the handler return is not hidden."""
+    plan = ExperimentPlan(
+        plan_id="timeout-report-test",
+        stages=[
+            StageSpec(
+                stage_id="stage",
+                operation="safe",
+                timeout_seconds=0.000001,
+            )
+        ],
+    )
+    private_key, public_key = make_keypair()
+    directive = HumanDirectiveRecord(
+        directive_id="timeout-directive",
+        timestamp=datetime(2026, 10, 22, tzinfo=timezone.utc),
+        objectives=["Detect stage time overruns"],
+        success_criteria=["Overrun is explicitly recorded"],
+        permitted_operations=["safe"],
+    )
+    directive.sign(private_key, "reviewer")
+    executor = WorkflowExecutor()
+    executor.register("safe", lambda _context: {"ok": True})
+    report = executor.execute(
+        plan=plan,
+        spec=make_spec(directive),
+        directive=directive,
+        public_key=public_key,
+        initial_context={},
+    )
+    assert report.timed_out_count == 1
+    assert report.stages[0].status is StageStatus.TIMED_OUT
+    assert "not forcibly interrupted" in (report.stages[0].error_message or "")
