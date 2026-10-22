@@ -74,6 +74,7 @@ class WorkflowStageResult(BaseModel):
     status: StageStatus
     input_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     output_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    output_refs: list[str] = Field(default_factory=list, max_length=500)
     elapsed_ms: float = Field(ge=0, allow_inf_nan=False)
     error_type: str | None = None
     error_message: str | None = None
@@ -392,6 +393,18 @@ class WorkflowExecutor:
                 decoded_output = json.loads(encoded_output)
                 if not isinstance(decoded_output, dict):
                     raise ValueError("stage handler must return a JSON object")
+                raw_output_refs = decoded_output.get("_artifact_refs", [])
+                if not isinstance(raw_output_refs, list) or any(
+                    not isinstance(reference, str) for reference in raw_output_refs
+                ):
+                    raise ValueError(
+                        "reserved _artifact_refs output must be a list of strings"
+                    )
+                output_refs = [reference.strip() for reference in raw_output_refs]
+                if any(not reference for reference in output_refs):
+                    raise ValueError("output artifact references must not be blank")
+                if len(output_refs) != len(set(output_refs)):
+                    raise ValueError("output artifact references must be unique")
                 output_digest = hashlib.sha256(encoded_output).hexdigest()
                 elapsed_ms = (time.perf_counter() - start) * 1000.0
                 if elapsed_ms > stage.timeout_seconds * 1000.0:
@@ -402,6 +415,7 @@ class WorkflowExecutor:
                             status=StageStatus.TIMED_OUT,
                             input_digest=input_digest,
                             output_digest=output_digest,
+                            output_refs=output_refs,
                             elapsed_ms=elapsed_ms,
                             error_type="StageTimeoutExceeded",
                             error_message=(
@@ -421,6 +435,7 @@ class WorkflowExecutor:
                         status=StageStatus.SUCCEEDED,
                         input_digest=input_digest,
                         output_digest=output_digest,
+                        output_refs=output_refs,
                         elapsed_ms=elapsed_ms,
                     )
                 )
