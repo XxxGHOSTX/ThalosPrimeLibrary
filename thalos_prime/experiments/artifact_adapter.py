@@ -100,8 +100,17 @@ def workflow_report_to_artifact(
     or task artifacts used by the run. The adapter preserves the signed
     directive and execution digests but does not auto-accept the report.
     """
+    reported_refs = {
+        reference
+        for stage in report.stages
+        for reference in stage.output_refs
+    }
     normalized_sources = sorted(
-        {source_uri.strip() for source_uri in source_uris if source_uri.strip()}
+        {
+            source_uri.strip()
+            for source_uri in [*source_uris, *reported_refs]
+            if source_uri.strip()
+        }
     )
     if not normalized_sources:
         raise ValueError("at least one real source URI is required for workflow provenance")
