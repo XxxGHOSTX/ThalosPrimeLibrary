@@ -6,8 +6,8 @@ import json
 
 from thalos_prime.artifacts.schema import Artifact
 from thalos_prime.experiments.contracts import ExperimentReport
-from thalos_prime.experiments.project_inventory import ProjectInventory
 from thalos_prime.experiments.execution import WorkflowExecutionReport
+from thalos_prime.experiments.project_inventory import ProjectInventory
 
 
 def report_to_artifact(report: ExperimentReport, *, timestamp_ns: int) -> Artifact:
