@@ -191,3 +191,18 @@ def test_secret_like_filename_is_skipped(tmp_path: Path) -> None:
     inventory = ProjectInventoryBuilder().scan(tmp_path)
     assert [item.path for item in inventory.files] == ["public.txt"]
     assert inventory.warning_counts["sensitive_path_skipped"] == 1
+
+
+def test_common_lockfiles_and_versioned_requirements_are_manifests(tmp_path: Path) -> None:
+    """Runtime manifests and dependency lockfiles are visible in the inventory."""
+    names = [
+        "requirements-dev.txt",
+        "package-lock.json",
+        "Cargo.lock",
+        "go.sum",
+        "pnpm-lock.yaml",
+    ]
+    for name in names:
+        (tmp_path / name).write_text("manifest marker", encoding="utf-8")
+    inventory = ProjectInventoryBuilder().scan(tmp_path)
+    assert inventory.manifest_paths == sorted(names)
