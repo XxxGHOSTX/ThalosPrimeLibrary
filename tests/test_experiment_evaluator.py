@@ -230,3 +230,35 @@ def test_report_artifact_identity_is_reproducible_for_fixed_timestamp() -> None:
     second = report_to_artifact(report, timestamp_ns=10)
     assert first.artifact_id == second.artifact_id
     assert first.content_hash == second.content_hash
+
+
+
+def test_directive_reference_requires_id_and_digest_together() -> None:
+    base = make_spec().model_dump(mode="python")
+    base["directive_id"] = "hdr-123"
+    with pytest.raises(ValidationError, match="must be supplied together"):
+        ExperimentSpec.model_validate(base)
+
+
+def test_directive_digest_must_be_sha256_hex() -> None:
+    base = make_spec().model_dump(mode="python")
+    base["directive_id"] = "hdr-123"
+    base["directive_digest"] = "not-a-digest"
+    with pytest.raises(ValidationError, match="lowercase SHA-256 hex digest"):
+        ExperimentSpec.model_validate(base)
+
+
+def test_report_artifact_preserves_directive_lineage() -> None:
+    base = make_spec().model_dump(mode="python")
+    base["directive_id"] = "hdr-123"
+    base["directive_digest"] = "c" * 64
+    spec = ExperimentSpec.model_validate(base)
+    report = ExperimentEvaluator.compare(
+        spec,
+        [
+            make_run("baseline", [0.7], [1.5]),
+            make_run("candidate", [0.9], [1.0]),
+        ],
+    )
+    artifact = report_to_artifact(report, timestamp_ns=10)
+    assert "directive:hdr-123" in artifact.source_uris
