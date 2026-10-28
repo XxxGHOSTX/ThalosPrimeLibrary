@@ -63,6 +63,7 @@ fn identity_model_passes_in_process_reproducibility_gate() {
     assert_eq!(report["baseline_output_hashes_stable"], true);
     assert_eq!(report["governed_output_hashes_stable"], true);
     assert_eq!(report["baseline_and_governed_outputs_match"], true);
+    assert_eq!(report["pipeline_digests_stable"], true);
     assert_eq!(report["measured_runs"], 5);
     assert_eq!(
         report["model_sha3_256"],
@@ -87,6 +88,8 @@ fn pipeline_digest_is_stable_across_processes() {
     assert_eq!(a["input_sha3_256"], b["input_sha3_256"]);
     assert_eq!(a["output_sha3_256"], b["output_sha3_256"]);
     assert_eq!(a["pipeline_sha3_256"], b["pipeline_sha3_256"]);
+    assert_eq!(a["pipeline_digests_stable"], true);
+    assert_eq!(b["pipeline_digests_stable"], true);
 
     let _ = fs::remove_file(report_a);
     let _ = fs::remove_file(report_b);
