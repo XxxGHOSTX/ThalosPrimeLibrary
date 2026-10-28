@@ -1,0 +1,26 @@
+name: thalos-native-runtime
+
+on:
+  push:
+    paths:
+      - 'native/thalos-governed-runtime/**'
+      - '.github/workflows/thalos-native-runtime.yml'
+  pull_request:
+    paths:
+      - 'native/thalos-governed-runtime/**'
+      - '.github/workflows/thalos-native-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --manifest-path native/thalos-governed-runtime/Cargo.toml -- --check
+      - name: Unit and end-to-end tests
+        run: cargo test --manifest-path native/thalos-governed-runtime/Cargo.toml
