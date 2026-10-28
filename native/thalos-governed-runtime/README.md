@@ -1,6 +1,6 @@
 # Thalos Prime Governed Runtime (Phase 1 prototype)
 
-This isolated Rust crate wraps ONNX Runtime with SHA3-256 identities for the exact model bytes, canonical tensor inputs, numeric outputs, and a versioned pipeline digest. It establishes a measurable baseline for the Phase 1 and Phase 2 milestones; it is not yet the complete Thalos Prime control plane, a general ONNX server, or a security sandbox.
+This isolated Rust crate wraps ONNX Runtime with SHA3-256 identities for the exact model bytes, canonical tensor inputs, numeric outputs, and a versioned pipeline digest. The pipeline digest binds the crate version, declared runtime policy, ONNX Runtime build identity, host OS/architecture, and model/input/output digests. These hashes provide content identity, not a digital signature or a trusted attestation. It establishes a measurable baseline for the Phase 1 and Phase 2 milestones; it is not yet the complete Thalos Prime control plane, a general ONNX server, or a security sandbox.
 
 ## Run
 
@@ -18,7 +18,7 @@ The runtime loads the exact model bytes it hashes, using an in-memory ONNX sessi
 
 The comparison uses the default CPU provider, sequential execution, one intra-op thread, one inter-op thread, and Level1 graph optimizations. The baseline timer covers `Session::run` only. The governed timer covers per-call input hashing, `Session::run`, output hashing, and pipeline-hash creation. Tensor construction is excluded from both timers. Baseline output hashing happens after its timer. Paired alternating samples and warmups reduce but do not eliminate host noise.
 
-The report records exact timing samples summarized as minimum, median, nearest-rank p95, and maximum. It also records session initialization time, model-read-and-hash time, input-hash time, model/input/output/pipeline SHA3-256 digests, host OS/architecture, and ONNX Runtime build information.
+The report records exact timing samples summarized as minimum, median, nearest-rank p95, and maximum. It also records session initialization time, model-read-and-hash time, input-hash time (digest computation only; JSON loading and parsing are excluded), model/input/output/pipeline SHA3-256 digests, host OS/architecture, and ONNX Runtime build information. Measured pairs alternate baseline-first and governed-first order to reduce systematic ordering bias. The baseline timer covers `Session::run` only; the governed timer covers input hashing, `Session::run`, output hashing, and pipeline-digest computation. Tensor construction is excluded from both timers.
 
 ## Determinism boundary
 
