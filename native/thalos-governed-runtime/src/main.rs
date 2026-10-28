@@ -89,6 +89,7 @@ struct Report {
     baseline_output_hashes_stable: bool,
     governed_output_hashes_stable: bool,
     baseline_and_governed_outputs_match: bool,
+    pipeline_digests_stable: bool,
     exact_output_reproducibility_verified: bool,
     output_sha3_256: String,
     pipeline_sha3_256: String,
@@ -241,10 +242,21 @@ fn output_hash(outputs: &ort::session::SessionOutputs<'_>) -> Result<String> {
     Ok(hex::encode(h.finalize()))
 }
 
-fn pipeline_hash(model: &str, input: &str, output: &str) -> String {
+fn pipeline_hash(
+    model: &str,
+    input: &str,
+    output: &str,
+    runtime_build: &str,
+    host_os: &str,
+    host_arch: &str,
+) -> String {
     let mut h = Sha3_256::new();
     h.update(b"THALOS:PIPELINE:v1\0");
+    hash_len(&mut h, env!("CARGO_PKG_VERSION").as_bytes());
     hash_len(&mut h, POLICY.as_bytes());
+    hash_len(&mut h, runtime_build.as_bytes());
+    hash_len(&mut h, host_os.as_bytes());
+    hash_len(&mut h, host_arch.as_bytes());
     hash_len(&mut h, model.as_bytes());
     hash_len(&mut h, input.as_bytes());
     hash_len(&mut h, output.as_bytes());
@@ -267,6 +279,35 @@ fn hashes_stable(values: &[String]) -> bool {
     values.first().is_some_and(|first| values.iter().all(|v| v == first))
 }
 
+fn run_baseline_sample(session: &mut Session, inputs: &[InputTensor]) -> Result<(u64, String)> {
+    let inference_inputs = ort_inputs(inputs)?;
+    let started = Instant::now();
+    let outputs = session.run(inference_inputs).context("baseline inference failed")?;
+    let elapsed = elapsed_ns(started);
+    let digest = output_hash(&outputs)?;
+    Ok((elapsed, digest))
+}
+
+fn run_governed_sample(
+    session: &mut Session,
+    inputs: &[InputTensor],
+    model_hash: &str,
+    runtime_build: &str,
+    host_os: &str,
+    host_arch: &str,
+) -> Result<(u64, String, String)> {
+    let inference_inputs = ort_inputs(inputs)?;
+    let started = Instant::now();
+    let input_digest = input_hash(inputs);
+    let outputs = session.run(inference_inputs).context("governed inference failed")?;
+    let output_digest = output_hash(&outputs)?;
+    let pipeline_digest = pipeline_hash(
+        model_hash, &input_digest, &output_digest, runtime_build, host_os, host_arch,
+    );
+    let elapsed = elapsed_ns(started);
+    Ok((elapsed, output_digest, pipeline_digest))
+}
+
 fn run() -> Result<(Report, bool)> {
     let args = parse_args()?;
     let model_started = Instant::now();
@@ -275,8 +316,8 @@ fn run() -> Result<(Report, bool)> {
     let model_hash = hex::encode(Sha3_256::digest(&model_bytes));
     let model_read_and_hash_ms = model_started.elapsed().as_secs_f64() * 1000.0;
 
-    let input_started = Instant::now();
     let inputs = load_inputs(&args.inputs)?;
+    let input_started = Instant::now();
     let input_digest = input_hash(&inputs);
     let input_hash_ms = input_started.elapsed().as_secs_f64() * 1000.0;
 
@@ -289,19 +330,22 @@ fn run() -> Result<(Report, bool)> {
         .commit_from_memory(&model_bytes)
         .context("creating ONNX Runtime session from hashed model bytes")?;
     let session_initialization_ms = init_started.elapsed().as_secs_f64() * 1000.0;
+    let runtime_build = ort::info().to_owned();
+    let host_os = env::consts::OS.to_owned();
+    let host_arch = env::consts::ARCH.to_owned();
 
-    for _ in 0..args.warmup {
-        let baseline_inputs = ort_inputs(&inputs)?;
-        let baseline_out = session.run(baseline_inputs).context("baseline warmup inference failed")?;
-        let _ = output_hash(&baseline_out)?;
-        drop(baseline_out);
-
-        let _ = input_hash(&inputs);
-        let governed_inputs = ort_inputs(&inputs)?;
-        let governed_out = session.run(governed_inputs).context("governed warmup inference failed")?;
-        let out_digest = output_hash(&governed_out)?;
-        let _ = pipeline_hash(&model_hash, &input_digest, &out_digest);
-        drop(governed_out);
+    for warmup_index in 0..args.warmup {
+        if warmup_index % 2 == 0 {
+            let _ = run_baseline_sample(&mut session, &inputs)?;
+            let _ = run_governed_sample(
+                &mut session, &inputs, &model_hash, &runtime_build, &host_os, &host_arch,
+            )?;
+        } else {
+            let _ = run_governed_sample(
+                &mut session, &inputs, &model_hash, &runtime_build, &host_os, &host_arch,
+            )?;
+            let _ = run_baseline_sample(&mut session, &inputs)?;
+        }
     }
 
     let mut baseline_ns = Vec::with_capacity(args.runs);
@@ -309,29 +353,37 @@ fn run() -> Result<(Report, bool)> {
     let mut baseline_hashes = Vec::with_capacity(args.runs);
     let mut governed_hashes = Vec::with_capacity(args.runs);
     let mut pipeline_hashes = Vec::with_capacity(args.runs);
-    for _ in 0..args.runs {
-        let baseline_inputs = ort_inputs(&inputs)?;
-        let started = Instant::now();
-        let baseline_outputs = session.run(baseline_inputs).context("baseline inference failed")?;
-        baseline_ns.push(elapsed_ns(started));
-        baseline_hashes.push(output_hash(&baseline_outputs)?);
-        drop(baseline_outputs);
+    for run_index in 0..args.runs {
+        if run_index % 2 == 0 {
+            let (elapsed, digest) = run_baseline_sample(&mut session, &inputs)?;
+            baseline_ns.push(elapsed);
+            baseline_hashes.push(digest);
 
-        let governed_inputs = ort_inputs(&inputs)?;
-        let started = Instant::now();
-        let governed_input_hash = input_hash(&inputs);
-        let governed_outputs = session.run(governed_inputs).context("governed inference failed")?;
-        let governed_output_hash = output_hash(&governed_outputs)?;
-        let pipeline = pipeline_hash(&model_hash, &governed_input_hash, &governed_output_hash);
-        governed_ns.push(elapsed_ns(started));
-        governed_hashes.push(governed_output_hash);
-        pipeline_hashes.push(pipeline);
-        drop(governed_outputs);
+            let (elapsed, digest, pipeline) = run_governed_sample(
+                &mut session, &inputs, &model_hash, &runtime_build, &host_os, &host_arch,
+            )?;
+            governed_ns.push(elapsed);
+            governed_hashes.push(digest);
+            pipeline_hashes.push(pipeline);
+        } else {
+            let (elapsed, digest, pipeline) = run_governed_sample(
+                &mut session, &inputs, &model_hash, &runtime_build, &host_os, &host_arch,
+            )?;
+            governed_ns.push(elapsed);
+            governed_hashes.push(digest);
+            pipeline_hashes.push(pipeline);
+
+            let (elapsed, digest) = run_baseline_sample(&mut session, &inputs)?;
+            baseline_ns.push(elapsed);
+            baseline_hashes.push(digest);
+        }
     }
 
     let baseline_output_hashes_stable = hashes_stable(&baseline_hashes);
     let governed_output_hashes_stable = hashes_stable(&governed_hashes);
-    let baseline_and_governed_outputs_match = baseline_hashes.iter().zip(&governed_hashes).all(|(a, b)| a == b);
+    let pipeline_digests_stable = hashes_stable(&pipeline_hashes);
+    let baseline_and_governed_outputs_match =
+        baseline_hashes.iter().zip(&governed_hashes).all(|(a, b)| a == b);
     let exact_output_reproducibility_verified = baseline_output_hashes_stable
         && governed_output_hashes_stable
         && baseline_and_governed_outputs_match;
@@ -351,9 +403,9 @@ fn run() -> Result<(Report, bool)> {
         model_sha3_256: model_hash,
         input_sha3_256: input_digest,
         runtime_policy: POLICY.to_owned(),
-        onnx_runtime_build: ort::info().to_owned(),
-        host_os: env::consts::OS.to_owned(),
-        host_arch: env::consts::ARCH.to_owned(),
+        onnx_runtime_build: runtime_build,
+        host_os,
+        host_arch,
         host_label: env::var("THALOS_HOST_LABEL").ok(),
         model_read_and_hash_ms,
         input_hash_ms,
@@ -367,6 +419,7 @@ fn run() -> Result<(Report, bool)> {
         baseline_output_hashes_stable,
         governed_output_hashes_stable,
         baseline_and_governed_outputs_match,
+        pipeline_digests_stable,
         exact_output_reproducibility_verified,
         output_sha3_256: governed_hashes.first().cloned().unwrap_or_default(),
         pipeline_sha3_256: pipeline_hashes.first().cloned().unwrap_or_default(),
@@ -430,5 +483,17 @@ mod tests {
     #[test]
     fn timing_statistics_reject_empty_samples() {
         assert!(stats(&[]).is_err());
+    }
+
+    #[test]
+    fn pipeline_digest_includes_runtime_and_platform_identity() {
+        let base = pipeline_hash("model", "input", "output", "ORT-A", "linux", "x86_64");
+        let other_runtime =
+            pipeline_hash("model", "input", "output", "ORT-B", "linux", "x86_64");
+        let other_platform =
+            pipeline_hash("model", "input", "output", "ORT-A", "windows", "x86_64");
+
+        assert_ne!(base, other_runtime);
+        assert_ne!(base, other_platform);
     }
 }
