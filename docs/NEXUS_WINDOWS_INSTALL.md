@@ -180,12 +180,13 @@ On Windows 10 Home without elevation, membrane operates in **dry-run mode** — 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `THALOS_NEXUS_SIGNING_KEY` | `thalos-nexus-dev-key-v1` | HMAC-SHA256 signing key for genome bundles |
+| `THALOS_NEXUS_SIGNING_KEY` | No default; required for signing | HMAC-SHA256 key for genome bundles (at least 32 UTF-8 bytes) |
 
-> **Security:** Always set `THALOS_NEXUS_SIGNING_KEY` to a strong random value in production:
+> **Security:** NEXUS fails closed if the signing key is missing or shorter than 32 UTF-8 bytes. Generate a random key outside source control:
 > ```cmd
-> set THALOS_NEXUS_SIGNING_KEY=my-strong-random-key-here
+> python -c "import secrets; print(secrets.token_urlsafe(48))"
 > ```
+> Set the generated value in your deployment secret manager or the current shell. Do not paste real secret values into documentation, GitHub issues, commits, or `.env.example`.
 
 ---
 
