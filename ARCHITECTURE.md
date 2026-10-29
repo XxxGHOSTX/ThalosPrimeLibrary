@@ -381,13 +381,13 @@ The following are **architectural non-conformance** conditions that must be trea
 
 ---
 
-## Greenfield Formal Design
+## Proposed Formal Design (Implementation Status Must Be Verified)
 
-> **Scope reframe: audit → greenfield design.**
-> This section proposes the novel formal system for Thalos Prime first (as the
-> authoritative design target), then maps it onto the current repository as the
-> implementation architecture.  It does not analyze uploaded whitepapers or exports;
-> it defines the formal model and treats the repo as the convergence target.
+> **Status:** This section describes proposed architecture, not a determination of novelty,
+> patentability, or completed implementation. The source code, tests, and dated verification
+> artifacts control claims about what is actually implemented. Some prior formal-model and
+> claim-scaffold documents were removed from the public tree; the references below do not
+> establish that those removed documents remain available or that every proposal is working.
 
 ### Epistemic Premise
 
@@ -399,9 +399,10 @@ artifacts that provably satisfy the user's coherence threshold.
 
 ### Formal System T
 
-The novel formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
-See [`docs/FORMAL_MODEL.md`](docs/FORMAL_MODEL.md) for the complete authoritative
-Formal Specification v1.0 definition, including:
+The proposed formal model is **T = ⟨D, I, R, V, E, P, B_t⟩**. The detailed
+standalone `docs/FORMAL_MODEL.md` document is not included in this branch. The
+following points are design proposals and must not be treated as verified runtime
+capabilities without corresponding source and test evidence:
 
 - All seven formal elements with precise types (e.g. I: X\* → ℤⁿ, R: (ℤⁿ × B_t) → H, V: H → {A,P,D,R}).
 - Canonical artifact schema ⟨c_i, s_i, p_i, v_i, τ_i, λ_i⟩ and coordinate hierarchy ⟨h_i, w_i, s_i, v_i, p_i⟩.
@@ -416,10 +417,11 @@ Formal Specification v1.0 definition, including:
 
 ### Architecture as Target
 
-Every module in this architecture document is the **implementation convergence target**
-for one or more elements of T.  The control-plane / data-plane boundary maps exactly
-to the T decomposition: I, R, and E live in the data plane; V, P, B_t, and the
-lifecycle contract are enforced by the control plane.
+The modules below are intended mappings, not proof that each formal element is fully
+implemented or independently verified. The control-plane / data-plane boundary is a
+design decomposition: I, R, and E are intended for the data plane; V, P, B_t, and the
+lifecycle contract are intended for the control plane. Confirm each mapping against the
+current implementation-status report and tests before relying on it in a filing or product claim.
 
 | Formal Element | Plane | Key Module |
 |----------------|-------|------------|
