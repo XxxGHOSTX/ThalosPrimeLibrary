@@ -1,3 +1,5 @@
+> **Status correction (29 October 2026):** Treat this file as a design proposal only. It does not certify patentability, filing, grant, or implementation of all described features. Do not rely on speculative statements as established technical or legal facts.
+
 # Thalos Prime Patent Charter (Draft v1.0)
 
 ## 1. Purpose and Core Function
@@ -89,7 +91,7 @@ Thalos Prime is a Human-Directed, AI-Executed Discovery Operating System (HD-AED
 - Respect site ToS and rate limits; prefer local deterministic generation for scale.
 
 ## 13. Summary Statement
-Thalos Prime is a patentable symbiotic intelligence platform that operationalizes coherence-driven discovery over deterministic or effectively infinite information spaces (e.g., Library of Babel). It unifies deterministic generation, heuristic/LLM refinement, recursive stabilization, cross-domain translation, and optional biological computation under a single human-directed, machine-executed operating system.
+This charter is a proposed technical-design and claim-development document, not a legal opinion, a filed patent application, or evidence that a patent has been granted. The features listed are not all implemented or benchmarked. Patentability, inventorship, disclosure dates, and claim scope require independent legal review.
 
 
 ---
