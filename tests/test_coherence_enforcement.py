@@ -230,7 +230,7 @@ def test_chat_request_generative_mode() -> None:
 
 def test_api_chat_generative_mode_success() -> None:
     """POST /api/v1/chat with generative mode returns 200 with high coherence."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat",
             json={
@@ -249,7 +249,7 @@ def test_api_chat_generative_mode_success() -> None:
 
 def test_api_chat_min_score_enforced_local_mode() -> None:
     """POST /api/v1/chat with local mode and min_score=80 returns 422."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat",
             json={
@@ -270,7 +270,7 @@ def test_api_chat_min_score_enforced_local_mode() -> None:
 
 def test_api_chat_min_score_zero_allows_local() -> None:
     """POST /api/v1/chat with min_score=0 allows low-coherence local results."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat",
             json={
@@ -287,7 +287,7 @@ def test_api_chat_min_score_zero_allows_local() -> None:
 
 def test_api_chat_metadata_includes_llm_provider() -> None:
     """Generative mode metadata always includes llm_provider (None when not using LLM)."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat",
             json={
