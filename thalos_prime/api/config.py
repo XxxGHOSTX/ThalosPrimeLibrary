@@ -106,6 +106,10 @@ def load_config() -> APIConfig:
         secret_key = secrets.token_urlsafe(48)
 
     cors_value = os.getenv("THALOS_CORS_ORIGINS")
+    if production and cors_value is None:
+        raise RuntimeError(
+            "Production requires THALOS_CORS_ORIGINS with explicit origins."
+        )
     cors_origins = (
         [origin.strip() for origin in cors_value.split(",") if origin.strip()]
         if cors_value is not None
