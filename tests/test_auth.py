@@ -156,3 +156,23 @@ def test_deterministic_halt_message() -> None:
     halt = DeterministicHalt("test invariant violated")
     assert halt.message == "test invariant violated"
     assert str(halt) == "test invariant violated"
+
+
+def test_production_rejects_authentication_bypass(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production must not honor the development-only bypass switch."""
+    monkeypatch.setenv("THALOS_ENV", "production")
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    monkeypatch.setenv("THALOS_API_KEYS", "")
+    auth = APIKeyAuthenticator()
+    with pytest.raises(DeterministicHalt, match="cannot be disabled in production"):
+        auth.initialize()
+
+
+def test_production_requires_strong_api_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production credentials shorter than 32 UTF-8 bytes must fail closed."""
+    monkeypatch.setenv("THALOS_ENV", "production")
+    monkeypatch.delenv("THALOS_AUTH_DISABLED", raising=False)
+    monkeypatch.setenv("THALOS_API_KEYS", "too-short")
+    auth = APIKeyAuthenticator()
+    with pytest.raises(DeterministicHalt, match="at least 32 UTF-8 bytes"):
+        auth.initialize()
