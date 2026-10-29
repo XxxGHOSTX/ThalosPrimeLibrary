@@ -28,15 +28,19 @@ This project does **not** claim:
 
 ---
 
-## References in Repository Documentation
+## Historical Draft References
 
-Some documents in this repository (notably `Thalos_Prime_Claims_Scaffold.md`, `Thalos_Prime_Patent_Charter.md`, and related files) use language such as:
-- "biological signals"
-- "wetware substrates"
-- "biological pathway designs"
-- "neural cells"
+The following draft files were removed from the current default branch by 29 October 2026:
 
-These references are speculative conceptual descriptions, design metaphors, or draft patent-style language exploring hypothetical future directions. They do **not** represent current implemented capabilities, real product claims, or legally asserted facts about this software.
+- `docs/FORMAL_MODEL.md`
+- `docs/guides/Thalos_Prime_Claims_Scaffold.md`
+- `docs/guides/Thalos_Prime_Patent_Charter.md`
+
+Earlier versions may remain in Git history, clones, forks, caches, or downloaded archives. This update does not claim that historical objects or third-party copies have been purged.
+
+Language in those historical drafts about “biological signals,” “wetware substrates,” “biological pathway designs,” or “neural cells” was conceptual or speculative. It does not establish an implemented biological capability, a patent filing, a patent grant, or a legally verified claim.
+
+Do not cite those removed drafts as current specifications, current product capabilities, operative patent claims, or evidence that a legal filing was made. Use the current source tree and current documentation when describing the implementation.
 
 ---
 
