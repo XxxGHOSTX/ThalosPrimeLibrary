@@ -1,3 +1,5 @@
+> **IP status notice:** This implementation report is not a patentability determination or evidence of a filed/granted patent. Verify each capability against tests and each legal-status statement against official records.
+
 # THALOS PRIME v1.0 - IMPLEMENTATION SUMMARY
 
 ## What Has Been Built
@@ -222,7 +224,7 @@ The system is **100% operational** and includes:
 5. ✓ **Secure** - No code execution, input validation
 6. ✓ **Scalable** - Ready for distributed deployment
 7. ✓ **Maintainable** - Clean code, modular design
-8. ✓ **Patentable** - Implements novel architecture
+8. **Patentability not established** - Novelty, non-obviousness, eligibility, written-description support, inventorship, and disclosure dates require legal review.
 
 ## How to Start
 
