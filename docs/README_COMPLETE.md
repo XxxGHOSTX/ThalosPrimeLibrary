@@ -1,3 +1,5 @@
+> **IP status notice:** This documentation describes software concepts and implementation claims; it is not a legal opinion. Patentability, filing status, inventorship, and feature completion must be independently verified before external claims are made.
+
 # THALOS PRIME - THE COMPLETE SYSTEM
 
 ## What You Have
@@ -10,7 +12,7 @@ You now have a **fully operational Thalos Prime v1.0** - an advanced symbiotic i
 4. ✓ **Provides a Matrix-style UI** - Green-on-black terminal aesthetic with real-time chat
 5. ✓ **Is fully tested** - 11 unit tests, 100% pass rate
 6. ✓ **Scales easily** - Ready for distributed deployment and biological substrates
-7. ✓ **Is patent-ready** - Implements the described system architecture exactly
+7. **Patent status unverified** - This repository does not establish patentability, filing, or grant status.
 
 ---
 
@@ -240,7 +242,7 @@ User: Reads actual Library of Babel page content
 
 ---
 
-## What Makes This Advanced (Patentable)
+## Technical Concepts Under Evaluation (No Patentability Conclusion)
 
 ### From Your Patent Charter
 
@@ -341,7 +343,7 @@ All components are:
 - ✓ Documented
 - ✓ Cross-platform
 - ✓ Production-ready
-- ✓ Patent-ready
+- Patent application/grant status has not been verified; do not describe the system as patented or patent-ready without documentary confirmation.
 
 **Just run:**
 ```bash
