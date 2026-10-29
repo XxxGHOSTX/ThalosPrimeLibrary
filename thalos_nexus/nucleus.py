@@ -7,8 +7,7 @@ The nucleus is the entry point for all genome data.  It:
 2. Validates each section against the bundled JSON schemas.
 3. Computes a deterministic SHA-256 hash of the serialised bundle.
 4. Signs the hash with HMAC-SHA256 using a key derived from the
-   ``THALOS_NEXUS_SIGNING_KEY`` environment variable (falls back to the
-   development default ``"thalos-nexus-dev-key-v1"``).
+   ``THALOS_NEXUS_SIGNING_KEY`` environment variable. No fallback signing key is provided.
 5. Returns a ``GenomeBundle`` dataclass capturing all of the above.
 
 Control Plane boundary: this module performs ingestion and signing only.
@@ -32,13 +31,17 @@ import jsonschema
 # Constants
 # ---------------------------------------------------------------------------
 
-_DEV_SIGNING_KEY = "thalos-nexus-dev-key-v1"
+_MIN_SIGNING_KEY_BYTES = 32
 _SCHEMAS_DIR = Path(__file__).parent / "schemas"
 
 
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
+
+
+class SigningKeyConfigurationError(RuntimeError):
+    """Raised when no sufficiently strong NEXUS signing key is configured."""
 
 
 class GenomeValidationError(ValueError):
@@ -167,7 +170,8 @@ def ingest_genome(genome_path: str | Path) -> GenomeBundle:
     - ``lineages`` — conforms to ``lineages.schema.json``
 
     The signing key is read from the ``THALOS_NEXUS_SIGNING_KEY`` environment
-    variable; if absent the development default is used.
+    variable. A missing or shorter-than-32-byte key fails closed; no default
+    key is used because a known default would permit signature forgery.
 
     Parameters
     ----------
@@ -185,6 +189,8 @@ def ingest_genome(genome_path: str | Path) -> GenomeBundle:
         If the file cannot be read or is not valid JSON.
     GenomeValidationError
         If any section fails its JSON-schema check.
+    SigningKeyConfigurationError
+        If the signing key is missing or has fewer than 32 UTF-8 bytes.
 
     """
     path = Path(genome_path)
@@ -215,7 +221,17 @@ def ingest_genome(genome_path: str | Path) -> GenomeBundle:
     )
     genome_hash = _sha256_hex(bundle_canonical)
 
-    signing_key = os.environ.get("THALOS_NEXUS_SIGNING_KEY", _DEV_SIGNING_KEY)
+    signing_key = os.environ.get("THALOS_NEXUS_SIGNING_KEY", "")
+    if not signing_key.strip():
+        raise SigningKeyConfigurationError(
+            "THALOS_NEXUS_SIGNING_KEY is required; configure a random secret "
+            "of at least 32 UTF-8 bytes outside source control."
+        )
+    if len(signing_key.encode("utf-8")) < _MIN_SIGNING_KEY_BYTES:
+        raise SigningKeyConfigurationError(
+            f"THALOS_NEXUS_SIGNING_KEY must be at least "
+            f"{_MIN_SIGNING_KEY_BYTES} UTF-8 bytes."
+        )
     signature = _hmac_sha256_hex(signing_key, genome_hash)
 
     return GenomeBundle(
