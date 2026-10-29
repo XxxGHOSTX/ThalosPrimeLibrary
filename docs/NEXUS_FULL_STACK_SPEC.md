@@ -34,7 +34,7 @@ Handles genome ingestion and signing.
 
 **Hashing:** The canonical genome JSON (sorted keys, no whitespace) is hashed with SHA-256.
 
-**Signing:** The bundle is signed with HMAC-SHA256 using a key from the `THALOS_NEXUS_SIGNING_KEY` environment variable (default: `thalos-nexus-dev-key-v1` for development).
+**Signing:** The bundle is signed with HMAC-SHA256 using a key from the `THALOS_NEXUS_SIGNING_KEY` environment variable. No built-in fallback exists; the operation fails if the key is missing or shorter than 32 UTF-8 bytes.
 
 **Output:** `GenomeBundle` dataclass with `genome_id`, `genome_hash`, `signature`, `intent`, `policy`, `fitness`, `lineages`, `created_at`.
 
