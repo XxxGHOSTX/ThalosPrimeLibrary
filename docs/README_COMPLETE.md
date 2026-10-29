@@ -344,9 +344,9 @@ http://127.0.0.1:8000/
 ---
 
 **Version**: 1.0 - Matrix Console
-**Status**: ✓ Production Ready
+**Status**: Historical guide; revalidate current behavior before production use
 **Date**: 2026-02-10
-**Tests**: ✓ 11/11 Passing
-**Documentation**: ✓ Complete
+**Historical Tests**: 11/11 passing as reported on 2026-02-10; not a current CI result
+**Documentation**: Historical status; verify current paths and implementation
 **Patent Status**: Not verified; no filing/grant status established by this README
 
