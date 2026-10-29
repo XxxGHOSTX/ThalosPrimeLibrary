@@ -279,7 +279,7 @@ QUERY: [user query]
 - Respects robots.txt and ToS of Library of Babel
 
 ### Data Privacy
-- No personal data collected
+- Data handling depends on deployment; query and session workflows may process personal data, so notice, retention, access and deletion requirements must be assessed.
 - Session IDs are random UUIDs (cryptographically safe)
 - No logging of user queries to persistent storage
 
@@ -324,9 +324,9 @@ QUERY: [user query]
 ## Compliance & Legal
 
 - **Library of Babel**: Used under fair use for research
-- **Data**: No personal data collected or stored
+- **Data**: Query/session/API logs and persistence may retain user inputs or responses depending on configuration; document actual data flows, retention, access controls and deletion.
 - **ToS**: Respects site rate limits and robots.txt
-- **Patent**: System architecture patented as described
+- **Patent status**: No patent status is asserted here; verify any application or grant through official USPTO records before making a public claim.
 
 ## References
 
