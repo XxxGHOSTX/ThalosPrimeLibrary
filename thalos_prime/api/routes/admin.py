@@ -4,6 +4,7 @@ Provides administrative and monitoring functionality.
 """
 
 import asyncio
+import hmac
 import os
 import signal
 import sys
@@ -21,13 +22,16 @@ from thalos_runtime.plugins.chat_high_coherence_task import execution_defaults
 router = APIRouter()
 
 # Simple API key authentication (replace with proper auth in production)
-ADMIN_API_KEY = os.getenv("THALOS_ADMIN_API_KEY", "admin-key-change-in-production")
-
-
 def verify_admin_key(x_api_key: str | None = Header(None)) -> bool:
-    """Verify admin API key."""
-    if x_api_key != ADMIN_API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid admin API key")
+    """Verify a strong, explicitly configured admin API key; fail closed otherwise."""
+    configured_key = os.getenv("THALOS_ADMIN_API_KEY", "")
+    if len(configured_key.encode("utf-8")) < 32:
+        raise HTTPException(
+            status_code=503,
+            detail="Admin endpoint disabled until THALOS_ADMIN_API_KEY is securely configured",
+        )
+    if not x_api_key or not hmac.compare_digest(x_api_key, configured_key):
+        raise HTTPException(status_code=401, detail="Invalid admin API key")
     return True
 
 
