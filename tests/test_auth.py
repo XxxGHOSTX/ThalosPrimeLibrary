@@ -46,7 +46,8 @@ def test_initialize_no_keys_raises_halt(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_initialize_auth_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    """initialize() succeeds with no keys when THALOS_AUTH_DISABLED=1."""
+    """The authentication bypass is available only in non-production environments."""
+    monkeypatch.setenv("THALOS_ENV", "development")
     monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
     monkeypatch.setenv("THALOS_API_KEYS", "")
 
