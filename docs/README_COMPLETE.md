@@ -242,25 +242,9 @@ User: Reads actual Library of Babel page content
 
 ---
 
-## Technical Concepts Under Evaluation (No Patentability Conclusion)
+## Intellectual Property Status
 
-### From Your Patent Charter
-
-✓ **Entropy Ingestion**: Accepts any input without schema
-✓ **Coherence Detection**: Multi-metric scoring system
-✓ **Recursive Stabilization**: Caches and validates results
-✓ **Cross-Domain Translation**: Maps raw data to intelligence
-✓ **Synthesis & Assembly**: Combines fragments into coherent responses
-✓ **Validation Filter**: Only returns high-confidence results
-✓ **Substrate Flexibility**: Architecture ready for biological compute
-✓ **Symbiotic Intelligence**: Works as hybrid system with user
-
-This implementation is:
-- **Deterministic** - Same query produces same results
-- **Reproducible** - Full source code and docs provided
-- **Scalable** - Ready for distributed deployment
-- **Auditable** - All decisions traced with confidence scores
-- **Extensible** - Easy to add new modules
+This repository's files and history do not establish that a patent application was filed or granted. Patentability, inventorship, disclosure dates, and ownership require independent verification. Do not characterize the system as patented, patent-ready, or eligible for protection based on this README. Internal claim-development materials are not part of this user guide.
 
 ---
 
@@ -336,7 +320,7 @@ By using Library of Babel as its knowledge source, Thalos Prime demonstrates tha
 
 ## Ready to Go
 
-**Your system is 100% operational.**
+**System status must be verified against the current implementation and test results.**
 
 All components are:
 - ✓ Tested
@@ -364,5 +348,5 @@ http://127.0.0.1:8000/
 **Date**: 2026-02-10
 **Tests**: ✓ 11/11 Passing
 **Documentation**: ✓ Complete
-**Patent Status**: ✓ Ready for Filing
+**Patent Status**: Not verified; no filing/grant status established by this README
 
