@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 from thalos_prime import __version__
 from thalos_prime.config import get_config
+from thalos_prime.cors_config import get_configured_cors_origins
 from thalos_prime.models.api_models import ErrorResponse
 from thalos_runtime.core.deps import get_engine, set_engine
 from thalos_runtime.core.engine import RuntimeEngine
@@ -162,7 +163,7 @@ def create_app() -> FastAPI:
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
+        allow_origins=get_configured_cors_origins(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
