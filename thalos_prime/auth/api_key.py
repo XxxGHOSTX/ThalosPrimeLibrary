@@ -80,7 +80,7 @@ class APIKeyAuthenticator:
 
         Reads ``THALOS_API_KEYS`` (comma-separated) and merges with any
         ``extra_keys`` supplied at construction. Respects
-        ``THALOS_AUTH_DISABLED=1`` to bypass key enforcement.
+        ``THALOS_AUTH_DISABLED=1`` to bypass key enforcement in non-production only.
 
         Raises:
             DeterministicHalt: If auth is enabled but no keys are configured.
@@ -105,7 +105,7 @@ class APIKeyAuthenticator:
             msg = (
                 "APIKeyAuthenticator: auth is enabled but no API keys are configured. "
                 f"Set {_ENV_API_KEYS} or pass extra_keys, "
-                f"or set {_ENV_AUTH_DISABLED}=1 to disable authentication."
+                f"Configure {_ENV_API_KEYS}; {_ENV_AUTH_DISABLED}=1 is allowed only outside production."
             )
             raise DeterministicHalt(msg)
 
