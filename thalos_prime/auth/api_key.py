@@ -10,9 +10,12 @@ No data-plane computation logic belongs here.
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 from typing import TYPE_CHECKING, Any
+
+from fastapi import Header, HTTPException
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -84,12 +87,20 @@ class APIKeyAuthenticator:
 
         """
         raw_disabled = os.environ.get(_ENV_AUTH_DISABLED, "0").strip()
-        self._auth_disabled = raw_disabled == "1"
+        environment = os.environ.get("THALOS_ENV", os.environ.get("ENV", "development")).strip().lower()
+        production = environment in {"production", "prod"}
+        if production and raw_disabled == "1":
+            raise DeterministicHalt("Authentication cannot be disabled in production.")
+        self._auth_disabled = raw_disabled == "1" and not production
 
         raw_keys = os.environ.get(_ENV_API_KEYS, "")
         env_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
         self._allowed_keys = set(env_keys) | set(self._extra_keys)
 
+        if production and any(len(key.encode("utf-8")) < 32 for key in self._allowed_keys):
+            raise DeterministicHalt("Production API keys must each contain at least 32 UTF-8 bytes.")
+        if production and not self._allowed_keys:
+            raise DeterministicHalt("Production requires explicit THALOS_API_KEYS or extra_keys.")
         if not self._auth_disabled and not self._allowed_keys:
             msg = (
                 "APIKeyAuthenticator: auth is enabled but no API keys are configured. "
@@ -174,7 +185,7 @@ class APIKeyAuthenticator:
             raise DeterministicHalt(msg)
         if self._auth_disabled:
             return True
-        return api_key in self._allowed_keys
+        return any(hmac.compare_digest(api_key, key) for key in self._allowed_keys)
 
     def get_fastapi_dependency(self) -> Callable[..., Any]:
         """Return a FastAPI ``Depends()``-compatible callable for route protection.
@@ -195,7 +206,7 @@ class APIKeyAuthenticator:
 
         authenticator = self
 
-        def _verify_api_key(x_api_key: str | None = None) -> bool:
+        def _verify_api_key(x_api_key: str | None = Header(default=None)) -> bool:
             """Verify the X-API-Key header.
 
             Args:
@@ -208,15 +219,8 @@ class APIKeyAuthenticator:
                 HTTPException: If the key is missing or invalid.
 
             """
-            try:
-                from fastapi import Header, HTTPException
-            except ImportError as exc:
-                msg = "fastapi is required for get_fastapi_dependency()"
-                raise ImportError(msg) from exc
-
             if x_api_key is None:
-                _ = Header(None)
-                raise HTTPException(status_code=403, detail="X-API-Key header is required")
+                raise HTTPException(status_code=401, detail="X-API-Key header is required")
             if not authenticator.authenticate(x_api_key):
                 raise HTTPException(status_code=403, detail="Invalid API key")
             return True
