@@ -320,8 +320,8 @@ if __name__ == "__main__":
     # Run the server
     uvicorn.run(
         "thalos_prime.api.server:app",
-        host="0.0.0.0",  # nosec B104
-        port=8000,
-        reload=True,
+        host=os.getenv("THALOS_HOST", "127.0.0.1"),
+        port=int(os.getenv("THALOS_PORT", "8000")),
+        reload=False,
         log_level="info",
     )
