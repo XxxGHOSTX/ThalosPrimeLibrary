@@ -49,7 +49,6 @@ def test_initialize_auth_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     """The authentication bypass is available only in non-production environments."""
     monkeypatch.setenv("THALOS_ENV", "development")
     monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
-    monkeypatch.setenv("THALOS_ENV", "development")
     monkeypatch.setenv("THALOS_API_KEYS", "")
 
     auth = APIKeyAuthenticator()
