@@ -1,4 +1,4 @@
-> **Status correction (29 October 2026):** Treat this file as a design proposal only. It does not certify patentability, filing, grant, or implementation of all described features. Do not rely on speculative statements as established technical or legal facts.
+> **Status correction (31 October 2026):** Treat this file as a design proposal only. It does not certify patentability, filing, grant, or implementation of all described features. Do not rely on speculative statements as established technical or legal facts.
 
 # Thalos Prime Patent Charter (Draft v1.0)
 
