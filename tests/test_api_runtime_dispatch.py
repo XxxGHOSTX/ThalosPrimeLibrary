@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi.testclient import TestClient
 
 from thalos_prime.api.server import app
@@ -88,7 +90,7 @@ def test_admin_tasks_lists_registered_task_names() -> None:
     with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.get(
             "/api/v1/admin/tasks",
-            headers={"x-api-key": "admin-key-change-in-production"},
+            headers={"x-api-key": os.environ["THALOS_ADMIN_API_KEY"]},
         )
     assert response.status_code == 200
     body = response.json()
