@@ -9,13 +9,14 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import os
 import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from thalos_prime.artifacts.schema import Artifact, GenesisLock, ValidationStatus
+from thalos_prime.artifacts.schema import Artifact, ValidationStatus
 from thalos_prime.audit.trail import AuditEventType, AuditTrail
 from thalos_prime.belief.ledger import BeliefLedger, BeliefState
 from thalos_prime.export.presenter import ExportPresenter
@@ -28,14 +29,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# Module-level singletons — initialised once at import time.
-# All keys are fixed for deterministic behaviour; swap via env-vars in prod.
+# Module-level state. Cryptographic keys must be configured at runtime.
 # ---------------------------------------------------------------------------
-_HMAC_KEY: bytes = b"thalos-prime-genesis-lock!!!!!!!!"  # nosec S105
-_PRP_KEY: bytes = b"thalos-prime-prp!!"  # nosec S105
+def _get_configured_indexer() -> PrpIndexer:
+    """Build an indexer only from an explicit stable deployment key."""
+    raw_key = os.environ.get("THALOS_PRP_KEY", "")
+    key = raw_key.encode("utf-8")
+    if len(key) < 32:
+        raise HTTPException(
+            status_code=503,
+            detail="Artifact ingestion is unavailable until THALOS_PRP_KEY is configured with at least 32 UTF-8 bytes",
+        )
+    return PrpIndexer(key=key)
 
-_genesis_lock = GenesisLock(key=_HMAC_KEY[:32])
-_indexer = PrpIndexer(key=_PRP_KEY)
+
 _belief_ledger = BeliefLedger(ledger_id="primary")
 _audit_trail = AuditTrail(trail_id="primary")
 _validation_pipeline = ValidationPipeline(
@@ -110,7 +117,7 @@ async def ingest_artifact(request: IngestRequest) -> dict[str, Any]:
         metadata=request.metadata or {},
         timestamp_ns=ts,
     )
-    coord = _indexer.index(artifact.content)
+    coord = _get_configured_indexer().index(artifact.content)
 
     verdict = _validation_pipeline.validate(artifact, ts)
 
