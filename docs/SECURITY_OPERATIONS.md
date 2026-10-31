@@ -58,6 +58,10 @@ The repository's earlier public history included development fallback strings su
 
 If a real credential is confirmed in source, logs, artifacts, or deployment output, revoke or rotate it first using its provider's supported process, then assess where it was used. Preserve evidence and timestamps. A Git-history rewrite does not revoke a credential and does not automatically remove copies from forks, clones, caches, or releases. Coordinate cleanup separately and do not rewrite shared history without a recovery plan.
 
+## Repository-family inventory
+
+See [Repository Security Inventory](REPOSITORY_SECURITY_INVENTORY.md) for the 16-repository control inventory, CodeQL coverage, historical database-artifact note, and manual GitHub ruleset actions.
+
 ## Verification status
 
 This branch contains proposed code and test changes. It is not merged, is not deployed, and is not a security certification. Verify CI, deployment settings, actual secret storage, network exposure, backups, and runtime behaviour before representing the system as secured.
