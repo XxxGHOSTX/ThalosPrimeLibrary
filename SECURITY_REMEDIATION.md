@@ -13,13 +13,15 @@
 - Require a stable configured `THALOS_PRP_KEY` for artifact indexing; no fixed key fallback is used.
 - Require an explicit bearer token for protected `/api/v1/*` routes and the separate runtime `POST /execute` endpoint.
 - Restrict the legacy `THALOS_AUTH_DISABLED=1` bypass to explicitly declared development/test environments.
+- Remove the known default admin key from the browser client, disable browser-initiated server shutdown, and minimize public runtime health responses.
+- Disable interactive OpenAPI/Swagger/ReDoc endpoints in production; retain them in development.
 - Add security-focused regression tests and test-only credentials; no production secret values are included.
 
 ## Compatibility warnings
 
 - Changing `THALOS_PRP_KEY` can change artifact coordinates. Do not rotate it without a tested data migration and recovery plan.
 - Changing JWT or NEXUS signing keys affects existing tokens or historical signature verification. Plan key versioning, re-authentication, and rollback before deployment.
-- API clients must send `Authorization: Bearer <THALOS_API_TOKEN>` to protected routes. Update clients and health/integration checks deliberately.
+- API clients must send `Authorization: Bearer <THALOS_API_TOKEN>` to protected routes. The static browser UI does not yet implement production user login/session authentication; do not embed a shared API token into its JavaScript. Implement an identity-aware session/gateway layer before production browser access. The UI's server-stop button is intentionally disabled.
 
 ## Validation still required
 
