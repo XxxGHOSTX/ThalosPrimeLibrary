@@ -200,11 +200,17 @@ class APIClient {
     }
 
     async shutdownServer() {
+        const adminKey = window.prompt(
+            'Enter the administrative API key. This key is sent only with this request and is not saved.'
+        );
+        if (!adminKey || new TextEncoder().encode(adminKey).length < 32) {
+            throw new Error('A configured administrative key of at least 32 bytes is required.');
+        }
         return this.request('/admin/shutdown', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': 'admin-key-change-in-production',
+                'x-api-key': adminKey,
             },
         });
     }
