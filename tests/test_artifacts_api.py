@@ -18,7 +18,7 @@ from thalos_prime.api.server import app
 # Shared test client (module-level reuse is fine — singletons in artifacts.py
 # accumulate state across test calls, which models real server behaviour).
 # ---------------------------------------------------------------------------
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"})
 
 
 # ===========================================================================
