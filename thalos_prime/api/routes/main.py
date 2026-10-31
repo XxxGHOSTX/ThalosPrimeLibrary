@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from thalos_prime.auth import require_api_token
-from fastapi.responses import FileResponse, HTMLResponse, Response
 
 router = APIRouter()
 
