@@ -1,6 +1,6 @@
 # Thalos Prime - Phase 1 & 2 Implementation Guide
 
-This document describes the Phase 1 and Phase 2 features implemented in the Thalos Prime Library.
+This is a historical implementation/roadmap guide. Feature descriptions below are not a current implementation certification; verify each feature against the exact source commit and passing tests before relying on it.
 
 ## Overview
 
