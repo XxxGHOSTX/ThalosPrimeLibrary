@@ -127,6 +127,9 @@ def create_app() -> FastAPI:
         FastAPI: Configured FastAPI application instance
 
     """
+    environment = os.getenv("THALOS_ENV", os.getenv("ENV", "development")).strip().lower()
+    production = environment in {"production", "prod"}
+
     app = FastAPI(
         title="Thalos Prime API",
         description="""
@@ -156,9 +159,9 @@ def create_app() -> FastAPI:
         """,
         version=__version__,
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        docs_url=None if production else "/docs",
+        redoc_url=None if production else "/redoc",
+        openapi_url=None if production else "/openapi.json",
     )
 
     # Configure CORS
