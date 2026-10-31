@@ -3,7 +3,9 @@
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from thalos_prime.auth import require_api_token
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
 router = APIRouter()
@@ -52,7 +54,7 @@ async def root() -> Response:
     """)
 
 
-@router.get("/api/v1/status")
+@router.get("/api/v1/status", dependencies=[Depends(require_api_token)])
 async def api_status() -> dict[str, Any]:
     """Get API status.
 
