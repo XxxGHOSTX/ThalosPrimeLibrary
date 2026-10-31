@@ -94,8 +94,6 @@ class APIKeyAuthenticator:
             raise DeterministicHalt(
                 "Authentication bypass is permitted only when THALOS_ENV is explicitly set to development or test."
             )
-        if production and raw_disabled == "1":
-            raise DeterministicHalt("Authentication cannot be disabled in production.")
         self._auth_disabled = raw_disabled == "1" and explicit_development
 
         raw_keys = os.environ.get(_ENV_API_KEYS, "")
@@ -110,7 +108,7 @@ class APIKeyAuthenticator:
             msg = (
                 "APIKeyAuthenticator: auth is enabled but no API keys are configured. "
                 f"Set {_ENV_API_KEYS} or pass extra_keys, "
-                f"Configure {_ENV_API_KEYS}; {_ENV_AUTH_DISABLED}=1 is allowed only outside production."
+                f"Configure {_ENV_API_KEYS}; {_ENV_AUTH_DISABLED}=1 requires explicit development or test mode."
             )
             raise DeterministicHalt(msg)
 
