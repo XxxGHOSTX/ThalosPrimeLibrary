@@ -50,6 +50,10 @@ Configure GitHub branch protection or a repository ruleset in the GitHub interfa
 
 Never merge a security PR while required checks are failing, skipped unexpectedly, or unavailable for review. If a workflow's logs cannot be obtained, record the failure as undiagnosed and use GitHub's Actions UI to inspect it rather than guessing at its cause.
 
+## Historical default-key findings
+
+The repository's earlier public history included development fallback strings such as `admin-key-change-in-production` and `change-this-secret-key-in-production`. The updated source removes these defaults, but a full-history secret scanner may continue to flag their prior commits. Do not suppress those findings with a broad allowlist. Treat the values as publicly known and unsafe; determine whether any deployment ever relied on them. If they were used in a live environment, rotate them through the provider and plan compatibility before considering the incident closed. The scan alert is not proof that a real production deployment used them or that a third party accessed it.
+
 ## Incident response and history
 
 If a real credential is confirmed in source, logs, artifacts, or deployment output, revoke or rotate it first using its provider's supported process, then assess where it was used. Preserve evidence and timestamps. A Git-history rewrite does not revoke a credential and does not automatically remove copies from forks, clones, caches, or releases. Coordinate cleanup separately and do not rewrite shared history without a recovery plan.
