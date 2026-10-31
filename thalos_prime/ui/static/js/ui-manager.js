@@ -418,12 +418,11 @@ class UIManager {
     }
 
     async handleStopServer() {
-        try {
-            await apiClient.shutdownServer();
-            this.showToast('warning', 'Shutdown Requested', 'Server is shutting down');
-        } catch (error) {
-            this.showToast('error', 'Shutdown Failed', error.message);
-        }
+        this.showToast(
+            'warning',
+            'Browser Shutdown Disabled',
+            'Stop the service through its trusted host or service orchestrator.'
+        );
     }
     
     // Display methods
