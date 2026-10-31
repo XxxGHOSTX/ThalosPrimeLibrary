@@ -407,7 +407,7 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.post(
                 "/execute",
                 json={"task": "legacy", "payload": {"query": "api test"}},
@@ -423,7 +423,7 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.post(
                 "/execute",
                 json={"task": "does_not_exist", "payload": {}},
@@ -436,7 +436,7 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.get("/health")
         assert resp.status_code == 200
         body = resp.json()
@@ -449,6 +449,6 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.post("/execute", json={"task": "legacy"})
         assert resp.status_code == 200
