@@ -57,3 +57,14 @@ If a real credential is confirmed in source, logs, artifacts, or deployment outp
 ## Verification status
 
 This branch contains proposed code and test changes. It is not merged, is not deployed, and is not a security certification. Verify CI, deployment settings, actual secret storage, network exposure, backups, and runtime behaviour before representing the system as secured.
+
+
+## Browser UI authentication boundary
+
+The current static browser UI does not implement a user login, identity provider, or secure session exchange. Do not embed `THALOS_API_TOKEN`, `THALOS_ADMIN_API_KEY`, or any other shared backend secret in JavaScript, HTML, browser storage, query strings, or a downloadable frontend bundle.
+
+For local development only, the UI may use the explicit local bypass with both `THALOS_ENV=development` and `THALOS_AUTH_DISABLED=1`; the separate admin API key remains required for administrative routes. Never enable that bypass in staging, production, or an environment with an unknown mode.
+
+Before exposing the browser UI in production, implement a real user-authentication layer (for example, an OIDC-backed session with Secure, HttpOnly, SameSite cookies) or a trusted identity-aware gateway. A gateway design must authenticate each user, strip any client-supplied backend authorization header, inject the backend service token only on the server side, restrict administrative paths to authorized administrators, and keep the admin key out of the browser. A single shared service token by itself does not provide per-user identity or role-based authorization.
+
+The browser's Stop Server control is disabled. Stop or restart the process through the trusted host, container orchestrator, or deployment control plane instead.
