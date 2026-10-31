@@ -32,7 +32,12 @@ from thalos_nexus import __version__
 from thalos_nexus.er import ArtifactFolder
 from thalos_nexus.gates import STANDARD_GATES
 from thalos_nexus.lysosome import GateRunner
-from thalos_nexus.nucleus import GenomeLoadError, GenomeValidationError, ingest_genome
+from thalos_nexus.nucleus import (
+    GenomeLoadError,
+    GenomeValidationError,
+    SigningKeyConfigurationError,
+    ingest_genome,
+)
 from thalos_nexus.spine import DeterminismSpine
 
 # ---------------------------------------------------------------------------
@@ -72,7 +77,7 @@ def _cmd_ingest_genome(args: argparse.Namespace) -> int:
     genome_path: str = args.genome_file
     try:
         bundle = ingest_genome(genome_path)
-    except (GenomeLoadError, GenomeValidationError) as exc:
+    except (GenomeLoadError, GenomeValidationError, SigningKeyConfigurationError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
@@ -95,7 +100,7 @@ def _cmd_evolve(args: argparse.Namespace) -> int:
             bundle = ingest_genome(genome_path)
             genome_hash = bundle.genome_hash
             spine.emit_event("genome.ingested", {"genome_id": bundle.genome_id})
-        except (GenomeLoadError, GenomeValidationError) as exc:
+        except (GenomeLoadError, GenomeValidationError, SigningKeyConfigurationError) as exc:
             print(f"ERROR: genome ingestion failed: {exc}", file=sys.stderr)
             spine.emit_event("genome.failed", {"error": str(exc)})
             return 1
@@ -184,7 +189,7 @@ def _cmd_traits(args: argparse.Namespace) -> int:
 
     try:
         bundle = ingest_genome(genome_path)
-    except (GenomeLoadError, GenomeValidationError) as exc:
+    except (GenomeLoadError, GenomeValidationError, SigningKeyConfigurationError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
