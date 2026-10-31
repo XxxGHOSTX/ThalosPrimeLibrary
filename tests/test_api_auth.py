@@ -72,3 +72,17 @@ def test_production_disables_interactive_api_documentation(monkeypatch) -> None:
     assert production_app.docs_url is None
     assert production_app.redoc_url is None
     assert production_app.openapi_url is None
+
+
+
+def test_main_api_status_requires_bearer_token(monkeypatch) -> None:
+    """The root UI remains public, but the API status endpoint requires auth."""
+    monkeypatch.delenv("THALOS_AUTH_DISABLED", raising=False)
+    monkeypatch.setenv("THALOS_API_TOKEN", "test-api-token-for-status-route-only-32")
+    client = TestClient(prime_app)
+    assert client.get("/").status_code == 200
+    assert client.get("/api/v1/status").status_code == 401
+    assert client.get(
+        "/api/v1/status",
+        headers={"Authorization": "Bearer test-api-token-for-status-route-only-32"},
+    ).status_code == 200
