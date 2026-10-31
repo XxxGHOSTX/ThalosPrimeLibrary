@@ -27,7 +27,7 @@
 
 The source and test changes have been committed to this review branch. A CI run must pass on the final branch head. Review every changed file, test the application locally, verify deployment settings, inspect the real hosting environment, and test API-client compatibility before merge. A successful GitHub commit is not proof that tests passed.
 
-The GitHub integration could not retrieve logs for several prior failed workflow jobs. Their precise failure causes remain undiagnosed; do not infer causes from short runtime alone.
+The GitHub integration could not retrieve logs or step summaries for the latest failed workflow jobs. Their precise failure causes remain undiagnosed; do not infer causes from short runtime alone. Full-history secret scanning can legitimately flag the old hardcoded development defaults in parent commits even after current source removes them. Do not broadly allowlist those strings: they are publicly known unsafe defaults. Determine whether any live deployment used them and rotate if confirmed.
 
 ## Scope limits
 
