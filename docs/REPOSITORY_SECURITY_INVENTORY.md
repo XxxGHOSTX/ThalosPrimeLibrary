@@ -51,6 +51,10 @@ The proposed replacement [PR #31](https://github.com/XxxGHOSTX/Thalos-Prime-Dire
 
 [PR #8](https://github.com/XxxGHOSTX/Thalos-Prime-Directive/pull/8) updates one IP/publication-status document. It corrects unqualified "proprietary/unpublished" assertions but does not establish sole ownership, a patent filing, or a copyright registration.
 
+### Main-branch IP document removals
+
+The public Library default tree intentionally omits `docs/FORMAL_MODEL.md`, `docs/guides/Thalos_Prime_Claims_Scaffold.md`, and `docs/guides/Thalos_Prime_Patent_Charter.md`, following explicit security/documentation commits on 29 October 2026. The current security branch keeps them absent as well. Those earlier commits are public; the removed file contents remain in Git history and may exist in forks/clones. This is not a history purge or a reversal of the prior disclosure. See [IP Provenance Register](IP_PROVENANCE_REGISTER.md) for the exact commit IDs and disclosure caveats.
+
 ### THALOS-PRIME-CORE-BUILD-V2 historical database
 
 The current default tree does not contain the previous `data.db` path. A recorded deletion commit does not prove what the old database contained or remove its old Git object. Confirm whether it ever contained personal, sensitive, or confidential information before deciding whether history cleanup or further incident response is required. Do not rewrite history without preserving evidence and planning for forks/clones.
