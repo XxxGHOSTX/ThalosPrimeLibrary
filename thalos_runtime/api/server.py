@@ -114,16 +114,9 @@ class ExecuteResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Response body for the GET /health endpoint.
-
-    Attributes:
-        status: Operational status string.
-        tasks: List of registered task names.
-
-    """
+    """Minimal response body for the public GET /health liveness endpoint."""
 
     status: str
-    tasks: list[str]
 
 
 @app.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api_token)])
@@ -153,14 +146,13 @@ def execute(request: ExecuteRequest) -> ExecuteResponse:
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    """Liveness probe returning engine operational status.
+    """Liveness probe returning only basic operational status.
 
-    Returns:
-        HealthResponse with status and registered task names.
-
+    Task names and runtime capabilities are available through authenticated
+    administrative endpoints, not the public liveness route.
     """
-    engine = _get_engine()
-    return HealthResponse(status="ok", tasks=engine.task_names())
+    _get_engine()
+    return HealthResponse(status="ok")
 
 
 __all__ = ["ExecuteRequest", "ExecuteResponse", "HealthResponse", "app"]
