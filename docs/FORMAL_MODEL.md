@@ -1,3 +1,5 @@
+> **Status notice — 31 October 2026:** This is a formal design proposal and target architecture. It is not an audit of existing code, a proof that every described invariant is implemented, a production certification, or a patent application. Implementation status must be independently demonstrated by source, reproducible tests, and commit-specific evidence. Patentability, inventorship, filing, and ownership are not determined by this document.
+
 # Thalos Prime — Formal Specification v1.0 (Greenfield Definition)
 
 > **Scope**: Authoritative greenfield formal model for Thalos Prime.
