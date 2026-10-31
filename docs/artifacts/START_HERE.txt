@@ -76,11 +76,20 @@ Or with coverage report:
 Set allowed API keys (comma-separated):
   export THALOS_API_KEYS="key1,key2,key3"
 
-Disable authentication (development only):
+Local authentication bypass (development/test only):
+  export THALOS_ENV=development
   export THALOS_AUTH_DISABLED=1
+Never use this bypass in production, staging, or an unknown environment.
 
-Set admin API key:
-  export THALOS_ADMIN_API_KEY="your-admin-key"
+For protected API routes, configure a separate random bearer token of at least
+32 bytes in THALOS_API_TOKEN and send it as:
+  Authorization: Bearer <your-token>
+
+Set a separate admin API key of at least 32 bytes:
+  export THALOS_ADMIN_API_KEY="<secure-random-value>"
+Generate secrets locally with a trusted password manager or:
+  python -c "import secrets; print(secrets.token_urlsafe(48))"
+Do not commit actual values to Git.
 
 ------------------------------------------------------------------------
 6. CONFIGURATION
