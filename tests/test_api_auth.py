@@ -34,3 +34,30 @@ def test_protected_api_fails_closed_when_token_is_missing(monkeypatch) -> None:
     monkeypatch.delenv("THALOS_API_TOKEN", raising=False)
     response = TestClient(prime_app).get("/api/v1/settings")
     assert response.status_code == 503
+
+
+
+def test_authentication_bypass_requires_explicit_development(monkeypatch) -> None:
+    """An explicitly local development environment may use the local UI bypass."""
+    monkeypatch.setenv("THALOS_ENV", "development")
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    monkeypatch.delenv("THALOS_API_TOKEN", raising=False)
+    response = TestClient(prime_app).get("/api/v1/settings")
+    assert response.status_code == 200
+
+
+def test_authentication_bypass_is_rejected_in_production(monkeypatch) -> None:
+    """Setting the bypass flag in production must fail closed."""
+    monkeypatch.setenv("THALOS_ENV", "production")
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    response = TestClient(prime_app).get("/api/v1/settings")
+    assert response.status_code == 503
+
+
+def test_authentication_bypass_is_rejected_when_environment_is_unknown(monkeypatch) -> None:
+    """The bypass is not enabled when the deployment mode is absent or unknown."""
+    monkeypatch.delenv("THALOS_ENV", raising=False)
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    response = TestClient(prime_app).get("/api/v1/settings")
+    assert response.status_code == 503
