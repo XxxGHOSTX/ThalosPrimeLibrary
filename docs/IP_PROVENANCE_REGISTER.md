@@ -37,6 +37,18 @@ A prior repository review identified a GitHub creation timestamp of **27 Decembe
 
 Preserve timestamped commits, releases, tags, archives, file hashes, correspondence, dated notebooks, prototype records, and actual first-disclosure evidence. Do not rewrite or delete history to conceal dates.
 
+### Prior public removal of formal-model and claim-development documents
+
+The current public default tree intentionally omits three detailed draft files following security/documentation commits on 29 October 2026:
+
+- `docs/guides/Thalos_Prime_Patent_Charter.md` was removed by commit `ba6a5b5102183c0ab892bc1967b14d9003b0cd90`.
+- `docs/guides/Thalos_Prime_Claims_Scaffold.md` was removed by commit `23ed19d10dcd2d93c7abc45cc231f1558758e0d1`.
+- `docs/FORMAL_MODEL.md` was removed by commit `c718fa61b789b14788ffe58563b8628d2a4a5580`.
+
+The public Phase 1/2 guides were also edited to remove detailed references to the unpublished formal model in commits `75b6d0e2dbe45efb2a08177f7561906e6ba04865` and `c4ae75edd3efc74c1316334fac90d36d0cb8dc00`.
+
+These were deliberate removals from the current public tree. This review branch keeps them absent; it does not republish their contents. **They remain in public Git history and may remain in forks, clones, caches, and prior downloads.** Removing a path from the current branch is not a history purge and does not reverse any prior public disclosure. No history rewrite or private archive has been performed in this task. If private preservation is required, store verified copies in a restricted archive separate from the public repository. Consider history cleanup only with counsel/technical review and a coordinated fork/clone plan.
+
 ## 4. Candidate invention for technical review
 
 **Working concept:** an evidence-gated runtime-candidate promotion protocol.
