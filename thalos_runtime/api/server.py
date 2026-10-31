@@ -23,9 +23,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 
+from thalos_prime.auth import require_api_token
 from thalos_runtime.core.engine import RuntimeEngine
 from thalos_runtime.core.executor import ExecutionError
 from thalos_runtime.core.registry import RegistryError
@@ -125,7 +126,7 @@ class HealthResponse(BaseModel):
     tasks: list[str]
 
 
-@app.post("/execute", response_model=ExecuteResponse)
+@app.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api_token)])
 def execute(request: ExecuteRequest) -> ExecuteResponse:
     """Execute a registered task via the runtime engine.
 
