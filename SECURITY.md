@@ -47,6 +47,12 @@ Once a fix is ready and released:
 - Credit will be given to the reporter (unless anonymity is requested).
 - We ask that you do not disclose the vulnerability publicly until the fix is released.
 
+## Current Security Remediation Status
+
+The default branch contains CodeQL, full-history secret-scanning, Dependabot, and CODEOWNERS configuration. The presence of these workflows does not mean that all scans are passing or that all alerts are resolved.
+
+Proposed fail-closed API, signing-key, and CORS changes are maintained on a separate security review branch and must not be treated as deployed until merged after successful required checks and deployment verification. See [Security Operations](docs/SECURITY_OPERATIONS.md) for production configuration, key lifecycle, incident response, and repository-control guidance.
+
 ## Security Considerations
 
 Thalos Prime Library is designed with the following security principles:
@@ -56,8 +62,8 @@ Thalos Prime Library is designed with the following security principles:
   with explicit errors.
 - **Deterministic execution**: The system is designed to halt with full state capture on
   unresolvable errors rather than silently degrading.
-- **Dependency auditing**: Dependencies are audited with `pip-audit` in CI.
-- **Static analysis**: `bandit` scans all source code for common security issues in CI.
+- **Dependency auditing**: Dependency audit workflows are configured; their current results must be reviewed on each target commit.
+- **Static analysis**: CodeQL and other configured security workflows must pass on the exact commit before release. Workflow presence alone is not a passing result.
 
 ## Preferred Languages
 
