@@ -9,6 +9,8 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from thalos_prime.cors_config import get_configured_cors_origins
+
 
 class APIConfig(BaseModel):
     """API Configuration."""
@@ -106,19 +108,10 @@ def load_config() -> APIConfig:
         secret_key = secrets.token_urlsafe(48)
 
     cors_value = os.getenv("THALOS_CORS_ORIGINS")
-    if production and cors_value is None:
-        raise RuntimeError(
-            "Production requires THALOS_CORS_ORIGINS with explicit origins."
-        )
-    cors_origins = (
-        [origin.strip() for origin in cors_value.split(",") if origin.strip()]
-        if cors_value is not None
-        else ["http://localhost:3000", "http://127.0.0.1:3000"]
+    cors_origins = get_configured_cors_origins(
+        environment=environment,
+        raw_origins=cors_value,
     )
-    if production and (not cors_origins or "*" in cors_origins):
-        raise RuntimeError(
-            "Production requires THALOS_CORS_ORIGINS with explicit origins; wildcard is forbidden."
-        )
 
     return APIConfig(
         host=os.getenv("THALOS_HOST", "127.0.0.1"),
