@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from thalos_prime.api.server import app as prime_app
+from thalos_prime.api.server import app as prime_app, create_app
 from thalos_runtime.api.server import app as runtime_app
 
 TOKEN = "test-token-for-thalos-prime-tests-only"
@@ -61,3 +61,14 @@ def test_authentication_bypass_is_rejected_when_environment_is_unknown(monkeypat
     monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
     response = TestClient(prime_app).get("/api/v1/settings")
     assert response.status_code == 503
+
+
+
+def test_production_disables_interactive_api_documentation(monkeypatch) -> None:
+    """Swagger, ReDoc, and OpenAPI are not exposed by the production app."""
+    monkeypatch.setenv("THALOS_ENV", "production")
+    monkeypatch.setenv("THALOS_CORS_ORIGINS", "https://app.example.test")
+    production_app = create_app()
+    assert production_app.docs_url is None
+    assert production_app.redoc_url is None
+    assert production_app.openapi_url is None
