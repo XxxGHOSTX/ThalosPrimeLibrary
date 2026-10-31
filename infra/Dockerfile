@@ -1,10 +1,10 @@
-FROM python:3.12-slim AS build
+FROM python:3.15-slim AS build
 WORKDIR /app
 COPY pyproject.toml ./
 COPY thalos_prime thalos_prime
 RUN python -m pip install --upgrade pip && pip install --no-cache-dir .
 
-FROM python:3.12-slim
+FROM python:3.15-slim
 RUN useradd --create-home appuser && \
     apt-get update && \
     apt-get install -y --no-install-recommends curl && \
