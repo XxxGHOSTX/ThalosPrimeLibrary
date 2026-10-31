@@ -234,12 +234,13 @@ without external dependencies.
 
 ---
 
-## 8. Greenfield Formal Design
+## 8. Proposed Formal Design (Not an Implementation or Novelty Certification)
 
-> **Scope reframe: audit → greenfield design.**
-> Rather than analyzing existing whitepapers or exports, this section proposes the
-> novel formal system for Thalos Prime first (as the authoritative design target),
-> then maps it onto the current repository as the implementation architecture.
+> **Status:** This section describes a design proposal. It does not establish patentability,
+> technical novelty, or completed implementation. Validate every runtime claim against the
+> current source code, tests, and dated verification artifacts. The standalone `docs/FORMAL_MODEL.md`
+> file is not included in this public tree; this blueprint is not a substitute for a complete,
+> tested formal specification.
 
 ### 8.1 Epistemic Premise
 
@@ -252,9 +253,9 @@ epistemic operating system that resolves this asymmetry.
 
 ### 8.2 Formal System T
 
-The authoritative formal system is **T = ⟨D, I, R, V, E, P, B_t⟩**.
-See [`docs/FORMAL_MODEL.md`](FORMAL_MODEL.md) for the complete definition,
-two-tier architecture, FACS bundle specification, and invariant table.
+The proposed formal model is **T = ⟨D, I, R, V, E, P, B_t⟩**. The following mappings
+are design intent and should not be relied on as proof that every described mechanism
+is implemented or experimentally validated.
 
 ### 8.3 Mapping T onto This Blueprint
 
@@ -270,7 +271,7 @@ two-tier architecture, FACS bundle specification, and invariant table.
 
 ### 8.4 Design Goal (Not Audit)
 
-The 7-stage MNN pipeline described in §2 is the **target architecture** that T
-demands.  Every stage must be fully deterministic (I-1 through I-9 in
-`docs/FORMAL_MODEL.md`), and no stage may be bypassed.  This blueprint is the
-formal design authority; CI gates enforce convergence toward it.
+The 7-stage MNN pipeline described in §2 is a proposed target architecture. Its
+invariants, determinism, coverage, and CI enforcement must be demonstrated by current
+tests and reproducible evidence. This blueprint is descriptive documentation, not a
+formal verification result; do not cite the absent `docs/FORMAL_MODEL.md` as an available specification.
