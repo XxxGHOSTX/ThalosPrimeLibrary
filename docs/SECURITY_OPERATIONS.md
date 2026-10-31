@@ -54,6 +54,10 @@ Never merge a security PR while required checks are failing, skipped unexpectedl
 
 The repository's earlier public history included development fallback strings such as `admin-key-change-in-production` and `change-this-secret-key-in-production`. The updated source removes these defaults, but a full-history secret scanner may continue to flag their prior commits. Do not suppress those findings with a broad allowlist. Treat the values as publicly known and unsafe; determine whether any deployment ever relied on them. If they were used in a live environment, rotate them through the provider and plan compatibility before considering the incident closed. The scan alert is not proof that a real production deployment used them or that a third party accessed it.
 
+## Public IP-draft removal and history
+
+The default branch intentionally omits detailed formal-model, claims-scaffold, and patent-charter documents after explicit 29 October 2026 removal commits. Keep them out of the public default tree unless the owner and qualified IP counsel approve republication. The old file versions remain in public Git history and may exist in forks, clones, or caches. Deleting a current path does not erase prior disclosure. No history rewrite was performed here; coordinate any history cleanup only after preserving evidence and planning for forks/clones.
+
 ## Incident response and history
 
 If a real credential is confirmed in source, logs, artifacts, or deployment output, revoke or rotate it first using its provider's supported process, then assess where it was used. Preserve evidence and timestamps. A Git-history rewrite does not revoke a credential and does not automatically remove copies from forks, clones, caches, or releases. Coordinate cleanup separately and do not rewrite shared history without a recovery plan.
