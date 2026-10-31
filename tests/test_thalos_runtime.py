@@ -407,7 +407,7 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.post(
                 "/execute",
                 json={"task": "legacy", "payload": {"query": "api test"}},
@@ -423,7 +423,7 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.post(
                 "/execute",
                 json={"task": "does_not_exist", "payload": {}},
@@ -431,17 +431,16 @@ class TestAPIServer:
         assert resp.status_code == 404
 
     def test_health_endpoint(self) -> None:
-        """GET /health returns 200 with status=ok and tasks list."""
+        """GET /health returns only the minimal liveness status."""
         from fastapi.testclient import TestClient
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.get("/health")
         assert resp.status_code == 200
         body = resp.json()
-        assert body["status"] == "ok"
-        assert "legacy" in body["tasks"]
+        assert body == {"status": "ok"}
 
     def test_execute_default_payload(self) -> None:
         """POST /execute without explicit payload uses empty dict."""
@@ -449,6 +448,6 @@ class TestAPIServer:
 
         from thalos_runtime.api.server import app
 
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
             resp = client.post("/execute", json={"task": "legacy"})
         assert resp.status_code == 200

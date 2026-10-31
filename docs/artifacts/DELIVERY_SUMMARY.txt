@@ -1,3 +1,10 @@
+HISTORICAL DELIVERY SUMMARY — NOT A CURRENT SECURITY OR PRODUCTION CERTIFICATION
+As of 31 October 2026, test totals, coverage percentages, and "fully operational"
+claims in this document have not been independently reproduced against the
+current default branch. Use this file as a historical record only. Current
+source, tests, and passing checks for a specific commit control implementation
+status.
+
 ThalosPrimeLibrary Delivery Summary
 -----------------------------------
 
@@ -138,4 +145,8 @@ Key Environment Variables
 THALOS_LIBRARY_PATH   Path to local library (optional)
 THALOS_API_KEYS       Comma-separated allowed API keys
 THALOS_AUTH_DISABLED  Set to 1 to bypass API key enforcement
-THALOS_ADMIN_API_KEY  Admin API key for /admin/* routes
+THALOS_ADMIN_API_KEY  Separate admin API key (random, at least 32 bytes)
+THALOS_API_TOKEN      Bearer token for protected /api/v1/* and runtime /execute
+THALOS_SECRET_KEY     Required production JWT secret (random, at least 32 bytes)
+THALOS_NEXUS_SIGNING_KEY  Required NEXUS signing key (random, at least 32 bytes)
+THALOS_PRP_KEY        Stable artifact index key (random, at least 32 bytes)

@@ -199,15 +199,6 @@ class APIClient {
         return this.request('/settings/reset', { method: 'POST' });
     }
 
-    async shutdownServer() {
-        return this.request('/admin/shutdown', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': 'admin-key-change-in-production',
-            },
-        });
-    }
 }
 
 // Export singleton instance

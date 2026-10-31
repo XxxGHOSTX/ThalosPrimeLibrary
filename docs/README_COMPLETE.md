@@ -2,17 +2,13 @@
 
 # THALOS PRIME - THE COMPLETE SYSTEM
 
-## What You Have
+## Project Scope and Verification
 
-You now have a **fully operational Thalos Prime v1.0** - an advanced symbiotic intelligence system that:
+This repository contains an evolving Thalos Prime codebase, experimental components, historical guides, and formal design materials. This document is a historical project guide, not a current release or production certification.
 
-1. ✓ **Uses Library of Babel as its knowledge base** - Queries libraryofbabel.info in real-time
-2. ✓ **Scores pages for coherence** - 0-100 scoring system ensures quality results
-3. ✓ **Caches intelligently** - 1-hour TTL reduces site load while maintaining freshness
-4. ✓ **Provides a Matrix-style UI** - Green-on-black terminal aesthetic with real-time chat
-5. ✓ **Is fully tested** - 11 unit tests, 100% pass rate
-6. ✓ **Scales easily** - Ready for distributed deployment and biological substrates
-7. **Patent status unverified** - This repository does not establish patentability, filing, or grant status.
+Descriptions of the generator, enumerator, coherence scoring, cache, user interface, database, distributed operation, and other components must be checked against the exact source branch and commit being evaluated. The presence of a module or design document does not by itself establish that a feature is integrated, production-ready, or covered by passing tests.
+
+Distributed deployment, biological-substrate integration, and full symbiotic operation are design objectives unless a working implementation and reproducible validation are supplied. Patentability, inventorship, disclosure dates, filing, grant, and ownership are not established by this guide.
 
 ---
 
@@ -348,5 +344,5 @@ http://127.0.0.1:8000/
 **Date**: 2026-02-10
 **Historical Tests**: 11/11 passing as reported on 2026-02-10; not a current CI result
 **Documentation**: Historical status; verify current paths and implementation
-**Patent Status**: Not verified; no filing/grant status established by this README
+**Patent Status**: Not verified; this guide does not establish a filing, grant, inventorship, or ownership.
 

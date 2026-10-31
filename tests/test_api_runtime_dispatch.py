@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi.testclient import TestClient
 
 from thalos_prime.api.server import app
@@ -9,7 +11,7 @@ from thalos_prime.api.server import app
 
 def test_chat_endpoint_dispatches_runtime_task() -> None:
     """POST /api/v1/chat returns ChatResponse from chat task execution (generative mode)."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat",
             json={
@@ -28,7 +30,7 @@ def test_chat_endpoint_dispatches_runtime_task() -> None:
 
 def test_chat_endpoint_enforces_threshold_with_local_mode() -> None:
     """POST /api/v1/chat raises 422 when local mode cannot meet min_score=80."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat",
             json={
@@ -48,7 +50,7 @@ def test_chat_endpoint_enforces_threshold_with_local_mode() -> None:
 
 def test_high_coherence_endpoint_returns_contract_metadata() -> None:
     """POST /api/v1/chat/high_coherence succeeds with generative mode."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat/high_coherence?min_score=80",
             json={
@@ -68,7 +70,7 @@ def test_high_coherence_endpoint_returns_contract_metadata() -> None:
 
 def test_high_coherence_endpoint_raises_422_on_threshold_miss() -> None:
     """POST /api/v1/chat/high_coherence raises 422 when local mode can't hit min_score."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.post(
             "/api/v1/chat/high_coherence?min_score=95",
             json={
@@ -85,10 +87,10 @@ def test_high_coherence_endpoint_raises_422_on_threshold_miss() -> None:
 
 def test_admin_tasks_lists_registered_task_names() -> None:
     """GET /api/v1/admin/tasks returns the RuntimeEngine registered tasks."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         response = client.get(
             "/api/v1/admin/tasks",
-            headers={"x-api-key": "admin-key-change-in-production"},
+            headers={"x-api-key": os.environ["THALOS_ADMIN_API_KEY"]},
         )
     assert response.status_code == 200
     body = response.json()

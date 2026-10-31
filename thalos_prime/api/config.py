@@ -4,16 +4,19 @@ Configuration settings for the Thalos Prime API.
 """
 
 import os
+import secrets
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from thalos_prime.cors_config import get_configured_cors_origins
 
 
 class APIConfig(BaseModel):
     """API Configuration."""
 
     # Server settings
-    host: str = Field(default="0.0.0.0", description="Server host")  # nosec B104
+    host: str = Field(default="127.0.0.1", description="Server host; loopback by default")
     port: int = Field(default=8000, description="Server port")
     workers: int = Field(default=4, description="Number of worker processes")
     reload: bool = Field(default=False, description="Enable auto-reload")
@@ -60,8 +63,8 @@ class APIConfig(BaseModel):
 
     # Security settings
     secret_key: str = Field(
-        default="change-this-secret-key-in-production",
-        description="Secret key for JWT",
+        default_factory=lambda: secrets.token_urlsafe(48),
+        description="Ephemeral local-development key; set THALOS_SECRET_KEY in production",
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(default=30, description="Access token expiration")
@@ -72,8 +75,8 @@ class APIConfig(BaseModel):
 
     # CORS
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["*"],
-        description="Allowed CORS origins",
+        default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"],
+        description="Allowed CORS origins; configure explicit origins for production",
     )
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
@@ -87,9 +90,31 @@ class APIConfig(BaseModel):
 
 # Load configuration from environment
 def load_config() -> APIConfig:
-    """Load configuration from environment variables."""
+    """Load and validate security-sensitive configuration from the environment.
+
+    Production requires an explicit secret of at least 32 UTF-8 bytes and an
+    explicit, non-wildcard CORS origin list. Development uses an ephemeral
+    random JWT secret and localhost-only CORS defaults.
+    """
+    environment = os.getenv("THALOS_ENV", os.getenv("ENV", "development")).lower()
+    production = environment in {"production", "prod"}
+    secret_key = os.getenv("THALOS_SECRET_KEY")
+    if production:
+        if not secret_key or len(secret_key.encode("utf-8")) < 32:
+            raise RuntimeError(
+                "Production requires THALOS_SECRET_KEY with at least 32 UTF-8 bytes."
+            )
+    elif not secret_key:
+        secret_key = secrets.token_urlsafe(48)
+
+    cors_value = os.getenv("THALOS_CORS_ORIGINS")
+    cors_origins = get_configured_cors_origins(
+        environment=environment,
+        raw_origins=cors_value,
+    )
+
     return APIConfig(
-        host=os.getenv("THALOS_HOST", "0.0.0.0"),  # nosec B104
+        host=os.getenv("THALOS_HOST", "127.0.0.1"),
         port=int(os.getenv("THALOS_PORT", "8000")),
         database_url=os.getenv("THALOS_DATABASE_URL", "sqlite:///./thalos_prime.db"),
         redis_url=os.getenv("THALOS_REDIS_URL", "redis://localhost:6379/0"),
@@ -97,7 +122,8 @@ def load_config() -> APIConfig:
         llm_enabled=os.getenv("THALOS_LLM_ENABLED", "false").lower() == "true",
         llm_provider=os.getenv("THALOS_LLM_PROVIDER", "openai"),
         llm_api_key=os.getenv("THALOS_LLM_API_KEY"),
-        secret_key=os.getenv("THALOS_SECRET_KEY", "change-this-secret-key-in-production"),
+        secret_key=secret_key,
+        cors_origins=cors_origins,
     )
 
 

@@ -46,7 +46,8 @@ def test_initialize_no_keys_raises_halt(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_initialize_auth_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    """initialize() succeeds with no keys when THALOS_AUTH_DISABLED=1."""
+    """The authentication bypass is available only in non-production environments."""
+    monkeypatch.setenv("THALOS_ENV", "development")
     monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
     monkeypatch.setenv("THALOS_API_KEYS", "")
 
@@ -156,3 +157,42 @@ def test_deterministic_halt_message() -> None:
     halt = DeterministicHalt("test invariant violated")
     assert halt.message == "test invariant violated"
     assert str(halt) == "test invariant violated"
+
+
+def test_production_rejects_authentication_bypass(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production must not honor the development-only bypass switch."""
+    monkeypatch.setenv("THALOS_ENV", "production")
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    monkeypatch.setenv("THALOS_API_KEYS", "")
+    auth = APIKeyAuthenticator()
+    with pytest.raises(DeterministicHalt, match="cannot be disabled in production"):
+        auth.initialize()
+
+
+def test_production_requires_strong_api_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production credentials shorter than 32 UTF-8 bytes must fail closed."""
+    monkeypatch.setenv("THALOS_ENV", "production")
+    monkeypatch.delenv("THALOS_AUTH_DISABLED", raising=False)
+    monkeypatch.setenv("THALOS_API_KEYS", "too-short")
+    auth = APIKeyAuthenticator()
+    with pytest.raises(DeterministicHalt, match="at least 32 UTF-8 bytes"):
+        auth.initialize()
+
+
+def test_auth_bypass_requires_explicit_development_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The legacy bypass must not activate when the deployment environment is unknown."""
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    monkeypatch.delenv("THALOS_ENV", raising=False)
+    monkeypatch.delenv("ENV", raising=False)
+    auth = APIKeyAuthenticator()
+    with pytest.raises(DeterministicHalt, match="THALOS_ENV is explicitly set"):
+        auth.initialize()
+
+
+def test_auth_bypass_is_rejected_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production never accepts the authentication bypass flag."""
+    monkeypatch.setenv("THALOS_AUTH_DISABLED", "1")
+    monkeypatch.setenv("THALOS_ENV", "production")
+    auth = APIKeyAuthenticator()
+    with pytest.raises(DeterministicHalt):
+        auth.initialize()

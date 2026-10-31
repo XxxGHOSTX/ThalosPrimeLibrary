@@ -54,7 +54,7 @@ def test_reset_settings_restores_defaults(tmp_path: Path, monkeypatch: pytest.Mo
 
 def test_settings_api_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("THALOS_USER_CONFIG_DIR", str(tmp_path))
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer test-token-for-thalos-prime-tests-only"}) as client:
         get_resp = client.get("/api/v1/settings")
         assert get_resp.status_code == 200
         patch_resp = client.patch(

@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Request, status
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -21,6 +21,8 @@ from fastapi.staticfiles import StaticFiles
 
 from thalos_prime import __version__
 from thalos_prime.config import get_config
+from thalos_prime.auth import require_api_token
+from thalos_prime.cors_config import get_configured_cors_origins
 from thalos_prime.models.api_models import ErrorResponse
 from thalos_runtime.core.deps import get_engine, set_engine
 from thalos_runtime.core.engine import RuntimeEngine
@@ -125,6 +127,9 @@ def create_app() -> FastAPI:
         FastAPI: Configured FastAPI application instance
 
     """
+    environment = os.getenv("THALOS_ENV", os.getenv("ENV", "development")).strip().lower()
+    production = environment in {"production", "prod"}
+
     app = FastAPI(
         title="Thalos Prime API",
         description="""
@@ -154,18 +159,18 @@ def create_app() -> FastAPI:
         """,
         version=__version__,
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        docs_url=None if production else "/docs",
+        redoc_url=None if production else "/redoc",
+        openapi_url=None if production else "/openapi.json",
     )
 
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=get_configured_cors_origins(),
+        allow_credentials=False,
+        allow_methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Accept", "Authorization", "Content-Type", "X-API-Key"],
     )
 
     # Add GZip compression
@@ -288,19 +293,20 @@ def register_routes(app: FastAPI) -> None:
 
         # Register routers with prefixes
         app.include_router(main_router, tags=["Main"])
-        app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
-        app.include_router(search_router, prefix="/api/v1/search", tags=["Search"])
-        app.include_router(generate_router, prefix="/api/v1/generate", tags=["Generate"])
-        app.include_router(enumerate_router, prefix="/api/v1/enumerate", tags=["Enumerate"])
-        app.include_router(decode_router, prefix="/api/v1/decode", tags=["Decode"])
-        app.include_router(settings_router, prefix="/api/v1/settings", tags=["Settings"])
-        app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
-        app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"])
-        app.include_router(artifacts_router, prefix="/api/v1/artifacts", tags=["Artifacts"])
+        app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"], dependencies=[Depends(require_api_token)])
+        app.include_router(search_router, prefix="/api/v1/search", tags=["Search"], dependencies=[Depends(require_api_token)])
+        app.include_router(generate_router, prefix="/api/v1/generate", tags=["Generate"], dependencies=[Depends(require_api_token)])
+        app.include_router(enumerate_router, prefix="/api/v1/enumerate", tags=["Enumerate"], dependencies=[Depends(require_api_token)])
+        app.include_router(decode_router, prefix="/api/v1/decode", tags=["Decode"], dependencies=[Depends(require_api_token)])
+        app.include_router(settings_router, prefix="/api/v1/settings", tags=["Settings"], dependencies=[Depends(require_api_token)])
+        app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"], dependencies=[Depends(require_api_token)])
+        app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"], dependencies=[Depends(require_api_token)])
+        app.include_router(artifacts_router, prefix="/api/v1/artifacts", tags=["Artifacts"], dependencies=[Depends(require_api_token)])
         app.include_router(
             individuation_router,
             prefix="/api/v1/individuation",
             tags=["Individuation"],
+            dependencies=[Depends(require_api_token)],
         )
 
         logger.info("All routes registered successfully")
@@ -319,8 +325,8 @@ if __name__ == "__main__":
     # Run the server
     uvicorn.run(
         "thalos_prime.api.server:app",
-        host="0.0.0.0",  # nosec B104
-        port=8000,
-        reload=True,
+        host=os.getenv("THALOS_HOST", "127.0.0.1"),
+        port=int(os.getenv("THALOS_PORT", "8000")),
+        reload=False,
         log_level="info",
     )

@@ -22,6 +22,12 @@ from pathlib import Path
 
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def _test_signing_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Supply a test-only key; production code has no embedded signing key."""
+    monkeypatch.setenv("THALOS_NEXUS_SIGNING_KEY", "test-only-key-" + "x" * 48)
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -125,16 +131,32 @@ class TestNucleus:
             ingest_genome(tmp_path / "nonexistent.json")
 
     def test_signing_key_env_override(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """THALOS_NEXUS_SIGNING_KEY env var affects signature but not hash."""
+        """Configured signing keys affect signatures without changing content hashes."""
         from thalos_nexus.nucleus import ingest_genome
 
         genome_path = _sample_genome(tmp_path)
-        monkeypatch.setenv("THALOS_NEXUS_SIGNING_KEY", "custom-key-123")
+        monkeypatch.setenv("THALOS_NEXUS_SIGNING_KEY", "custom-key-" + "y" * 40)
         b_custom = ingest_genome(genome_path)
+        monkeypatch.setenv("THALOS_NEXUS_SIGNING_KEY", "other-key-" + "z" * 40)
+        b_other = ingest_genome(genome_path)
+        assert b_custom.genome_hash == b_other.genome_hash
+        assert b_custom.signature != b_other.signature
+
+    def test_missing_signing_key_fails_closed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """No embedded development key is accepted as a fallback."""
+        from thalos_nexus.nucleus import SigningKeyConfigurationError, ingest_genome
+
         monkeypatch.delenv("THALOS_NEXUS_SIGNING_KEY", raising=False)
-        b_dev = ingest_genome(genome_path)
-        assert b_custom.genome_hash == b_dev.genome_hash
-        assert b_custom.signature != b_dev.signature
+        with pytest.raises(SigningKeyConfigurationError, match="is required"):
+            ingest_genome(_sample_genome(tmp_path))
+
+    def test_short_signing_key_fails_closed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Short signing keys are rejected before a signature is produced."""
+        from thalos_nexus.nucleus import SigningKeyConfigurationError, ingest_genome
+
+        monkeypatch.setenv("THALOS_NEXUS_SIGNING_KEY", "too-short")
+        with pytest.raises(SigningKeyConfigurationError, match="at least 32"):
+            ingest_genome(_sample_genome(tmp_path))
 
     def test_bundle_to_dict(self, tmp_path: Path) -> None:
         """to_dict returns expected keys."""
@@ -654,3 +676,4 @@ class TestCLI:
         assert hasattr(thalos_nexus, "__version__")
         assert hasattr(thalos_nexus, "GenomeBundle")
         assert hasattr(thalos_nexus, "DeterminismSpine")
+
