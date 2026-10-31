@@ -47,7 +47,7 @@ jobs:
             -o dist/ThalosPrime.msi
 
       - name: Build Setup.exe with Inno Setup
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.9
         with:
           path: installer/windows/inno/ThalosPrimeSetup.iss
 
